@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://c13yiq47lgbf7"]
+
+[ext_resource type="PackedScene" uid="uid://d3flmlart0sj6" path="res://character.tscn" id="1_0e48y"]
+[ext_resource type="Script" uid="uid://bek6llqu8mjn" path="res://node_2d.gd" id="3_0hol4"]
+[ext_resource type="Texture2D" uid="uid://biem1sk422r6t" path="res://Captura de pantalla 2026-07-28 135759.png" id="3_epypp"]
+[ext_resource type="PackedScene" uid="uid://cr3qx240w6sv2" path="res://Cursor.tscn" id="4_0hol4"]
+[ext_resource type="PackedScene" uid="uid://co3kec6w521np" path="res://tp_proyectile.tscn" id="5_q6r6c"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ddicg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
+size = Vector2(100, 823)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_otjec"]
+size = Vector2(252, 65)
+
+[node name="Node2D" type="Node2D" unique_id=332440221]
+script = ExtResource("3_0hol4")
+
+[node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_0e48y")]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=501081668]
+position = Vector2(0, 448)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=362609759]
+shape = SubResource("WorldBoundaryShape2D_ddicg")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=410968071]
+position = Vector2(0, 113)
+scale = Vector2(2.6087787, 0.39561415)
+texture = ExtResource("3_epypp")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=870366971]
+
+[node name="CURSOR" parent="CanvasLayer" unique_id=857868883 instance=ExtResource("4_0hol4")]
+position = Vector2(137, 0)
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="." unique_id=620635416]
+
+[node name="Sprite2D2" type="Sprite2D" parent="StaticBody2D3" unique_id=1150503970]
+position = Vector2(-566.0001, 96)
+rotation = 1.5707964
+scale = Vector2(2.6154583, 0.3539474)
+texture = ExtResource("3_epypp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3" unique_id=1627028617]
+position = Vector2(-513, 178)
+shape = SubResource("RectangleShape2D_ddicg")
+
+[node name="Tp_proyectile" parent="." unique_id=1992403906 instance=ExtResource("5_q6r6c")]
+position = Vector2(-6, 225)
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="." unique_id=1649903343]
+visible = false
+
+[node name="Sprite2D2" type="Sprite2D" parent="StaticBody2D2" unique_id=1875524492]
+scale = Vector2(0.23926517, 0.11469309)
+texture = ExtResource("3_epypp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2" unique_id=2056919536]
+shape = SubResource("RectangleShape2D_otjec")

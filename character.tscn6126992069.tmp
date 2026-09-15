@@ -1,0 +1,178 @@
+[gd_scene format=3 uid="uid://d3flmlart0sj6"]
+
+[ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="1_qi5as"]
+[ext_resource type="Script" uid="uid://dhrp4tbu5k020" path="res://character_body_2d.gd" id="1_wa5vi"]
+[ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="2_jb3kq"]
+[ext_resource type="PackedScene" uid="uid://co3kec6w521np" path="res://tp_proyectile.tscn" id="2_px5sl"]
+[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="2_wfnr8"]
+[ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="3_0qfo5"]
+[ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="3_c1b4b"]
+[ext_resource type="Script" uid="uid://db2yu04lj06te" path="res://node.gd" id="3_wa5vi"]
+[ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
+[ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
+[ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
+[ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
+[ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
+[ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
+[ext_resource type="Script" uid="uid://b2vu32r2n7pcp" path="res://slash_controller.gd" id="13_bwfjh"]
+[ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
+[ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="15_kjduu"]
+[ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
+[ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
+
+[sub_resource type="Resource" id="Resource_7tnxx"]
+script = ExtResource("3_c1b4b")
+transition = 5
+ease = 1
+
+[sub_resource type="Resource" id="Resource_qi5as"]
+script = ExtResource("3_c1b4b")
+transition = 5
+ease = 1
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
+size = Vector2(126, 127)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_bwfjh"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_otjec"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_lpiy1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_88tkl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_y0ipg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_kjduu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_3d8aq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_8i6g0")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": 0,
+"name": &"slash",
+"speed": 24.0
+}]
+
+[node name="Node2D" type="Node2D" unique_id=1720170991]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
+physics_interpolation_mode = 1
+top_level = true
+position = Vector2(750, 0)
+zoom = Vector2(0.4, 0.4)
+
+[node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
+process_priority = 300
+process_physics_priority = 300
+script = ExtResource("1_qi5as")
+metadata/_custom_type_script = "uid://bd046eokvcnu2"
+
+[node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
+top_level = true
+position = Vector2(750, 0)
+script = ExtResource("2_jb3kq")
+priority = 1
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.4, 0.4)
+tween_resource = SubResource("Resource_7tnxx")
+follow_offset = Vector2(750, 0)
+follow_damping = true
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="TPHITCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=719054145 node_paths=PackedStringArray("follow_target")]
+top_level = true
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.25, 0.25)
+tween_resource = SubResource("Resource_qi5as")
+_preview_noise = false
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="TPCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=207274216 node_paths=PackedStringArray("follow_target")]
+top_level = true
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.2, 0.2)
+tween_resource = SubResource("Resource_qi5as")
+_preview_noise = false
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "trajectory_line")]
+scale = Vector2(1, 2)
+collision_layer = 2
+script = ExtResource("1_wa5vi")
+speed = 500.0
+sprint_multiplier = 2.5
+gravity = 3000.0
+low_jump_multiplier = 4.0
+tp_projectile_scene = ExtResource("2_px5sl")
+physics_config = ExtResource("3_0qfo5")
+aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
+trajectory_line = NodePath("Preview")
+
+[node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
+shape = SubResource("RectangleShape2D_0qfo5")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=563234074]
+sprite_frames = SubResource("SpriteFrames_bwfjh")
+
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=288962317]
+texture = ExtResource("2_wfnr8")
+
+[node name="JumpController" type="Node" parent="CharacterBody2D" unique_id=1822103920]
+script = ExtResource("3_wa5vi")
+coyote_time = 0.2
+jump_buffer_time = 0.2
+first_jump_force = 1200.0
+second_jump_force = 1200.0
+
+[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
+script = ExtResource("4_wfnr8")
+line_color = Color(0, 11.311408, 16.732914, 1)
+
+[node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
+script = ExtResource("10_jb3kq")
+landing_marker_scene = ExtResource("11_c1b4b")
+
+[node name="ReloadIndicator" type="Node2D" parent="CharacterBody2D" unique_id=1412953015]
+script = ExtResource("12_7tnxx")
+width = 30.0
+offset = Vector2(120, -20)
+bg_color = Color(0, 0.7176471, 0, 0.6)
+fill_color = Color(0, 1, 0, 1)
+
+[node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
+script = ExtResource("13_bwfjh")
+attack_range = 270.0
+slash_offset_distance = 120.0
+slash_rotation_offset_degrees = 120.0
+
+[node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_otjec")
+animation = &"slash"
+frame = 9
+frame_progress = 1.0

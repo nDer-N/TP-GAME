@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://m3nich7e1c7l"]
+
+[ext_resource type="PackedScene" uid="uid://d3flmlart0sj6" path="res://character.tscn" id="2_uadvd"]
+[ext_resource type="PackedScene" uid="uid://co3kec6w521np" path="res://tp_proyectile.tscn" id="4_1o0d5"]
+
+[node name="Node2D" type="Node2D" unique_id=1647584484]
+
+[node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("2_uadvd")]
+
+[node name="Tp_proyectile" parent="." unique_id=1992403906 instance=ExtResource("4_1o0d5")]

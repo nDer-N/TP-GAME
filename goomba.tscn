@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dao48rqjx70o2"]
+
+[ext_resource type="Script" uid="uid://cfoil22spgwsp" path="res://goomba.gd" id="1_jke6y"]
+[ext_resource type="Texture2D" uid="uid://cys2s1sqteris" path="res://resources/red.png" id="2_jke6y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_otjec"]
+size = Vector2(128, 192)
+
+[node name="Goomba" type="CharacterBody2D" unique_id=506820675 groups=["enemies"]]
+script = ExtResource("1_jke6y")
+speed = 200.0
+gravity = 3000.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1009786888]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_otjec")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=411205140]
+position = Vector2(1.9073486e-06, -32.000008)
+scale = Vector2(2, 3.0000002)
+texture = ExtResource("2_jke6y")

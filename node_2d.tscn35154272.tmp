@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://c13yiq47lgbf7"]
+
+[ext_resource type="PackedScene" uid="uid://d3flmlart0sj6" path="res://character.tscn" id="1_0e48y"]
+[ext_resource type="Script" uid="uid://bek6llqu8mjn" path="res://node_2d.gd" id="3_0hol4"]
+[ext_resource type="Texture2D" uid="uid://biem1sk422r6t" path="res://Captura de pantalla 2026-07-28 135759.png" id="3_epypp"]
+[ext_resource type="PackedScene" uid="uid://cr3qx240w6sv2" path="res://Cursor.tscn" id="4_0hol4"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ddicg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_otjec"]
+size = Vector2(358, 58)
+
+[node name="Node2D" type="Node2D" unique_id=332440221]
+script = ExtResource("3_0hol4")
+
+[node name="Character" parent="." unique_id=1720170991 instance=ExtResource("1_0e48y")]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=501081668]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=362609759]
+position = Vector2(565, 564)
+shape = SubResource("WorldBoundaryShape2D_ddicg")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=410968071]
+position = Vector2(25.999992, 676)
+scale = Vector2(2.6087787, 0.39561415)
+texture = ExtResource("3_epypp")
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="." unique_id=1877338133]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2" unique_id=892014710]
+position = Vector2(486, 424)
+shape = SubResource("RectangleShape2D_otjec")
+one_way_collision = true
+
+[node name="Sprite2D2" type="Sprite2D" parent="StaticBody2D2" unique_id=1370783346]
+position = Vector2(486.68747, 425.5156)
+scale = Vector2(0.3421995, 0.10345391)
+texture = ExtResource("3_epypp")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=870366971]
+
+[node name="CURSOR" parent="CanvasLayer" unique_id=857868883 instance=ExtResource("4_0hol4")]

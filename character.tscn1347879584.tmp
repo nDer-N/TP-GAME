@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://d3flmlart0sj6"]
+
+[ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="1_qi5as"]
+[ext_resource type="Script" uid="uid://dhrp4tbu5k020" path="res://character_body_2d.gd" id="1_wa5vi"]
+[ext_resource type="Script" uid="uid://bhexx6mj1xv3q" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_2d.gd" id="2_jb3kq"]
+[ext_resource type="PackedScene" uid="uid://co3kec6w521np" path="res://tp_proyectile.tscn" id="2_px5sl"]
+[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="2_wfnr8"]
+[ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="3_0qfo5"]
+[ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="3_c1b4b"]
+[ext_resource type="Script" uid="uid://db2yu04lj06te" path="res://node.gd" id="3_wa5vi"]
+[ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
+
+[sub_resource type="Resource" id="Resource_7tnxx"]
+script = ExtResource("3_c1b4b")
+transition = 5
+ease = 1
+
+[sub_resource type="Resource" id="Resource_qi5as"]
+script = ExtResource("3_c1b4b")
+transition = 5
+ease = 1
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
+size = Vector2(43, 84)
+
+[node name="Node2D" type="Node2D" unique_id=1720170991]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
+physics_interpolation_mode = 1
+top_level = true
+position = Vector2(40, 0)
+zoom = Vector2(0.8, 0.8)
+
+[node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
+process_priority = 300
+process_physics_priority = 300
+script = ExtResource("1_qi5as")
+metadata/_custom_type_script = "uid://bd046eokvcnu2"
+
+[node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
+top_level = true
+position = Vector2(40, 0)
+script = ExtResource("2_jb3kq")
+priority = 1
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.8, 0.8)
+tween_resource = SubResource("Resource_7tnxx")
+follow_offset = Vector2(40, 0)
+follow_damping = true
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="TPCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=207274216 node_paths=PackedStringArray("follow_target", "follow_targets")]
+top_level = true
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+follow_targets = [NodePath("../../../CharacterBody2D")]
+zoom = Vector2(0.6, 0.6)
+tween_resource = SubResource("Resource_qi5as")
+_preview_noise = false
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam")]
+collision_layer = 2
+script = ExtResource("1_wa5vi")
+gravity = 3000.0
+friction = 1200.0
+tp_projectile_scene = ExtResource("2_px5sl")
+physics_config = ExtResource("3_0qfo5")
+aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
+
+[node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
+position = Vector2(11.5, 32)
+shape = SubResource("RectangleShape2D_0qfo5")
+
+[node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=288962317]
+position = Vector2(11.25, 31.750002)
+scale = Vector2(0.33984375, 0.66015625)
+texture = ExtResource("2_wfnr8")
+
+[node name="JumpController" type="Node" parent="CharacterBody2D" unique_id=1822103920]
+script = ExtResource("3_wa5vi")
+first_jump_force = 1000.0
+second_jump_force = 700.0
+
+[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
+script = ExtResource("4_wfnr8")
+line_color = Color(1, 0, 0, 1)
+
+[node name="TrajectoryLine" type="Line2D" parent="CharacterBody2D" unique_id=502628011]
+width = 2.0
+default_color = Color(1.1998439, 0.5313974, 0, 1)

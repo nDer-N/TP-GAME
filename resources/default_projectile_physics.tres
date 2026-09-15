@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProjectilePhysicsConfig" format=3 uid="uid://b66kr5sme6dne"]
+
+[ext_resource type="Script" uid="uid://djyis8jysjsvw" path="res://resources/projectile_physics_config.gd" id="1_71168"]
+
+[resource]
+script = ExtResource("1_71168")
+base_speed = 600.0
+gravity = 980.0
+bounce_decay = 0.5
+max_bounces = 5
+metadata/_custom_type_script = "uid://djyis8jysjsvw"
