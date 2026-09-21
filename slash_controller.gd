@@ -12,9 +12,11 @@ extends Node
 @export var slash_rotation_offset_degrees: float = 0.0   # <- nuevo
 
 signal attack_performed(direction: Vector2)
+signal attack_connected(didConnect: bool)
 
 @onready var body: CharacterBody2D = get_parent()
 @onready var slash_sprite: AnimatedSprite2D = get_parent().get_node("SlashEffect")
+@onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D
 
 var cooldown_timer: float = 0.0
 var is_attacking: bool = false
@@ -69,6 +71,10 @@ func try_attack() -> void:
 			print("  -> HIT!")
 			if enemy.has_method("take_damage"):
 				enemy.take_damage(attack_damage, direction)
+				attack_connected.emit(true)
+				noise_emitter.emit()
+				HitStop.request(0.4)
+				
 				
 		else:
 			print("  -> FUERA DEL ARCO (arc_half=", rad_to_deg(arc_half_angle), ")")

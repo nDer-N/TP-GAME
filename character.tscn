@@ -9,13 +9,16 @@
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="3_c1b4b"]
 [ext_resource type="Script" uid="uid://db2yu04lj06te" path="res://node.gd" id="3_wa5vi"]
 [ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
+[ext_resource type="Shader" uid="uid://be0yqxcwgshl8" path="res://shaders/white_flash.gdshader" id="7_8i6g0"]
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
 [ext_resource type="Script" uid="uid://b2vu32r2n7pcp" path="res://slash_controller.gd" id="13_bwfjh"]
+[ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="14_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
+[ext_resource type="Resource" uid="uid://bdbu68bfmohq7" path="res://resources/noise_hit.tres" id="15_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="15_kjduu"]
 [ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
@@ -35,6 +38,11 @@ ease = 1
 size = Vector2(126, 127)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_bwfjh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3d8aq"]
+shader = ExtResource("7_8i6g0")
+shader_parameter/flash_amount = 0.0
+shader_parameter/flash_color = Color(0, 1, 0.972549, 1)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_otjec"]
 animations = [{
@@ -77,6 +85,7 @@ animations = [{
 [node name="Node2D" type="Node2D" unique_id=1720170991]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
+process_mode = 3
 physics_interpolation_mode = 1
 top_level = true
 position = Vector2(750, 0)
@@ -84,12 +93,14 @@ zoom = Vector2(0.35, 0.35)
 editor_draw_limits = true
 
 [node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
+process_mode = 3
 process_priority = 300
 process_physics_priority = 300
 script = ExtResource("1_qi5as")
 metadata/_custom_type_script = "uid://bd046eokvcnu2"
 
 [node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
+process_mode = 3
 top_level = true
 position = Vector2(750, 0)
 script = ExtResource("2_jb3kq")
@@ -101,6 +112,7 @@ tween_resource = SubResource("Resource_7tnxx")
 follow_offset = Vector2(750, 0)
 follow_damping = true
 draw_limits = true
+noise_emitter_layer = 1
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="TPHITCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=719054145 node_paths=PackedStringArray("follow_target")]
@@ -174,6 +186,7 @@ shape = SubResource("RectangleShape2D_0qfo5")
 sprite_frames = SubResource("SpriteFrames_bwfjh")
 
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=288962317]
+material = SubResource("ShaderMaterial_3d8aq")
 texture = ExtResource("2_wfnr8")
 
 [node name="JumpController" type="Node" parent="CharacterBody2D" unique_id=1822103920]
@@ -200,12 +213,22 @@ bg_color = Color(0, 0.7176471, 0, 0.6)
 fill_color = Color(0, 1, 0, 1)
 
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
+process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 270.0
+attack_range = 300.0
 attack_damage = 3
 arc_angle_degrees = 180.0
-slash_offset_distance = 120.0
+slash_offset_distance = 150.0
 slash_rotation_offset_degrees = 120.0
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
+process_mode = 3
+scale = Vector2(2, 4)
+script = ExtResource("14_3d8aq")
+noise = ExtResource("15_3d8aq")
+duration = 0.3
+decay_time = 0.1
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
 scale = Vector2(2, 2)

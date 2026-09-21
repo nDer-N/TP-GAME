@@ -39,17 +39,20 @@ enum State { IDLE, ALERTED, CHARGING, DASHING, STUNNED }
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var detection_area: Area2D = $DetectionArea
 @onready var hitbox: Area2D = $Hitbox
+@onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D
 
 @export var knockback_force: float = 500.0        # fuerza horizontal del empujón
 @export var knockback_up_force: float = 220.0     # componente vertical del empujón
 @export var knockback_duration: float = 0.35      # cuánto dura el empujón antes de frenar
 @export var knockback_friction: float = 900.0 
 
+
 var _state: State = State.IDLE
 var _hp: int
 var _player: Node2D = null
 var _knockback_timer: float = 0.0
 var _is_knocked_back: bool = false
+var _player_in_detection: bool = false
 
 # idle
 var _idle_origin_y: float = 0.0
@@ -88,6 +91,10 @@ func _ready() -> void:
 		detection_area.body_entered.connect(_on_detection_body_entered)
 	if hitbox:
 		hitbox.body_entered.connect(_on_hitbox_body_entered)
+		
+	if detection_area:
+		detection_area.body_entered.connect(_on_detection_body_entered)
+		detection_area.body_exited.connect(_on_detection_body_exited)
 
 
 func _physics_process(delta: float) -> void:
@@ -198,37 +205,30 @@ func _process_dashing(delta: float) -> void:
 
 
 func _on_hit_wall(collision: KinematicCollision2D) -> void:
+	noise_emitter.emit()
 	_spawn_hit_effect(collision.get_position())
 
+	# Separar de la superficie para evitar re-colisión en el próximo frame
 	var normal := collision.get_normal()
+	global_position += normal * 4.0
 
-	# Rebote especular: refleja la velocidad según la normal de la superficie
-	var reflected := velocity.bounce(normal)
-	reflected *= bounce_decay
-	velocity = reflected
+	# Rebote inverso
+	_dash_direction = -_dash_direction
+	velocity = _dash_direction * dash_speed
 
-	# Actualizar dirección
-	if velocity.length_squared() > 0.01:
-		_dash_direction = velocity.normalized()
-		if sprite:
-			sprite.rotation = _dash_direction.angle() + _sprite_base_rotation
-
-	# Feedback visual breve: flash amarillo
 	if sprite:
+		sprite.rotation = _dash_direction.angle() + _sprite_base_rotation
 		sprite.modulate = Color(1, 0.9, 0.3, 1)
 
 	_bounces_left -= 1
-
-	# ¿Se agotó la energía o los rebotes?
-	if velocity.length() < min_bounce_speed or _bounces_left <= 0:
-		_enter_stunned(stun_time_on_wall)
-		return
-
-	# Reanudar el contador de dash (opcional, para que no se aturda por tiempo si sigue rebotando)
 	_dash_timer = 0.0
+
+	if _bounces_left <= 0:
+		_enter_stunned(stun_time_on_wall)
 
 
 func _on_hit_player(player: Node2D) -> void:
+	noise_emitter.emit()
 	if player.has_method("take_hit"):
 		player.take_hit()
 
@@ -259,6 +259,9 @@ func _enter_stunned(duration: float) -> void:
 
 	if sprite:
 		sprite.modulate = Color(0.6, 0.6, 0.6, 1)
+	
+
+
 
 
 func _process_stunned(delta: float) -> void:
@@ -273,19 +276,30 @@ func _process_stunned(delta: float) -> void:
 		_idle_origin_y = global_position.y
 		_float_phase = 0.0
 		_state = State.IDLE
+		if _player_in_detection:
+			_start_attack()
+		else:
+			_state = State.IDLE
 
 
 # ---------- DETECCIÓN ----------
 
 func _on_detection_body_entered(body: Node2D) -> void:
-	if _state != State.IDLE:
-		return
 	if not body.has_method("take_hit"):
 		return
+	_player_in_detection = true
+	# Si estamos en IDLE, arrancar el ataque inmediatamente
+	if _state == State.IDLE:
+		_start_attack()
 
+func _on_detection_body_exited(body: Node2D) -> void:
+	if not body.has_method("take_hit"):
+		return
+	_player_in_detection = false
+
+func _start_attack() -> void:
 	_state = State.ALERTED
 	_charge_timer = 0.0
-
 	if sprite:
 		sprite.modulate = Color(1, 0.8, 0.2, 1)
 

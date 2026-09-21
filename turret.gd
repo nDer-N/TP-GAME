@@ -208,9 +208,26 @@ func _on_detection_body_exited(body: Node2D) -> void:
 func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 	if _is_dead:
 		return
+
 	_hp -= amount
+
+	# Flash rojo de daño
+	_flash_damage()
+
 	if _hp <= 0:
 		die()
+
+
+func _flash_damage() -> void:
+	if cannon_sprite == null:
+		return
+	# Guardar el color actual (puede estar en medio de la carga)
+	var previous_color: Color = cannon_sprite.modulate
+	cannon_sprite.modulate = Color(1, 0.3, 0.3, 1)
+	await get_tree().create_timer(0.1).timeout
+	# Restaurar solo si el nodo sigue vivo y no murió en el intertanto
+	if is_instance_valid(cannon_sprite) and not _is_dead:
+		cannon_sprite.modulate = previous_color
 
 
 func die() -> void:

@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://bco7wyeai557e" path="res://dasher.gd" id="1_aji8u"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="2_c6idp"]
 [ext_resource type="Texture2D" uid="uid://biem1sk422r6t" path="res://Captura de pantalla 2026-07-28 135759.png" id="2_d7dph"]
+[ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="4_ddfrq"]
+[ext_resource type="Resource" uid="uid://djr0dktr7mlyt" path="res://resources/noise_shake.tres" id="5_jopxj"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f4g2i"]
 radius = 80.399
@@ -11,12 +13,17 @@ radius = 80.399
 radius = 448.0714
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_d7dph"]
-radius = 56.0
+radius = 96.0
 
 [node name="Dasher" type="CharacterBody2D" unique_id=1512360025 groups=["enemies"]]
 collision_mask = 3
 script = ExtResource("1_aji8u")
+hits_to_die = 6
+dash_speed = 1200.0
+bounce_decay = 1.0
+max_bounces = 1
 hit_effect_scene = ExtResource("2_c6idp")
+knockback_force = 1000.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1837698814]
 position = Vector2(7.1525574e-07, 6.8530694e-06)
@@ -37,3 +44,10 @@ collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=522493827]
 shape = SubResource("CircleShape2D_d7dph")
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="." unique_id=384442052]
+script = ExtResource("4_ddfrq")
+noise = ExtResource("5_jopxj")
+duration = 0.3
+decay_time = 0.1
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"

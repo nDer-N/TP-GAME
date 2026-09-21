@@ -18,9 +18,12 @@ extends CharacterBody2D
 @export var trajectory_line: Line2D 
 @export var max_hits: int = 3
 @export var hit_invulnerability_time: float = 1.0
+@export var attack_flash_duration: float = 1 
+@export var damage_flash_duration: float = 0.7  # cuánto dura el destello
+@export var attack_flash_color: Color = Color(1, 1, 1, 1)
+@export var damage_flash_color: Color = Color(1, 1, 0, 1)
 
-
-
+var _flash_tween: Tween = null
 var current_speed: float = speed
 var jumps_left: int = 2
 var facing_direction: int = 1
@@ -52,6 +55,14 @@ func _ready() -> void:
 		hits_display.update_hits(current_hits)
 	else:
 		print("No se encontró HitsDisplay en el árbol")
+	print("HitStop existe: ", HitStop)
+	if slash_controller and slash_controller.has_signal("attack_connected"):
+		slash_controller.attack_connected.connect(_on_attack_connected)
+
+func _on_attack_connected(did_connect: bool) -> void:
+	if not did_connect:
+		return
+	flash_sprite(attack_flash_duration, attack_flash_color)
 
 
 func _physics_process(delta: float) -> void:
@@ -114,7 +125,6 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 	if invulnerable_timer > 0:
-		sprite.modulate = Color(1, 1, 0, 1)
 		invulnerable_timer -= delta
 	else:
 		sprite.modulate = Color(1, 1, 1, 1)
@@ -237,11 +247,35 @@ func take_hit() -> void:
 	current_hits += 1
 	invulnerable_timer = hit_invulnerability_time
 	print("Golpe recibido: ", current_hits, "/", max_hits)
+	flash_sprite(damage_flash_duration, damage_flash_color)
 	if hits_display:
 		hits_display.update_hits(current_hits)
 	if current_hits >= max_hits:
 		die()
-		
+
+func flash_sprite(duration: float, color: Color ) -> void:
+	if sprite == null or sprite.material == null:
+		return
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
+		return
+	
+	# Matar el tween anterior si existe (para que golpes seguidos no se pisen)
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+	
+	# Setear color y arrancar el flash en 1.0
+	mat.set_shader_parameter("flash_color", color)
+	mat.set_shader_parameter("flash_amount", 1.0)
+	
+	# Bajar de 1.0 a 0.0 durante `duration`
+	_flash_tween = create_tween()
+	_flash_tween.tween_method(
+		func(v: float): mat.set_shader_parameter("flash_amount", v),
+		1.0,   # desde
+		0.0,   # hasta
+		duration
+	)
 func die() -> void:
 	current_hits = max_hits
 	hits_display.update_hits(current_hits)

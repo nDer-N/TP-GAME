@@ -9,7 +9,7 @@ extends Area2D
 ## Componente vertical del knockback (para que salte un poco).
 @export var knockback_up_force: float = 250.0
 
-## Duración durante la cual el jugador queda empujado (si quieres controlarlo).
+## Duración durante la cual el jugador queda empujado.
 @export var knockback_duration: float = 0.25
 
 ## Tiempo de vida máximo por si nunca impacta.
@@ -18,15 +18,26 @@ extends Area2D
 ## Velocidad a la que viaja el proyectil (px/s).
 @export var speed: float = 260.0
 
+## ¿Puede ser destruido por el slash del jugador?
+@export var destructible: bool = true
+
+## Si es destructible, cuántos golpes aguanta.
+@export var hits_to_destroy: int = 1
+
+## Grupo al que pertenece (para que el SlashController lo detecte).
+@export var enemy_group: String = "enemies"
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 var _direction: Vector2 = Vector2.ZERO
 var _life_timer: float = 0.0
 var _has_hit: bool = false
+var _hp: int = 1
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	add_to_group(enemy_group)
 
 
 ## Llamado por la torreta al instanciar el proyectil.
@@ -75,3 +86,23 @@ func _apply_knockback(body: Node2D) -> void:
 	# Empujar en la dirección del proyectil + un poco hacia arriba
 	body.velocity.x = _direction.x * knockback_force
 	body.velocity.y = -knockback_up_force
+	
+func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
+	if not destructible:
+		return
+	if _has_hit:
+		return
+
+	_hp -= amount
+
+	# Flash de daño
+	if sprite:
+		sprite.modulate = Color(1, 0.3, 0.3, 1)
+
+	if _hp <= 0:
+		die()
+
+
+func die() -> void:
+	# Opcional: partículas, sonido, etc.
+	queue_free()

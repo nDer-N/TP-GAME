@@ -5,7 +5,7 @@
 [ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="2_xuoj6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xuoj6"]
-size = Vector2(127.26747, 127.85031)
+size = Vector2(111.633736, 111.925156)
 
 [node name="Tp_proyectile" type="CharacterBody2D" unique_id=1992403906]
 scale = Vector2(0.5, 0.5)
