@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://b5ygye7aitqkv"]
+
+[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_jvrk8"]
+[ext_resource type="Script" uid="uid://onj7a4v0fk6v" path="res://turret_projectile.gd" id="1_p4yln"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
+size = Vector2(64, 64)
+
+[node name="TurretProjectile" type="Area2D" unique_id=1569484547]
+collision_mask = 2
+script = ExtResource("1_p4yln")
+knockback_force = 1000.0
+speed = 1000.0
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1564958836 groups=["enemies"]]
+position = Vector2(-3.8146973e-06, -3.8146973e-06)
+scale = Vector2(0.49999994, 0.49999994)
+texture = ExtResource("1_jvrk8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1300024826]
+shape = SubResource("RectangleShape2D_ddicg")

@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://bpn4djkdyokry" path="res://breakable.gd" id="3_hu44a"]
 [ext_resource type="PackedScene" uid="uid://cr3qx240w6sv2" path="res://Cursor.tscn" id="4_4t6hg"]
 [ext_resource type="Script" uid="uid://boipk570qpai2" path="res://area_2d.gd" id="5_7vrqn"]
+[ext_resource type="PackedScene" uid="uid://bc15esx4347n2" path="res://Turret.tscn" id="7_0cr88"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_bhfnd"]
 
@@ -84,3 +85,6 @@ shape = SubResource("RectangleShape2D_0cr88")
 position = Vector2(13472, -1986.875)
 scale = Vector2(9.88, 6.84)
 shape = SubResource("RectangleShape2D_4t6hg")
+
+[node name="Turret" parent="." unique_id=707328617 instance=ExtResource("7_0cr88")]
+position = Vector2(2464, -608)

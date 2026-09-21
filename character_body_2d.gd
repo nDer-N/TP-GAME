@@ -36,13 +36,7 @@ var hits_display: Control
 var death_barrier: CollisionShape2D
 var is_on_Ceiling: bool = false
 var is_on_basement: bool = false
-
-
-
-
-
-
-
+var knockback_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $PlayerHitbox
@@ -51,7 +45,7 @@ var is_on_basement: bool = false
 
 
 func _ready() -> void:
-	
+	add_to_group("player");
 	hits_display = get_tree().get_first_node_in_group("hud")
 	if hits_display:
 		hits_display.setup(max_hits)
@@ -74,6 +68,7 @@ func _physics_process(delta: float) -> void:
 		BasementCam.priority = 0
 	if is_dead:
 		return
+	
 	var input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	
@@ -237,6 +232,8 @@ func check_enemy_contact() -> void:
 
 
 func take_hit() -> void:
+	if invulnerable_timer > 0.0 or is_dead:
+		return
 	current_hits += 1
 	invulnerable_timer = hit_invulnerability_time
 	print("Golpe recibido: ", current_hits, "/", max_hits)

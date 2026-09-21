@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://bc15esx4347n2"]
+
+[ext_resource type="Script" uid="uid://b33m4crlkgqe4" path="res://turret.gd" id="1_iwplw"]
+[ext_resource type="Texture2D" uid="uid://cw1cxvd04dgh0" path="res://resources/TILE2.png" id="1_uijts"]
+[ext_resource type="Texture2D" uid="uid://chbi01pv3teoi" path="res://resources/green.png" id="2_iwplw"]
+[ext_resource type="PackedScene" uid="uid://b5ygye7aitqkv" path="res://TurretProjectile.tscn" id="2_wvatt"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
+size = Vector2(192, 192)
+
+[node name="Turret" type="Node2D" unique_id=707328617 node_paths=PackedStringArray("muzzle", "cannon_pivot", "cannon_sprite") groups=["enemies"]]
+script = ExtResource("1_iwplw")
+hits_to_die = 5
+projectile_scene = ExtResource("2_wvatt")
+aim_lockout_time = 0.0
+muzzle = NodePath("CannonPivot/Muzzle")
+cannon_pivot = NodePath("CannonPivot")
+cannon_sprite = NodePath("CannonPivot/CannonSprite")
+
+[node name="Base" type="Sprite2D" parent="." unique_id=1059566795]
+position = Vector2(-2.861023e-06, 2.861023e-06)
+scale = Vector2(0.08888889, 0.08888889)
+texture = ExtResource("1_uijts")
+
+[node name="CannonPivot" type="Node2D" parent="." unique_id=1315881737]
+
+[node name="CannonSprite" type="Sprite2D" parent="CannonPivot" unique_id=708113103]
+position = Vector2(-11.826085, 0)
+scale = Vector2(3.6249998, 1)
+texture = ExtResource("2_iwplw")
+offset = Vector2(26.434784, 0)
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="CannonPivot" unique_id=1403105253]
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CannonPivot/CharacterBody2D" unique_id=380442055]
+shape = SubResource("RectangleShape2D_ddicg")
+
+[node name="Muzzle" type="Node2D" parent="CannonPivot" unique_id=1986641513]
