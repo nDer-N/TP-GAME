@@ -20,6 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
 [ext_resource type="Resource" uid="uid://bdbu68bfmohq7" path="res://resources/noise_hit.tres" id="15_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="15_kjduu"]
+[ext_resource type="Resource" uid="uid://3mvngijot75w" path="res://resources/noise_sprint.tres" id="15_r5wlx"]
 [ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
 
@@ -167,10 +168,11 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 scale = Vector2(1, 2)
 collision_layer = 2
 script = ExtResource("1_wa5vi")
-speed = 500.0
-sprint_multiplier = 2.5
+speed = 700.0
+sprint_multiplier = 1.78
 gravity = 3000.0
 low_jump_multiplier = 4.0
+friction = 3000.0
 tp_projectile_scene = ExtResource("2_px5sl")
 physics_config = ExtResource("3_0qfo5")
 aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
@@ -212,10 +214,19 @@ offset = Vector2(120, -20)
 bg_color = Color(0, 0.7176471, 0, 0.6)
 fill_color = Color(0, 1, 0, 1)
 
+[node name="PhantomCameraNoiseEmitter2D2" type="Node2D" parent="CharacterBody2D" unique_id=1896032420]
+process_mode = 3
+scale = Vector2(2, 2)
+script = ExtResource("14_3d8aq")
+noise = ExtResource("15_r5wlx")
+duration = 5.0
+decay_time = 0.1
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
+
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
 process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 300.0
+attack_range = 350.0
 attack_damage = 3
 arc_angle_degrees = 180.0
 slash_offset_distance = 150.0

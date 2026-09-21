@@ -45,6 +45,7 @@ var knockback_timer: float = 0.0
 @onready var collision_shape: CollisionShape2D = $PlayerHitbox
 @onready var jump_controller: Node = $JumpController
 @onready var slash_controller: Node = $SlashController
+@onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D2
 
 
 func _ready() -> void:
@@ -86,6 +87,7 @@ func _physics_process(delta: float) -> void:
 	current_speed = speed
 	
 	if Input.is_action_pressed("sprint"):
+		noise_emitter.emit()
 		current_speed *= sprint_multiplier
 	
 	if not is_on_floor():
@@ -160,10 +162,24 @@ func update_character_state():
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
+
+	# --- CANCELAR CARGA DEL TP CON ATTACK ---
+	# Si estamos cargando el TP y el jugador presiona attack, cancelar.
+	if is_charging and event.is_action_pressed("attack"):
+		_cancel_tp_charge()
+		# Opcional: que el slash también se ejecute al cancelar
+		slash_controller.try_attack()
+		print("TP cancelado con slash")
+		return
+
+	# --- ATTACK NORMAL ---
 	if event.is_action_pressed("attack"):
 		slash_controller.try_attack()
 		print("ATTCK")
-	if tp_charges>0:
+		return
+
+	# --- TP ---
+	if tp_charges > 0:
 		if event.is_action_pressed("shoot_tp"):
 			is_charging = true
 			aim_pcam.priority = 10
@@ -173,18 +189,24 @@ func _unhandled_input(event: InputEvent) -> void:
 				update_trajectory_preview()
 		elif event.is_action_released("shoot_tp"):
 			if is_charging:
-				
 				is_charging = false
 				if trajectory_line:
 					trajectory_line.visible = false
-					trajectory_line.clear_points()  # Limpiar puntos
+					trajectory_line.clear_points()
 				if charge_power >= min_power_threshold:
 					var mouse_world_pos = get_viewport().get_camera_2d().get_global_mouse_position()
 					shoot_tp(mouse_world_pos, charge_power)
-					#shoot_tp(get_global_mouse_position(), charge_power)
 					print(charge_power)
 				charge_power = 0.0
-	
+				aim_pcam.priority = 0
+
+func _cancel_tp_charge() -> void:
+	is_charging = false
+	charge_power = 0.0
+	if trajectory_line:
+		trajectory_line.visible = false
+		trajectory_line.clear_points()
+	aim_pcam.priority = 0
 	
 func update_trajectory_preview():
 	if trajectory_line and physics_config:
