@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://c30mf4wfo7oqr"]
+
+[ext_resource type="Script" uid="uid://bco7wyeai557e" path="res://dasher.gd" id="1_aji8u"]
+[ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="2_c6idp"]
+[ext_resource type="Texture2D" uid="uid://biem1sk422r6t" path="res://Captura de pantalla 2026-07-28 135759.png" id="2_d7dph"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f4g2i"]
+radius = 80.399
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_otjec"]
+radius = 448.0714
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_d7dph"]
+radius = 56.0
+
+[node name="Dasher" type="CharacterBody2D" unique_id=1512360025 groups=["enemies"]]
+collision_mask = 3
+script = ExtResource("1_aji8u")
+hit_effect_scene = ExtResource("2_c6idp")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1837698814]
+position = Vector2(7.1525574e-07, 6.8530694e-06)
+scale = Vector2(0.122137405, 0.22456141)
+texture = ExtResource("2_d7dph")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1484342968]
+shape = SubResource("CircleShape2D_f4g2i")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=848659878]
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=818553012]
+shape = SubResource("CircleShape2D_otjec")
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=1948411496]
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=522493827]
+shape = SubResource("CircleShape2D_d7dph")

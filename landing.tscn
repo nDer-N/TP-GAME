@@ -1,10 +1,44 @@
 [gd_scene format=3 uid="uid://djchg5k5nyd08"]
 
-[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_lhgdk"]
+[ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="1_pi8sn"]
+[ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="2_tgr88"]
+[ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="3_rkiv8"]
+[ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="4_62r7l"]
+[ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="5_g23w1"]
+[ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="6_c0ieg"]
+[ext_resource type="Script" uid="uid://b8ysdtpcx4ua1" path="res://landing.gd" id="7_tgr88"]
 
-[node name="Node2D" type="Node2D" unique_id=123963697]
+[sub_resource type="SpriteFrames" id="SpriteFrames_ddicg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_pi8sn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_tgr88")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_rkiv8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_62r7l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_g23w1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_c0ieg")
+}],
+"loop": 0,
+"name": &"impact",
+"speed": 12.0
+}]
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=554148503]
-position = Vector2(1.9073486e-06, 3.8146973e-06)
-scale = Vector2(0.4423032, 0.44230327)
-texture = ExtResource("1_lhgdk")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=886728696]
+position = Vector2(0, -8)
+rotation = -2.3775115
+sprite_frames = SubResource("SpriteFrames_ddicg")
+animation = &"impact"
+frame = 5
+frame_progress = 1.0
+script = ExtResource("7_tgr88")
