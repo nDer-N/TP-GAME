@@ -36,6 +36,7 @@ hud=""
 death_barrier=""
 breakable=""
 crumble=""
+player=""
 
 [input]
 

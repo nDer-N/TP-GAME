@@ -151,7 +151,7 @@ follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "trajectory_line")]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "trajectory_line") groups=["player"]]
 scale = Vector2(1, 2)
 collision_layer = 2
 script = ExtResource("1_wa5vi")
@@ -202,6 +202,8 @@ fill_color = Color(0, 1, 0, 1)
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
 script = ExtResource("13_bwfjh")
 attack_range = 270.0
+attack_damage = 3
+arc_angle_degrees = 180.0
 slash_offset_distance = 120.0
 slash_rotation_offset_degrees = 120.0
 
