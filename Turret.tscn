@@ -44,5 +44,4 @@ shape = SubResource("RectangleShape2D_ddicg")
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=1054156528]
-visible = false
 shape = SubResource("CircleShape2D_ddicg")
