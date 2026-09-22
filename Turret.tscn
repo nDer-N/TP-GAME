@@ -18,6 +18,7 @@ projectile_scene = ExtResource("2_wvatt")
 muzzle = NodePath("CannonPivot/Muzzle")
 cannon_pivot = NodePath("CannonPivot")
 cannon_sprite = NodePath("CannonPivot/CannonSprite")
+turn_speed = 20.0
 
 [node name="Base" type="Sprite2D" parent="." unique_id=1059566795]
 position = Vector2(-2.861023e-06, 2.861023e-06)

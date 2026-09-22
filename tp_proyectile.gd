@@ -70,3 +70,6 @@ func _get_platform_top(collision_point: Vector2) -> Vector2:
 	if result:
 		return Vector2(collision_point.x, result.position.y - target_half_height - 2.0)
 	return Vector2(collision_point.x, collision_point.y - target_half_height - 2.0)
+
+func die() -> void:
+	queue_free()

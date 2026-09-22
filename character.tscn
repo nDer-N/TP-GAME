@@ -242,6 +242,7 @@ decay_time = 0.1
 metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
+process_mode = 3
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_otjec")
 animation = &"slash"
