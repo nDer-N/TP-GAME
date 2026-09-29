@@ -73,7 +73,7 @@ func try_attack() -> void:
 				enemy.take_damage(attack_damage, direction)
 				attack_connected.emit(true)
 				noise_emitter.emit()
-				HitStop.request(0.4)
+				HitStop.request(0.1)
 				
 				
 		else:

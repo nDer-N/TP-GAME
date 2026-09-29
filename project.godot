@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 PhantomCameraManager="*uid://duq6jhf6unyis"
 HitStop="*uid://pgg45igwi3u0"
+Events="*uid://ddx6nudbypxq8"
 
 [display]
 

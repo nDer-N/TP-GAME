@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://caiw4f7mcbfk5"]
+
+[ext_resource type="Script" uid="uid://dee7oawwwmwo0" path="res://resources/teleport_vfx.gd" id="1_84e2r"]
+[ext_resource type="Texture2D" uid="uid://brt6ostfhm0lp" path="res://resources/TILE3.png" id="2_rinkr"]
+
+[sub_resource type="Curve" id="Curve_rinkr"]
+_limits = [-200.0, 200.0, 0.0, 1.0]
+_data = [Vector2(0.011278197, 86.153854), 0.0, 0.0, 0, 0, Vector2(1, -110.769226), -803.0188, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_rinkr"]
+curve = SubResource("Curve_rinkr")
+
+[sub_resource type="Curve" id="Curve_bp71h"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.4724374, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_f4g2i"]
+curve = SubResource("Curve_bp71h")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_otjec"]
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 5.0
+spread = 180.0
+initial_velocity_min = 400.0
+initial_velocity_max = 1000.0
+gravity = Vector3(0, 0, 0)
+radial_accel_min = -2.2351742e-06
+radial_accel_max = 200.0
+radial_accel_curve = SubResource("CurveTexture_rinkr")
+scale_curve = SubResource("CurveTexture_f4g2i")
+color = Color(0, 0.97754747, 0.9775476, 1)
+
+[node name="TeleportVFX" type="Node2D" unique_id=1611680154]
+script = ExtResource("1_84e2r")
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=2010756758]
+emitting = false
+amount = 30
+texture = ExtResource("2_rinkr")
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_otjec")

@@ -22,7 +22,11 @@ extends CharacterBody2D
 @export var damage_flash_duration: float = 0.7  # cuánto dura el destello
 @export var attack_flash_color: Color = Color(1, 1, 1, 1)
 @export var damage_flash_color: Color = Color(1, 1, 0, 1)
+@export var HitCAM: PhantomCamera2D
+@export var HitCAM_duration: float = 1
+@export var teleport_vfx_scene: PackedScene
 
+var _hit_timer: float = 0.0
 var _flash_tween: Tween = null
 var current_speed: float = speed
 var jumps_left: int = 2
@@ -51,6 +55,7 @@ var knockback_timer: float = 0.0
 func _ready() -> void:
 	add_to_group("player");
 	hits_display = get_tree().get_first_node_in_group("hud")
+	Events.enemy_died.connect(_on_enemy_died)
 	if hits_display:
 		hits_display.setup(max_hits)
 		hits_display.update_hits(current_hits)
@@ -64,9 +69,20 @@ func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
 	flash_sprite(attack_flash_duration, attack_flash_color)
+	
+func _on_enemy_died(enemy_died:bool) -> void:
+	print("DEATH")
+	# Dar prioridad a la HitCam
+	HitCAM.priority = 10
+	_hit_timer = HitCAM_duration
 
 
 func _physics_process(delta: float) -> void:
+	if _hit_timer > 0.0:
+		_hit_timer -= delta
+		if _hit_timer <= 0.0:
+			HitCAM.priority = 0
+			
 	if is_on_Ceiling:
 		print("CEILING")
 		CeilingCam.priority = 5
@@ -198,7 +214,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					shoot_tp(mouse_world_pos, charge_power)
 					print(charge_power)
 				charge_power = 0.0
-				aim_pcam.priority = 0
+				
 
 func _cancel_tp_charge() -> void:
 	is_charging = false
@@ -246,8 +262,19 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	
 func _on_tp_landed(landing_position: Vector2) -> void:
 	landing_position.y = landing_position.y - 64.0
+	if teleport_vfx_scene:
+		var vfx_out = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_out)
+		vfx_out.global_position = global_position
+		vfx_out.setup(-1.0) # Dirección -1 para colapsar
 	global_position = landing_position
 	velocity = Vector2.ZERO
+	
+	if teleport_vfx_scene:
+		var vfx_in = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_in)
+		vfx_in.global_position = global_position
+		vfx_in.setup(1.0) # Dirección 1 para expandir
 	aim_pcam.priority = 0
 
 func check_enemy_contact() -> void:

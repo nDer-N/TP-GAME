@@ -98,3 +98,6 @@ position = Vector2(6312, -1000)
 
 [node name="Dasher2" parent="." unique_id=1065229859 instance=ExtResource("6_4t6hg")]
 position = Vector2(8456, -584)
+
+[node name="Dasher3" parent="." unique_id=1993458810 instance=ExtResource("6_4t6hg")]
+position = Vector2(744, -616)

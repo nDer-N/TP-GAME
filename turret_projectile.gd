@@ -24,6 +24,7 @@ extends Area2D
 ## Si es destructible, cuántos golpes aguanta.
 @export var hits_to_destroy: int = 1
 
+
 ## Grupo al que pertenece (para que el SlashController lo detecte).
 @export var enemy_group: String = "enemies"
 
@@ -33,6 +34,7 @@ var _direction: Vector2 = Vector2.ZERO
 var _life_timer: float = 0.0
 var _has_hit: bool = false
 var _hp: int = 1
+
 
 
 func _ready() -> void:
@@ -100,9 +102,12 @@ func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 		sprite.modulate = Color(1, 0.3, 0.3, 1)
 
 	if _hp <= 0:
+		
 		die()
 
 
 func die() -> void:
 	# Opcional: partículas, sonido, etc.
+	HitStop.request(0.1)
+	
 	queue_free()

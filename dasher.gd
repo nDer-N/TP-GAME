@@ -345,8 +345,12 @@ func _apply_knockback(hit_direction: Vector2) -> void:
 	# Orientar sprite hacia donde sale despedido (opcional)
 	if sprite and abs(hit_direction.x) > 0.01:
 		sprite.flip_h = hit_direction.x < 0.0
+		
+		
 func die() -> void:
 	_spawn_hit_effect()
+	Events.enemy_died.emit(true)
+	HitStop.request(0.4)
 	queue_free()
 
 

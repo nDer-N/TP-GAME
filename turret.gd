@@ -231,6 +231,8 @@ func _flash_damage() -> void:
 
 
 func die() -> void:
+	HitStop.request(0.4)
+	Events.enemy_died.emit(true)
 	_is_dead = true
 	if cannon_sprite:
 		cannon_sprite.modulate = dead_color
