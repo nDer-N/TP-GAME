@@ -45,11 +45,12 @@ var is_on_Ceiling: bool = false
 var is_on_basement: bool = false
 var knockback_timer: float = 0.0
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision_shape: CollisionShape2D = $PlayerHitbox
 @onready var jump_controller: Node = $JumpController
 @onready var slash_controller: Node = $SlashController
 @onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D2
+@onready var animation_controller: Node = $AnimationController
 
 
 func _ready() -> void:
@@ -62,15 +63,42 @@ func _ready() -> void:
 	else:
 		print("No se encontró HitsDisplay en el árbol")
 	print("HitStop existe: ", HitStop)
-	if slash_controller and slash_controller.has_signal("attack_connected"):
-		slash_controller.attack_connected.connect(_on_attack_connected)
+	if slash_controller:
+		if slash_controller.has_signal("attack_connected"):
+			slash_controller.attack_connected.connect(_on_attack_connected)
+		if slash_controller.has_signal("attack_performed"):
+			slash_controller.attack_performed.connect(_on_attack_performed)
+
+func _on_attack_performed(direction: Vector2) -> void:
+	if animation_controller == null:
+		return
+
+	# Si ya hay una secuencia activa, avanzar el combo
+	if animation_controller.is_in_sequence():
+		animation_controller.advance_slash_sequence()
+		return
+
+	# Si no, iniciar secuencia nueva
+	var angle_deg := rad_to_deg(direction.angle())
+	var dir_key: String
+	if angle_deg >= -135.0 and angle_deg <= -45.0:
+		dir_key = "up"
+	elif angle_deg >= 45.0 and angle_deg <= 135.0:
+		dir_key = "down"
+	else:
+		dir_key = "side"
+		if sprite:
+			sprite.flip_h = direction.x < 0.0
+
+	animation_controller.start_slash_sequence(dir_key)
+
 
 func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
 	flash_sprite(attack_flash_duration, attack_flash_color)
 	
-func _on_enemy_died(enemy_died:bool) -> void:
+func _on_enemy_died() -> void:
 	print("DEATH")
 	# Dar prioridad a la HitCam
 	HitCAM.priority = 10
@@ -166,13 +194,40 @@ func check_height():
 
 
 func update_character_state():
-	if velocity.x > 10:
-		facing_direction = 1
-		sprite.flip_h = false
-	elif velocity.x < -10:
-		facing_direction = -1
-		sprite.flip_h = true
-		
+	var in_slash: bool = animation_controller != null and animation_controller.is_in_sequence()
+	if not in_slash:
+		if velocity.x > 10:
+			facing_direction = 1
+			sprite.flip_h = false
+		elif velocity.x < -10:
+			facing_direction = -1
+			sprite.flip_h = true
+
+	_update_visual_state()
+
+func _update_visual_state() -> void:
+	if animation_controller == null:
+		return
+
+	# Si hay una secuencia de slash activa, no tocar el estado
+	if animation_controller.is_in_sequence():
+		return
+	
+	if not is_on_floor():
+		if velocity.y < 0:
+			animation_controller.set_state(animation_controller.VisualState.JUMP)
+		else:
+			animation_controller.set_state(animation_controller.VisualState.FALL)
+		return
+	#if Input.is_action_just_pressed("jump"):
+	#	animation_controller.set_state(animation_controller.VisualState.JUMP)
+
+	if abs(velocity.x) < 10.0:
+		animation_controller.set_state(animation_controller.VisualState.IDLE)
+	elif Input.is_action_pressed("sprint"):
+		animation_controller.set_state(animation_controller.VisualState.RUN)
+	else:
+		animation_controller.set_state(animation_controller.VisualState.WALK)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -190,6 +245,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# --- ATTACK NORMAL ---
 	if event.is_action_pressed("attack"):
+	
 		slash_controller.try_attack()
 		print("ATTCK")
 		return

@@ -21,6 +21,8 @@ func jump_processing(delta: float) -> void:
 	
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer_timer = jump_buffer_time
+		if body.animation_controller and body.animation_controller.is_in_sequence():
+			body.animation_controller.cancel_sequence()
 	else:
 		jump_buffer_timer -= delta
 	
