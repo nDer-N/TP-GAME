@@ -12,19 +12,33 @@
 [ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
 [ext_resource type="Shader" uid="uid://be0yqxcwgshl8" path="res://shaders/white_flash.gdshader" id="7_8i6g0"]
 [ext_resource type="PackedScene" uid="uid://caiw4f7mcbfk5" path="res://resources/TeleportVFX.tscn" id="8_hvi53"]
+[ext_resource type="Texture2D" uid="uid://bdv43tclu4p6q" path="res://animations/idle/idle_0000.png" id="9_xc4g8"]
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
+[ext_resource type="Texture2D" uid="uid://bisptgw45hps1" path="res://animations/idle/idle_0001.png" id="10_xc8pg"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
+[ext_resource type="Texture2D" uid="uid://cqhgbtx3tvvqw" path="res://animations/idle/idle_0002.png" id="11_grlnq"]
+[ext_resource type="Texture2D" uid="uid://c1yodlp7ug56x" path="res://animations/idle/idle_0003.png" id="12_3fhje"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
+[ext_resource type="Texture2D" uid="uid://5a2stbo8j55d" path="res://animations/idle/idle_0004.png" id="13_0a77e"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
 [ext_resource type="Script" uid="uid://b2vu32r2n7pcp" path="res://slash_controller.gd" id="13_bwfjh"]
 [ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="14_3d8aq"]
+[ext_resource type="Texture2D" uid="uid://du5th64ljt3r8" path="res://animations/idle/idle_0005.png" id="14_hkojd"]
 [ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
 [ext_resource type="Resource" uid="uid://bdbu68bfmohq7" path="res://resources/noise_hit.tres" id="15_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="15_kjduu"]
+[ext_resource type="Texture2D" uid="uid://jarvdrkq86hh" path="res://animations/idle/idle_0006.png" id="15_ltcw0"]
 [ext_resource type="Resource" uid="uid://3mvngijot75w" path="res://resources/noise_sprint.tres" id="15_r5wlx"]
 [ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
+[ext_resource type="Texture2D" uid="uid://dpsg8g34j02df" path="res://animations/idle/idle_0007.png" id="16_fwo57"]
 [ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
+[ext_resource type="Texture2D" uid="uid://jns72yvghoik" path="res://animations/idle/idle_0008.png" id="17_n0b81"]
+[ext_resource type="Texture2D" uid="uid://856ltyh1ej28" path="res://animations/idle/idle_0009.png" id="18_7suoe"]
+[ext_resource type="Texture2D" uid="uid://dwuwl5kp8lc7q" path="res://animations/idle/idle_0010.png" id="19_2xv5r"]
+[ext_resource type="Texture2D" uid="uid://bhv3ehcks3wyf" path="res://animations/idle/idle_0011.png" id="20_q5fly"]
+[ext_resource type="Texture2D" uid="uid://byld4n54w4ymu" path="res://animations/idle/idle_0012.png" id="21_suc4m"]
+[ext_resource type="Texture2D" uid="uid://cif1qe00dkb5h" path="res://animations/idle/idle_0013.png" id="22_2q63v"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
 script = ExtResource("3_c1b4b")
@@ -37,10 +51,58 @@ script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
 
+[sub_resource type="SpriteFrames" id="SpriteFrames_f4g2i"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_xc4g8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_xc8pg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_grlnq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_3fhje")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_0a77e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_hkojd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_ltcw0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_fwo57")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_n0b81")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_7suoe")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_2xv5r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_q5fly")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_suc4m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_2q63v")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 12.0
+}]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
 size = Vector2(126, 127)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_bwfjh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3d8aq"]
 shader = ExtResource("7_8i6g0")
@@ -189,13 +251,17 @@ HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
 HitCAM_duration = 0.5
 teleport_vfx_scene = ExtResource("8_hvi53")
 
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
+position = Vector2(7.6293945e-06, -12.000001)
+scale = Vector2(0.37250003, 0.18625002)
+sprite_frames = SubResource("SpriteFrames_f4g2i")
+animation = &"idle"
+
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=563234074]
-sprite_frames = SubResource("SpriteFrames_bwfjh")
-
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=288962317]
+visible = false
 material = SubResource("ShaderMaterial_3d8aq")
 texture = ExtResource("2_wfnr8")
 
