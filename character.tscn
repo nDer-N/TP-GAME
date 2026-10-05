@@ -289,29 +289,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("28_nqrpu")
-}, {
-"duration": 1.0,
-"texture": ExtResource("29_if43k")
-}, {
-"duration": 1.0,
-"texture": ExtResource("30_2s6co")
-}, {
-"duration": 1.0,
-"texture": ExtResource("31_xgqjs")
-}, {
-"duration": 1.0,
-"texture": ExtResource("32_cfyvn")
-}, {
-"duration": 1.0,
-"texture": ExtResource("33_clhtc")
-}],
-"loop": 0,
-"name": &"DOWNSLASHStop_A",
-"speed": 12.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": ExtResource("34_3dj7f")
 }, {
 "duration": 1.0,
@@ -328,6 +305,29 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": ExtResource("39_jt2bb")
+}],
+"loop": 0,
+"name": &"DOWNSLASHStop_A",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("28_nqrpu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_if43k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_2s6co")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_xgqjs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_cfyvn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_clhtc")
 }],
 "loop": 0,
 "name": &"DOWNSLASHStop_B",
@@ -401,29 +401,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("33_mlyrl")
-}, {
-"duration": 1.0,
-"texture": ExtResource("34_n8kt1")
-}, {
-"duration": 1.0,
-"texture": ExtResource("35_ptv04")
-}, {
-"duration": 1.0,
-"texture": ExtResource("36_sl5si")
-}, {
-"duration": 1.0,
-"texture": ExtResource("37_umy2e")
-}, {
-"duration": 1.0,
-"texture": ExtResource("38_j1ngu")
-}],
-"loop": 0,
-"name": &"SIDESLASHStop_A",
-"speed": 24.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": ExtResource("27_5rqqa")
 }, {
 "duration": 1.0,
@@ -440,6 +417,29 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": ExtResource("32_60xuq")
+}],
+"loop": 0,
+"name": &"SIDESLASHStop_A",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("33_mlyrl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_n8kt1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_ptv04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_sl5si")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_umy2e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_j1ngu")
 }],
 "loop": 0,
 "name": &"SIDESLASHStop_B",
@@ -615,29 +615,6 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("64_4ukqv")
-}, {
-"duration": 1.0,
-"texture": ExtResource("65_w7u4s")
-}, {
-"duration": 1.0,
-"texture": ExtResource("66_jexlq")
-}, {
-"duration": 1.0,
-"texture": ExtResource("67_dcrvu")
-}, {
-"duration": 1.0,
-"texture": ExtResource("68_owkaa")
-}, {
-"duration": 1.0,
-"texture": ExtResource("69_0ugdb")
-}],
-"loop": 0,
-"name": &"UPSLASHStop_A",
-"speed": 24.0
-}, {
-"frames": [{
-"duration": 1.0,
 "texture": ExtResource("58_voccl")
 }, {
 "duration": 1.0,
@@ -654,6 +631,29 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": ExtResource("63_jhdk2")
+}],
+"loop": 0,
+"name": &"UPSLASHStop_A",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("64_4ukqv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("65_w7u4s")
+}, {
+"duration": 1.0,
+"texture": ExtResource("66_jexlq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("67_dcrvu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("68_owkaa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("69_0ugdb")
 }],
 "loop": 0,
 "name": &"UPSLASHStop_B",
@@ -995,13 +995,12 @@ teleport_vfx_scene = ExtResource("8_hvi53")
 min_fall_speed_for_landing = 2000.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
+process_mode = 1
 material = SubResource("ShaderMaterial_hh1h4")
 position = Vector2(7.6293945e-06, -12.000001)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = SubResource("SpriteFrames_f4g2i")
-animation = &"landing"
-frame = 5
-frame_progress = 1.0
+animation = &"UPSLASHStop_B"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -1062,7 +1061,7 @@ decay_time = 0.1
 metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
-process_mode = 3
+process_mode = 1
 material = SubResource("ShaderMaterial_0yg4w")
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_otjec")

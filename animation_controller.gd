@@ -258,7 +258,8 @@ func _on_animation_finished() -> void:
 	# --- Slash (lo que ya tenías) ---
 	match _combo_phase:
 		SequencePhase.START:
-			_combo_timer = combo_window
+			_combo_loop_index = 1
+			
 			pass
 		SequencePhase.LOOP:
 			pass
