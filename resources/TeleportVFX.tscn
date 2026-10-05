@@ -36,6 +36,7 @@ color = Color(0, 0.97754747, 0.9775476, 1)
 script = ExtResource("1_84e2r")
 
 [node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=2010756758]
+visible = false
 emitting = false
 amount = 30
 texture = ExtResource("2_rinkr")
