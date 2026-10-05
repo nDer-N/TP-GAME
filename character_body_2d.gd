@@ -18,9 +18,16 @@ extends CharacterBody2D
 @export var trajectory_line: Line2D 
 @export var max_hits: int = 3
 @export var hit_invulnerability_time: float = 1.0
+@export var attack_flash_duration: float = 1 
+@export var damage_flash_duration: float = 0.7  # cuánto dura el destello
+@export var attack_flash_color: Color = Color(1, 1, 1, 1)
+@export var damage_flash_color: Color = Color(1, 1, 0, 1)
+@export var HitCAM: PhantomCamera2D
+@export var HitCAM_duration: float = 1
+@export var teleport_vfx_scene: PackedScene
 
-
-
+var _hit_timer: float = 0.0
+var _flash_tween: Tween = null
 var current_speed: float = speed
 var jumps_left: int = 2
 var facing_direction: int = 1
@@ -42,19 +49,40 @@ var knockback_timer: float = 0.0
 @onready var collision_shape: CollisionShape2D = $PlayerHitbox
 @onready var jump_controller: Node = $JumpController
 @onready var slash_controller: Node = $SlashController
+@onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D2
 
 
 func _ready() -> void:
 	add_to_group("player");
 	hits_display = get_tree().get_first_node_in_group("hud")
+	Events.enemy_died.connect(_on_enemy_died)
 	if hits_display:
 		hits_display.setup(max_hits)
 		hits_display.update_hits(current_hits)
 	else:
 		print("No se encontró HitsDisplay en el árbol")
+	print("HitStop existe: ", HitStop)
+	if slash_controller and slash_controller.has_signal("attack_connected"):
+		slash_controller.attack_connected.connect(_on_attack_connected)
+
+func _on_attack_connected(did_connect: bool) -> void:
+	if not did_connect:
+		return
+	flash_sprite(attack_flash_duration, attack_flash_color)
+	
+func _on_enemy_died(enemy_died:bool) -> void:
+	print("DEATH")
+	# Dar prioridad a la HitCam
+	HitCAM.priority = 10
+	_hit_timer = HitCAM_duration
 
 
 func _physics_process(delta: float) -> void:
+	if _hit_timer > 0.0:
+		_hit_timer -= delta
+		if _hit_timer <= 0.0:
+			HitCAM.priority = 0
+			
 	if is_on_Ceiling:
 		print("CEILING")
 		CeilingCam.priority = 5
@@ -75,6 +103,7 @@ func _physics_process(delta: float) -> void:
 	current_speed = speed
 	
 	if Input.is_action_pressed("sprint"):
+		noise_emitter.emit()
 		current_speed *= sprint_multiplier
 	
 	if not is_on_floor():
@@ -114,7 +143,6 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	
 	if invulnerable_timer > 0:
-		sprite.modulate = Color(1, 1, 0, 1)
 		invulnerable_timer -= delta
 	else:
 		sprite.modulate = Color(1, 1, 1, 1)
@@ -150,10 +178,24 @@ func update_character_state():
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
 		return
+
+	# --- CANCELAR CARGA DEL TP CON ATTACK ---
+	# Si estamos cargando el TP y el jugador presiona attack, cancelar.
+	if is_charging and event.is_action_pressed("attack"):
+		_cancel_tp_charge()
+		# Opcional: que el slash también se ejecute al cancelar
+		slash_controller.try_attack()
+		print("TP cancelado con slash")
+		return
+
+	# --- ATTACK NORMAL ---
 	if event.is_action_pressed("attack"):
 		slash_controller.try_attack()
 		print("ATTCK")
-	if tp_charges>0:
+		return
+
+	# --- TP ---
+	if tp_charges > 0:
 		if event.is_action_pressed("shoot_tp"):
 			is_charging = true
 			aim_pcam.priority = 10
@@ -163,18 +205,24 @@ func _unhandled_input(event: InputEvent) -> void:
 				update_trajectory_preview()
 		elif event.is_action_released("shoot_tp"):
 			if is_charging:
-				
 				is_charging = false
 				if trajectory_line:
 					trajectory_line.visible = false
-					trajectory_line.clear_points()  # Limpiar puntos
+					trajectory_line.clear_points()
 				if charge_power >= min_power_threshold:
 					var mouse_world_pos = get_viewport().get_camera_2d().get_global_mouse_position()
 					shoot_tp(mouse_world_pos, charge_power)
-					#shoot_tp(get_global_mouse_position(), charge_power)
 					print(charge_power)
 				charge_power = 0.0
-	
+				
+
+func _cancel_tp_charge() -> void:
+	is_charging = false
+	charge_power = 0.0
+	if trajectory_line:
+		trajectory_line.visible = false
+		trajectory_line.clear_points()
+	aim_pcam.priority = 0
 	
 func update_trajectory_preview():
 	if trajectory_line and physics_config:
@@ -214,8 +262,19 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	
 func _on_tp_landed(landing_position: Vector2) -> void:
 	landing_position.y = landing_position.y - 64.0
+	if teleport_vfx_scene:
+		var vfx_out = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_out)
+		vfx_out.global_position = global_position
+		vfx_out.setup(-1.0) # Dirección -1 para colapsar
 	global_position = landing_position
 	velocity = Vector2.ZERO
+	
+	if teleport_vfx_scene:
+		var vfx_in = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_in)
+		vfx_in.global_position = global_position
+		vfx_in.setup(1.0) # Dirección 1 para expandir
 	aim_pcam.priority = 0
 
 func check_enemy_contact() -> void:
@@ -237,11 +296,35 @@ func take_hit() -> void:
 	current_hits += 1
 	invulnerable_timer = hit_invulnerability_time
 	print("Golpe recibido: ", current_hits, "/", max_hits)
+	flash_sprite(damage_flash_duration, damage_flash_color)
 	if hits_display:
 		hits_display.update_hits(current_hits)
 	if current_hits >= max_hits:
 		die()
-		
+
+func flash_sprite(duration: float, color: Color ) -> void:
+	if sprite == null or sprite.material == null:
+		return
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
+		return
+	
+	# Matar el tween anterior si existe (para que golpes seguidos no se pisen)
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+	
+	# Setear color y arrancar el flash en 1.0
+	mat.set_shader_parameter("flash_color", color)
+	mat.set_shader_parameter("flash_amount", 1.0)
+	
+	# Bajar de 1.0 a 0.0 durante `duration`
+	_flash_tween = create_tween()
+	_flash_tween.tween_method(
+		func(v: float): mat.set_shader_parameter("flash_amount", v),
+		1.0,   # desde
+		0.0,   # hasta
+		duration
+	)
 func die() -> void:
 	current_hits = max_hits
 	hits_display.update_hits(current_hits)
