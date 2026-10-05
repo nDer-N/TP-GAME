@@ -25,7 +25,14 @@ extends CharacterBody2D
 @export var HitCAM: PhantomCamera2D
 @export var HitCAM_duration: float = 1
 @export var teleport_vfx_scene: PackedScene
+@export var aim_outline_color: Color = Color(1.0, 0.6, 0.0, 1.0)
+@export var aim_outline_width: float = 1.5
+@export var landing_lock_time: float = 0.10
+@export var min_fall_speed_for_landing: float = 200.0
 
+var _last_fall_speed: float = 0.0 
+var _was_on_floor: bool = false
+var _outline_active: bool = false
 var _hit_timer: float = 0.0
 var _flash_tween: Tween = null
 var current_speed: float = speed
@@ -92,7 +99,18 @@ func _on_attack_performed(direction: Vector2) -> void:
 
 	animation_controller.start_slash_sequence(dir_key)
 
-
+func set_outline(active: bool) -> void:
+	if sprite == null or sprite.material == null:
+		return
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
+		return
+	if _outline_active == active:
+		return
+	_outline_active = active
+	mat.set_shader_parameter("outline_color", aim_outline_color)
+	mat.set_shader_parameter("outline_width", aim_outline_width)
+	mat.set_shader_parameter("outline_amount", 1.0 if active else 0.0)
 func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
@@ -168,7 +186,14 @@ func _physics_process(delta: float) -> void:
 	print(recharge_timer)
 	update_character_state()
 	slash_controller.attack_processing(delta)
+	_was_on_floor = is_on_floor()
+	if not is_on_floor():
+		_last_fall_speed = velocity.y
 	move_and_slide()
+	var now_on_floor := is_on_floor()
+	if not _was_on_floor and now_on_floor:
+		_play_landing_animation()
+	_was_on_floor = now_on_floor
 	
 	if invulnerable_timer > 0:
 		invulnerable_timer -= delta
@@ -179,6 +204,23 @@ func _physics_process(delta: float) -> void:
 	check_height()
 	
 
+func _play_landing_animation() -> void:
+	if animation_controller == null:
+		return
+	if animation_controller.is_in_sequence() or animation_controller.is_aiming():
+		return
+
+	# Ignorar caídas suaves
+	if _last_fall_speed < min_fall_speed_for_landing:
+		return
+
+	var dur := landing_lock_time
+	var anim_name: String = animation_controller.animation_map.get(
+		int(animation_controller.VisualState.LANDING), "")
+	if anim_name != "" and sprite.sprite_frames.has_animation(anim_name):
+		dur = sprite.sprite_frames.get_frame_count(anim_name) / sprite.sprite_frames.get_animation_speed(anim_name)
+
+	animation_controller.force_state(animation_controller.VisualState.LANDING,dur)
 func check_height():
 	print(global_position)
 	if global_position.y <-1920:
@@ -209,19 +251,27 @@ func _update_visual_state() -> void:
 	if animation_controller == null:
 		return
 
-	# Si hay una secuencia de slash activa, no tocar el estado
+	# ¿Está apuntando?
+	if animation_controller.is_aiming():
+		if abs(velocity.x) < 10.0 and is_on_floor():
+			animation_controller.show_aim()
+			return
+		else:
+			animation_controller.hide_aim()
+
+	# --- Slash sigue bloqueando todo lo demás ---
 	if animation_controller.is_in_sequence():
 		return
-	
+
+	# --- En el aire ---
 	if not is_on_floor():
 		if velocity.y < 0:
 			animation_controller.set_state(animation_controller.VisualState.JUMP)
 		else:
 			animation_controller.set_state(animation_controller.VisualState.FALL)
 		return
-	#if Input.is_action_just_pressed("jump"):
-	#	animation_controller.set_state(animation_controller.VisualState.JUMP)
 
+	# --- En el suelo ---
 	if abs(velocity.x) < 10.0:
 		animation_controller.set_state(animation_controller.VisualState.IDLE)
 	elif Input.is_action_pressed("sprint"):
@@ -238,6 +288,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Si estamos cargando el TP y el jugador presiona attack, cancelar.
 	if is_charging and event.is_action_pressed("attack"):
 		_cancel_tp_charge()
+		set_outline(false)
+		if animation_controller:
+			animation_controller.cancel_aim_sequence()
 		# Opcional: que el slash también se ejecute al cancelar
 		slash_controller.try_attack()
 		print("TP cancelado con slash")
@@ -259,26 +312,35 @@ func _unhandled_input(event: InputEvent) -> void:
 			if trajectory_line:
 				trajectory_line.visible = true
 				update_trajectory_preview()
+			set_outline(true)
+			if animation_controller:
+				animation_controller.start_aim_sequence()
 		elif event.is_action_released("shoot_tp"):
 			if is_charging:
 				is_charging = false
+				set_outline(false)
 				if trajectory_line:
 					trajectory_line.visible = false
 					trajectory_line.clear_points()
+				if animation_controller:
+					animation_controller.end_aim_sequence()
 				if charge_power >= min_power_threshold:
 					var mouse_world_pos = get_viewport().get_camera_2d().get_global_mouse_position()
 					shoot_tp(mouse_world_pos, charge_power)
 					print(charge_power)
 				charge_power = 0.0
-				
+				aim_pcam.priority = 0
 
 func _cancel_tp_charge() -> void:
 	is_charging = false
 	charge_power = 0.0
+	set_outline(false) 
 	if trajectory_line:
 		trajectory_line.visible = false
 		trajectory_line.clear_points()
 	aim_pcam.priority = 0
+	if animation_controller and animation_controller.is_aiming():
+		animation_controller.cancel_aim_sequence()
 	
 func update_trajectory_preview():
 	if trajectory_line and physics_config:
@@ -349,6 +411,10 @@ func check_enemy_contact() -> void:
 func take_hit() -> void:
 	if invulnerable_timer > 0.0 or is_dead:
 		return
+	set_outline(false) 
+	if animation_controller and animation_controller.is_aiming():
+		animation_controller.cancel_aim_sequence()
+		_cancel_tp_charge()
 	current_hits += 1
 	invulnerable_timer = hit_invulnerability_time
 	print("Golpe recibido: ", current_hits, "/", max_hits)
@@ -382,6 +448,11 @@ func flash_sprite(duration: float, color: Color ) -> void:
 		duration
 	)
 func die() -> void:
+	set_outline(false) 
+	if animation_controller and animation_controller.is_aiming():
+		animation_controller.cancel_aim_sequence()
+	if animation_controller and animation_controller.is_in_sequence():
+		animation_controller.cancel_sequence()
 	current_hits = max_hits
 	hits_display.update_hits(current_hits)
 	is_dead = true

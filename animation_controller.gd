@@ -7,7 +7,8 @@ extends Node
 	1: "walk",
 	2: "run",
 	3: "jump",
-	4: "fall"
+	4: "fall",
+	5: "landing"
 }
 
 @export var min_hold_time: float = 0.0
@@ -34,8 +35,15 @@ extends Node
 	},
 }
 
-enum VisualState { IDLE, WALK, RUN, JUMP, FALL}
+@export var aim_sequence: Dictionary = {
+	"start": "TPAimStart",
+	"loop": "TPAimLoop",
+	"shoot": "TPShoot",
+}
+
+enum VisualState { IDLE, WALK, RUN, JUMP, FALL, LANDING}
 enum SequencePhase { NONE, START, LOOP, STOP }
+enum AimPhase { NONE, START, LOOP, SHOOT }
 
 var _current_state: VisualState = VisualState.IDLE
 var _current_anim: String = ""
@@ -47,6 +55,10 @@ var _combo_phase: SequencePhase = SequencePhase.NONE
 var _combo_data: Dictionary = {}
 var _combo_loop_index: int = 0
 var _combo_timer: float = 0.0
+
+# --- Apuntado del TP ---
+var _aim_phase: AimPhase = AimPhase.NONE
+var _aim_visible: bool = false
 
 
 func _ready() -> void:
@@ -153,7 +165,70 @@ func advance_slash_sequence() -> void:
 	_combo_timer = combo_window
 	_play_animation(loops[_combo_loop_index])
 
+func start_aim_sequence() -> void:
+	if _aim_phase != AimPhase.NONE:
+		return
+	var start_anim: String = aim_sequence.get("start", "")
+	if start_anim == "":
+		return
+	_aim_phase = AimPhase.START
+	_aim_visible = true
+	_locked = true
+	_play_animation(start_anim)
 
+func end_aim_sequence() -> void:
+	if _aim_phase != AimPhase.START and _aim_phase != AimPhase.LOOP:
+		return
+	_aim_phase = AimPhase.SHOOT
+	_aim_visible = true
+	var shoot_anim: String = aim_sequence.get("shoot", "")
+	if shoot_anim == "":
+		_end_aim()
+		return
+	_play_animation(shoot_anim)
+
+func cancel_aim_sequence() -> void:
+	if _aim_phase == AimPhase.NONE:
+		return
+	_end_aim()
+
+func get_current_aim_anim() -> String:
+	match _aim_phase:
+		AimPhase.START: return aim_sequence.get("start", "")
+		AimPhase.LOOP:  return aim_sequence.get("loop", "")
+		AimPhase.SHOOT: return aim_sequence.get("shoot", "")
+	return ""
+	
+func show_aim() -> void:
+	if _aim_phase == AimPhase.NONE:
+		return
+	_aim_visible = true
+	_locked = true   # ← volver a bloquear para que set_state(IDLE) no pise
+	var anim := get_current_aim_anim()
+	if anim != "":
+		_play_animation(anim)
+
+func hide_aim() -> void:
+	if not _aim_visible:
+		return
+	_aim_visible = false
+	_locked = false 
+
+func is_aiming() -> bool:
+	return _aim_phase != AimPhase.NONE
+
+func is_playing_scripted() -> bool:
+	return is_in_sequence() or is_aiming()
+
+func is_aim_visible() -> bool:
+	return _aim_visible
+
+func _end_aim() -> void:
+	_aim_phase = AimPhase.NONE
+	_aim_visible = false
+	_locked = false
+	_set_state(VisualState.IDLE)
+	
 func is_in_sequence() -> bool:
 	return _combo_phase != SequencePhase.NONE
 
@@ -161,19 +236,37 @@ func is_in_sequence() -> bool:
 # ---------- FASES ----------
 
 func _on_animation_finished() -> void:
-	print("[AC] animation_finished. phase=", _combo_phase)
+	# --- Aim ---
+	if _aim_phase != AimPhase.NONE:
+		# Si el aim no se está mostrando, no avanzar la fase
+		if not _aim_visible:
+			return
+		match _aim_phase:
+			AimPhase.START:
+				_aim_phase = AimPhase.LOOP
+				var loop_anim: String = aim_sequence.get("loop", "")
+				if loop_anim == "":
+					_end_aim()
+					return
+				_play_animation(loop_anim)
+			AimPhase.LOOP:
+				pass
+			AimPhase.SHOOT:
+				_end_aim()
+		return
+
+	# --- Slash (lo que ya tenías) ---
 	match _combo_phase:
 		SequencePhase.START:
-			# NO auto-transicionar. Esperamos input o que expire el timer.
 			_combo_timer = combo_window
 			pass
-
 		SequencePhase.LOOP:
-			# Tampoco. Quedate en la última pose esperando input o timeout.
 			pass
-
 		SequencePhase.STOP:
 			_end_sequence()
+
+
+
 
 
 func _enter_stop() -> void:
@@ -207,11 +300,13 @@ func _end_sequence() -> void:
 	_set_state(VisualState.IDLE)
 	
 func cancel_sequence() -> void:
-	if _combo_phase == SequencePhase.NONE:
+	if _combo_phase == SequencePhase.NONE and _aim_phase == AimPhase.NONE:
 		return
 	_combo_phase = SequencePhase.NONE
 	_combo_data = {}
 	_combo_loop_index = 0
 	_combo_timer = 0.0
+	_aim_phase = AimPhase.NONE
+	_aim_visible = false
 	_locked = false
 	_set_state(VisualState.IDLE)
