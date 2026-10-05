@@ -895,8 +895,8 @@ animations = [{
 process_mode = 3
 physics_interpolation_mode = 1
 top_level = true
-position = Vector2(750, 0)
-zoom = Vector2(0.35, 0.35)
+position = Vector2(750, -8)
+zoom = Vector2(0.4, 0.4)
 editor_draw_limits = true
 
 [node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
@@ -908,11 +908,11 @@ metadata/_custom_type_script = "uid://bd046eokvcnu2"
 
 [node name="HitCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1936468053 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 0)
+position = Vector2(750, -8)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.4, 0.4)
+zoom = Vector2(0.45, 0.45)
 tween_resource = ExtResource("4_1r1pa")
 follow_offset = Vector2(750, 0)
 follow_damping = true
@@ -923,12 +923,12 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 [node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
 process_mode = 3
 top_level = true
-position = Vector2(750, 0)
+position = Vector2(750, -8)
 script = ExtResource("2_jb3kq")
 priority = 1
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.35, 0.35)
+zoom = Vector2(0.4, 0.4)
 tween_resource = SubResource("Resource_7tnxx")
 follow_offset = Vector2(750, 0)
 follow_damping = true
@@ -938,6 +938,7 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="TPCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=207274216 node_paths=PackedStringArray("follow_target")]
 top_level = true
+position = Vector2(0, -8)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -949,7 +950,7 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="CeilingCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1637117747 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, -300)
+position = Vector2(750, -308)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -962,7 +963,7 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="BasementCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1688982036 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 300)
+position = Vector2(750, 292)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -974,6 +975,8 @@ draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "trajectory_line", "HitCAM") groups=["player"]]
+light_mask = 2
+position = Vector2(0, -8)
 scale = Vector2(1, 2)
 collision_layer = 2
 script = ExtResource("1_wa5vi")
@@ -992,7 +995,9 @@ max_hits = 5
 HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
 HitCAM_duration = 0.5
 teleport_vfx_scene = ExtResource("8_hvi53")
+landing_lock_time = 0.5
 min_fall_speed_for_landing = 2000.0
+side_slash_lunge_speed = 2000.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
@@ -1000,7 +1005,9 @@ material = SubResource("ShaderMaterial_hh1h4")
 position = Vector2(7.6293945e-06, -12.000001)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = SubResource("SpriteFrames_f4g2i")
-animation = &"UPSLASHStop_B"
+animation = &"SIDESLASHStart"
+frame = 5
+frame_progress = 1.0
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -1045,8 +1052,9 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
 process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 300.0
+attack_range = 370.0
 attack_damage = 3
+attack_cooldown = 0.0
 arc_angle_degrees = 180.0
 slash_offset_distance = 150.0
 slash_rotation_offset_degrees = 120.0
@@ -1072,3 +1080,4 @@ frame_progress = 1.0
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
+combo_window = 0.2

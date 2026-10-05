@@ -29,7 +29,12 @@ extends CharacterBody2D
 @export var aim_outline_width: float = 1.5
 @export var landing_lock_time: float = 0.10
 @export var min_fall_speed_for_landing: float = 200.0
+@export var attack_brake_friction: float = 3000.0
+@export var side_slash_lunge_speed: float = 450.0      # velocidad inicial del empujón
+@export var side_slash_lunge_duration: float = 0.15
 
+var _slash_lunge_velocity: float = 0.0
+var _slash_lunge_timer: float = 0.0
 var _last_fall_speed: float = 0.0 
 var _was_on_floor: bool = false
 var _outline_active: bool = false
@@ -80,24 +85,26 @@ func _on_attack_performed(direction: Vector2) -> void:
 	if animation_controller == null:
 		return
 
-	# Si ya hay una secuencia activa, avanzar el combo
-	if animation_controller.is_in_sequence():
-		animation_controller.advance_slash_sequence()
-		return
-
-	# Si no, iniciar secuencia nueva
 	var angle_deg := rad_to_deg(direction.angle())
 	var dir_key: String
+
 	if angle_deg >= -135.0 and angle_deg <= -45.0:
 		dir_key = "up"
 	elif angle_deg >= 45.0 and angle_deg <= 135.0:
 		dir_key = "down"
 	else:
 		dir_key = "side"
+		# Lunge lateral en la dirección del slash
+		_start_side_slash_lunge(sign(direction.x))
 		if sprite:
 			sprite.flip_h = direction.x < 0.0
-
 	animation_controller.start_slash_sequence(dir_key)
+
+func _start_side_slash_lunge(direction_x: float) -> void:
+	if abs(direction_x) < 0.01:
+		return
+	_slash_lunge_velocity = sign(direction_x) * side_slash_lunge_speed
+	_slash_lunge_timer = side_slash_lunge_duration
 
 func set_outline(active: bool) -> void:
 	if sprite == null or sprite.material == null:
@@ -124,6 +131,8 @@ func _on_enemy_died() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _slash_lunge_timer > 0.0:
+		_slash_lunge_timer -= delta
 	if _hit_timer > 0.0:
 		_hit_timer -= delta
 		if _hit_timer <= 0.0:
@@ -158,16 +167,26 @@ func _physics_process(delta: float) -> void:
 		else:
 			velocity.y += gravity * delta
 	
-	if input_dir:
+	# ¿El slash bloquea el movimiento? Solo en el suelo y en START/LOOP.
+	var movement_locked := false
+	if animation_controller and animation_controller.is_movement_locked() and is_on_floor():
+		movement_locked = true
+
+	if _slash_lunge_timer > 0.0 and is_on_floor():
+		# Lunge lateral con decaimiento lineal
+		var t := _slash_lunge_timer / side_slash_lunge_duration
+		velocity.x = _slash_lunge_velocity * t
+	elif movement_locked:
+		velocity.x = move_toward(velocity.x, 0.0, attack_brake_friction * delta)
+	elif input_dir:
 		velocity.x = input_dir.x * current_speed
-	elif not input_dir:
+	else:
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
+		
 	if tp_charges>0:	
-		if is_charging:
-			charge_power =min(charge_power + charge_rate * delta, max_charge)
-			update_trajectory_preview()
-		
-		
+			if is_charging:
+				charge_power =min(charge_power + charge_rate * delta, max_charge)
+				update_trajectory_preview()
 		#print("NO CHARGES LEFT!")
 	jump_controller.jump_processing(delta)
 	if Input.is_action_just_pressed("reload") and tp_charges < max_tp_charges and not is_recharging:
@@ -412,6 +431,8 @@ func take_hit() -> void:
 	if invulnerable_timer > 0.0 or is_dead:
 		return
 	set_outline(false) 
+	_slash_lunge_timer = 0.0           # ← reset
+	_slash_lunge_velocity = 0.0
 	if animation_controller and animation_controller.is_aiming():
 		animation_controller.cancel_aim_sequence()
 		_cancel_tp_charge()
@@ -449,6 +470,8 @@ func flash_sprite(duration: float, color: Color ) -> void:
 	)
 func die() -> void:
 	set_outline(false) 
+	_slash_lunge_timer = 0.0           # ← reset
+	_slash_lunge_velocity = 0.0
 	if animation_controller and animation_controller.is_aiming():
 		animation_controller.cancel_aim_sequence()
 	if animation_controller and animation_controller.is_in_sequence():

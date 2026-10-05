@@ -23,6 +23,9 @@ func jump_processing(delta: float) -> void:
 		jump_buffer_timer = jump_buffer_time
 		if body.animation_controller and body.animation_controller.is_in_sequence():
 			body.animation_controller.cancel_sequence()
+			body._slash_lunge_timer = 0.0       # ← reset
+			body._slash_lunge_velocity = 0.0
+		
 	else:
 		jump_buffer_timer -= delta
 	

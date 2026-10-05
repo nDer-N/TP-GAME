@@ -86,6 +86,8 @@ func _process(delta: float) -> void:
 
 # ---------- ESTADOS NORMALES ----------
 
+func is_movement_locked() -> bool:
+	return _combo_phase == SequencePhase.START or _combo_phase == SequencePhase.LOOP
 func set_state(new_state: VisualState) -> void:
 	if _locked:
 		return
@@ -128,11 +130,15 @@ func start_slash_sequence(direction_key: String) -> void:
 		push_warning("AnimationController: no hay secuencia para '", direction_key, "'")
 		return
 
-	# Si ya estamos en una secuencia, tratamos este input como avance.
+	# Si ya hay una secuencia activa, actualizamos la dirección y avanzamos.
+	# Esto permite combos con direcciones distintas:
+	#   SIDESLASHStart → UPSLASHLoop_A → DOWNSLASHLoop_B → DOWNSLASHStop_B
 	if _combo_phase == SequencePhase.START or _combo_phase == SequencePhase.LOOP:
+		_combo_data = data
 		advance_slash_sequence()
 		return
 
+	# Secuencia nueva
 	_combo_data = data
 	_combo_phase = SequencePhase.START
 	_combo_loop_index = 0
@@ -259,7 +265,7 @@ func _on_animation_finished() -> void:
 	match _combo_phase:
 		SequencePhase.START:
 			_combo_loop_index = 1
-			
+			_combo_timer = combo_window
 			pass
 		SequencePhase.LOOP:
 			pass
