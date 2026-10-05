@@ -998,6 +998,7 @@ teleport_vfx_scene = ExtResource("8_hvi53")
 landing_lock_time = 0.5
 min_fall_speed_for_landing = 2000.0
 side_slash_lunge_speed = 2000.0
+side_slash_lunge_duration = 0.1
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
@@ -1052,7 +1053,7 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
 process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 370.0
+attack_range = 350.0
 attack_damage = 3
 attack_cooldown = 0.0
 arc_angle_degrees = 180.0
@@ -1070,6 +1071,7 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
 process_mode = 1
+modulate = Color(1, 1, 0, 1)
 material = SubResource("ShaderMaterial_0yg4w")
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_otjec")
