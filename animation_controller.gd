@@ -8,7 +8,8 @@ extends Node
 	2: "run",
 	3: "jump",
 	4: "fall",
-	5: "landing"
+	5: "landing",
+	6: "recharging"
 }
 
 @export var min_hold_time: float = 0.0
@@ -41,7 +42,7 @@ extends Node
 	"shoot": "TPShoot",
 }
 
-enum VisualState { IDLE, WALK, RUN, JUMP, FALL, LANDING}
+enum VisualState { IDLE, WALK, RUN, JUMP, FALL, LANDING, RECHARGING}
 enum SequencePhase { NONE, START, LOOP, STOP }
 enum AimPhase { NONE, START, LOOP, SHOOT }
 
@@ -94,7 +95,10 @@ func set_state(new_state: VisualState) -> void:
 	if new_state == _current_state:
 		return
 	_set_state(new_state)
-
+	
+func unlock() -> void:
+	_locked = false
+	_hold_timer = 0.0
 
 func force_state(new_state: VisualState, lock_time: float = 0.0) -> void:
 	_set_state(new_state)

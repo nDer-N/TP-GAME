@@ -116,14 +116,14 @@ position = Vector2(744, -616)
 
 [node name="BagonCargaP" type="Sprite2D" parent="BG" unique_id=1010580046]
 modulate = Color(0.56490344, 0.32756507, 0, 1)
-z_index = -1
+z_index = -2
 position = Vector2(21245.22, -1039.9999)
 scale = Vector2(1.1925929, 0.99259263)
 texture = ExtResource("9_7vrqn")
 
 [node name="BagonGrandeP" type="Sprite2D" parent="BG" unique_id=1367844225]
 modulate = Color(0.44995004, 0.3129315, 9.62615e-08, 1)
-z_index = -1
+z_index = -2
 position = Vector2(7520.0005, -936)
 scale = Vector2(1.1750001, 0.89629626)
 texture = ExtResource("10_tvjhf")
@@ -148,7 +148,7 @@ texture_scale = 1.12
 
 [node name="PointLight2D3" type="PointLight2D" parent="BG/BagonGrandeP" unique_id=1863948937]
 z_index = -1
-position = Vector2(11615.317, -946.1157)
+position = Vector2(11662.978, -981.81824)
 scale = Vector2(34.52766, 41.241997)
 energy = 3.79
 shadow_enabled = true
@@ -157,7 +157,7 @@ texture_scale = 1.12
 
 [node name="EscenatP" type="Sprite2D" parent="BG" unique_id=1816436389]
 modulate = Color(0.73665935, 0.4217907, 0, 1)
-z_index = -1
+z_index = -2
 position = Vector2(2560, -920)
 scale = Vector2(1.2208333, 0.89629626)
 texture = ExtResource("11_vmw6g")

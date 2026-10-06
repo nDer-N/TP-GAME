@@ -13,6 +13,7 @@ extends CharacterBody2D
 @export var aim_pcam: PhantomCamera2D
 @export var CeilingCam: PhantomCamera2D
 @export var BasementCam: PhantomCamera2D
+@export var ChargeCam: PhantomCamera2D
 @export var max_tp_charges: int = 3
 @export var recharge_hold_time: float = 1.0
 @export var trajectory_line: Line2D 
@@ -63,6 +64,8 @@ var knockback_timer: float = 0.0
 @onready var slash_controller: Node = $SlashController
 @onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D2
 @onready var animation_controller: Node = $AnimationController
+@onready var outline_sprite: AnimatedSprite2D = $OutlineSprite
+@onready var dust_particles: GPUParticles2D = $dust_particles
 
 
 func _ready() -> void:
@@ -107,17 +110,12 @@ func _start_side_slash_lunge(direction_x: float) -> void:
 	_slash_lunge_timer = side_slash_lunge_duration
 
 func set_outline(active: bool) -> void:
-	if sprite == null or sprite.material == null:
-		return
-	var mat := sprite.material as ShaderMaterial
-	if mat == null:
+	if outline_sprite == null:
 		return
 	if _outline_active == active:
 		return
 	_outline_active = active
-	mat.set_shader_parameter("outline_color", aim_outline_color)
-	mat.set_shader_parameter("outline_width", aim_outline_width)
-	mat.set_shader_parameter("outline_amount", 1.0 if active else 0.0)
+	outline_sprite.visible = active
 func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
@@ -131,6 +129,12 @@ func _on_enemy_died() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	
+	var is_moving = abs(velocity.x)>10
+	var on_ground = is_on_floor()
+	
+	dust_particles.emitting = is_moving and on_ground
+	
 	if _slash_lunge_timer > 0.0:
 		_slash_lunge_timer -= delta
 	if _hit_timer > 0.0:
@@ -190,17 +194,35 @@ func _physics_process(delta: float) -> void:
 		#print("NO CHARGES LEFT!")
 	jump_controller.jump_processing(delta)
 	if Input.is_action_just_pressed("reload") and tp_charges < max_tp_charges and not is_recharging:
+		if animation_controller.is_aiming():
+			animation_controller.cancel_aim_sequence()
+			_cancel_tp_charge()
+		if animation_controller.is_in_sequence():
+			animation_controller.cancel_sequence()
 		is_recharging = true
 		recharge_timer = 0.0
+		ChargeCam.priority = 10
+		set_outline(true)
+		animation_controller.force_state(
+		animation_controller.VisualState.RECHARGING,
+		recharge_hold_time 
+	)
 	if is_recharging:
 		if input_dir != Vector2.ZERO or Input.is_action_pressed("jump"):
 			is_recharging = false
 			recharge_timer = 0.0
+			ChargeCam.priority = 0
+			animation_controller.unlock()
+			set_outline(false)
 		else:
 			recharge_timer += delta
 			if recharge_timer >= recharge_hold_time:
 				start_recharge()
+				ChargeCam.priority = 0
+				set_outline(false)
+				ScreenFlashLayer.flash(0.3, 1)
 				is_recharging = false
+				animation_controller.unlock()
 				recharge_timer = 0.0
 	print(recharge_timer)
 	update_character_state()
@@ -269,7 +291,9 @@ func update_character_state():
 func _update_visual_state() -> void:
 	if animation_controller == null:
 		return
-
+	if is_recharging:
+		animation_controller.set_state(animation_controller.VisualState.RECHARGING)
+		return
 	# ¿Está apuntando?
 	if animation_controller.is_aiming():
 		if abs(velocity.x) < 10.0 and is_on_floor():
@@ -277,10 +301,14 @@ func _update_visual_state() -> void:
 			return
 		else:
 			animation_controller.hide_aim()
+	
+
 
 	# --- Slash sigue bloqueando todo lo demás ---
 	if animation_controller.is_in_sequence():
 		return
+		
+	
 
 	# --- En el aire ---
 	if not is_on_floor():
