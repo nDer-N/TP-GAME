@@ -18,6 +18,7 @@ func _process(_delta: float) -> void:
 			_end_hit_stop()
 
 
+
 ## Pedir hit stop en segundos.
 ## Ejemplo: HitStop.request(0.08) → pausa 80ms
 func request(duration: float, ignore_time_scale: bool = true) -> void:
