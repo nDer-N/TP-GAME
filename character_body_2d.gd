@@ -36,7 +36,14 @@ extends CharacterBody2D
 @export var knockback_friction: float = 800.0       # qué tan rápido frena el empujón
 @export var knockback_gravity_mult: float = 1.0
 @export var hit_recoil_multiplier: float = 1.0
+@export var tp_charge_orb_scene: PackedScene
+@export var tp_charge_offsets: Array[Vector2] = [
+	Vector2(-30, -12),   # orbe 1: atrás y arriba
+	Vector2(-30,  12),   # orbe 2: atrás y abajo
+	Vector2(-55,   0),   # orbe 3: más atrás
+]
 
+var _tp_orbs: Array[Node2D] = []
 var _last_attack_dir_x: float = 1.0
 var _slash_lunge_velocity: float = 0.0
 var _slash_lunge_timer: float = 0.0
@@ -74,6 +81,7 @@ var knockback_timer: float = 0.0
 
 
 func _ready() -> void:
+	_sync_tp_orbs()
 	add_to_group("player");
 	hits_display = get_tree().get_first_node_in_group("hud")
 	Events.enemy_died.connect(_on_enemy_died)
@@ -455,11 +463,13 @@ func update_trajectory_preview():
 		
 func start_recharge():
 	tp_charges = min(tp_charges + 1, max_tp_charges)
+	_sync_tp_orbs()
 	pass
 
 
 func shoot_tp(target_position: Vector2, charge_power2: float):
 	tp_charges-=1
+	_sync_tp_orbs()
 	var projectile = tp_projectile_scene.instantiate()
 	get_tree().current_scene.add_child(projectile)
 
@@ -488,6 +498,7 @@ func _on_tp_landed(landing_position: Vector2) -> void:
 		vfx_out.setup(-1.0) # Dirección -1 para colapsar
 	global_position = landing_position
 	velocity = Vector2.ZERO
+	_snap_all_tp_orbs()
 	
 	if teleport_vfx_scene:
 		var vfx_in = teleport_vfx_scene.instantiate()
@@ -558,6 +569,38 @@ func flash_sprite(duration: float, color: Color ) -> void:
 		0.0,   # hasta
 		duration
 	)
+func _sync_tp_orbs() -> void:
+	if tp_charge_orb_scene == null:
+		return
+
+	# Eliminar orbes de más
+	while _tp_orbs.size() > tp_charges:
+		var orb = _tp_orbs.pop_back()
+		if is_instance_valid(orb):
+			orb.queue_free()
+
+	# Añadir orbes faltantes
+	while _tp_orbs.size() < tp_charges:
+		var idx := _tp_orbs.size()
+		var orb = tp_charge_orb_scene.instantiate()
+		get_tree().current_scene.add_child(orb)
+		orb.follow_target = self
+		orb.sprite_to_check_flip = sprite
+		orb.bob_phase_offset = idx * 1.2   # desfase para que no floten en fase
+		if idx < tp_charge_offsets.size():
+			orb.offset = tp_charge_offsets[idx]
+		else:
+			# Fallback si hay más cargas que offsets definidos
+			orb.offset = Vector2(-30 - idx * 15, 0)
+		orb.snap_to_target()   # aparecer ya en posición
+		_tp_orbs.append(orb)
+
+
+func _snap_all_tp_orbs() -> void:
+	for orb in _tp_orbs:
+		if is_instance_valid(orb):
+			orb.snap_to_target()
+			
 func die() -> void:
 	set_outline(false) 
 	_slash_lunge_timer = 0.0           # ← reset

@@ -1,5 +1,12 @@
 [gd_scene format=3 uid="uid://bta8utsxvgac0"]
 
+[ext_resource type="Script" uid="uid://bwr3oeeiacjil" path="res://tp_charge_orb.gd" id="1_3hc83"]
+[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_acuex"]
+
 [node name="TPChargeOrb" type="Node2D" unique_id=1033478212]
+script = ExtResource("1_3hc83")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=3235001]
+position = Vector2(3.9999976, 5.999998)
+scale = Vector2(0.56249994, 0.59374994)
+texture = ExtResource("1_acuex")

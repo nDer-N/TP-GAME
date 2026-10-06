@@ -16,6 +16,7 @@
 [ext_resource type="SpriteFrames" uid="uid://yxce0s5dcbm7" path="res://resources/PLAYER_ANIMATIONS.tres" id="10_5said"]
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
 [ext_resource type="Script" uid="uid://b87uh60h7n8ct" path="res://outline_sprite.gd" id="10_pm3tn"]
+[ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
@@ -236,6 +237,8 @@ landing_lock_time = 0.5
 min_fall_speed_for_landing = 2000.0
 side_slash_lunge_speed = 2000.0
 side_slash_lunge_duration = 0.1
+tp_charge_orb_scene = ExtResource("10_uswop")
+tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
 
 [node name="OutlineSprite" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1818357279 node_paths=PackedStringArray("target")]
 process_mode = 1
