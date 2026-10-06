@@ -206,7 +206,7 @@ func _physics_process(delta: float) -> void:
 	var input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	
-	if invulnerable_timer > 0.0:
+	if invulnerable_timer > hit_invulnerability_time/3:
 		input_dir = Vector2.ZERO
 	
 	current_speed = speed
@@ -536,7 +536,7 @@ func take_hit() -> void:
 	
 	animation_controller.force_state(
 		animation_controller.VisualState.HURT,
-		hit_invulnerability_time
+		hit_invulnerability_time/2
 	)
 	
 	print("Golpe recibido: ", current_hits, "/", max_hits)

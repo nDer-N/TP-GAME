@@ -116,9 +116,7 @@ func _find_player() -> Node2D:
 # ---------- Apuntado ----------
 
 func _update_aim(delta: float) -> void:
-	# No apuntar mientras carga (da ventana de reacción al jugador)
-	if _is_charging:
-		return
+	
 
 	if _player == null or not is_instance_valid(_player):
 		return

@@ -42,6 +42,37 @@ script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
 
+[sub_resource type="Curve" id="Curve_k2app"]
+_data = [Vector2(0.003759399, 0.86153847), 0.0, 0.0, 0, 0, Vector2(0.9924812, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_7tq60"]
+curve = SubResource("Curve_k2app")
+
+[sub_resource type="Curve" id="Curve_shm3m"]
+_data = [Vector2(0, 0.4846154), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_f4g2i"]
+curve = SubResource("Curve_shm3m")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_otjec"]
+particle_flag_disable_z = true
+angle_min = -4.9999895
+angle_max = 20.000011
+direction = Vector3(1, -1, 0)
+initial_velocity_min = 20.0
+initial_velocity_max = 40.0
+gravity = Vector3(0, -100, 0)
+damping_min = 5.0
+damping_max = 10.0
+scale_max = 1.4
+scale_curve = SubResource("CurveTexture_f4g2i")
+alpha_curve = SubResource("CurveTexture_7tq60")
+hue_variation_min = -2.2351742e-08
+hue_variation_max = 0.009999977
+turbulence_enabled = true
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
 size = Vector2(126, 127)
 
@@ -84,37 +115,6 @@ animations = [{
 "name": &"slash",
 "speed": 24.0
 }]
-
-[sub_resource type="Curve" id="Curve_k2app"]
-_data = [Vector2(0.003759399, 0.86153847), 0.0, 0.0, 0, 0, Vector2(0.9924812, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_7tq60"]
-curve = SubResource("Curve_k2app")
-
-[sub_resource type="Curve" id="Curve_shm3m"]
-_data = [Vector2(0, 0.4846154), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="CurveTexture" id="CurveTexture_f4g2i"]
-curve = SubResource("Curve_shm3m")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_otjec"]
-particle_flag_disable_z = true
-angle_min = -4.9999895
-angle_max = 20.000011
-direction = Vector3(1, -1, 0)
-initial_velocity_min = 20.0
-initial_velocity_max = 40.0
-gravity = Vector3(0, -100, 0)
-damping_min = 5.0
-damping_max = 10.0
-scale_max = 1.4
-scale_curve = SubResource("CurveTexture_f4g2i")
-alpha_curve = SubResource("CurveTexture_7tq60")
-hue_variation_min = -2.2351742e-08
-hue_variation_max = 0.009999977
-turbulence_enabled = true
 
 [node name="Node2D" type="Node2D" unique_id=1720170991]
 
@@ -240,6 +240,20 @@ side_slash_lunge_duration = 0.1
 tp_charge_orb_scene = ExtResource("10_uswop")
 tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
 
+[node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
+position = Vector2(7.9999995, 59.999996)
+scale = Vector2(0.7, 0.7)
+emitting = false
+amount = 16
+texture = ExtResource("31_uswop")
+lifetime = 0.7
+process_material = SubResource("ParticleProcessMaterial_otjec")
+
+[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
+script = ExtResource("4_wfnr8")
+dash_length = 20.0
+line_color = Color(0, 16.732626, 13.28493, 1)
+
 [node name="OutlineSprite" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1818357279 node_paths=PackedStringArray("target")]
 process_mode = 1
 visible = false
@@ -260,7 +274,7 @@ light_mask = 2
 position = Vector2(7.6293945e-06, -8)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = ExtResource("10_5said")
-animation = &"TPShoot"
+animation = &"jump"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -276,10 +290,6 @@ coyote_time = 0.2
 jump_buffer_time = 0.2
 first_jump_force = 1200.0
 second_jump_force = 1200.0
-
-[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
-script = ExtResource("4_wfnr8")
-line_color = Color(0, 16.732626, 13.28493, 1)
 
 [node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
 script = ExtResource("10_jb3kq")
@@ -308,7 +318,7 @@ script = ExtResource("13_bwfjh")
 attack_range = 350.0
 attack_damage = 3
 attack_cooldown = 0.0
-arc_angle_degrees = 180.0
+arc_angle_degrees = 200.0
 slash_offset_distance = 150.0
 slash_rotation_offset_degrees = 120.0
 
@@ -336,12 +346,3 @@ process_mode = 3
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
 combo_window = 0.2
-
-[node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
-position = Vector2(7.9999995, 59.999996)
-scale = Vector2(0.7, 0.7)
-emitting = false
-amount = 16
-texture = ExtResource("31_uswop")
-lifetime = 0.7
-process_material = SubResource("ParticleProcessMaterial_otjec")
