@@ -356,13 +356,22 @@ func _update_visual_state() -> void:
 	if is_recharging:
 		animation_controller.set_state(animation_controller.VisualState.RECHARGING)
 		return
-	# ¿Está apuntando?
+	# ¿Está apuntando?-
 	if animation_controller.is_aiming():
-		if abs(velocity.x) < 10.0 and is_on_floor():
-			animation_controller.show_aim()
-			return
+		if animation_controller.is_in_shoot_phase():
+			if abs(velocity.x) > 10.0 or not is_on_floor():
+				animation_controller.cancel_aim_sequence()
+				# Cae al flujo normal (walk/run/jump/fall)
+			else:
+				# Quieto en el suelo: la animación de shoot sigue sola
+				return
 		else:
-			animation_controller.hide_aim()
+			# START o LOOP: pausa/reanudar como antes
+			if abs(velocity.x) < 10.0 and is_on_floor():
+				animation_controller.show_aim()
+				return
+			else:
+				animation_controller.hide_aim()
 	
 
 

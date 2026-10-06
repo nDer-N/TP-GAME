@@ -29,7 +29,13 @@
 [ext_resource type="Resource" uid="uid://3mvngijot75w" path="res://resources/noise_sprint.tres" id="15_r5wlx"]
 [ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
+[ext_resource type="Texture2D" uid="uid://trqj7j7d4wbh" path="res://animations/blade/blade_0000.png" id="31_0fer6"]
 [ext_resource type="Texture2D" uid="uid://dt71oc3mfvnfk" path="res://resources/dust.png" id="31_uswop"]
+[ext_resource type="Texture2D" uid="uid://bj21bi1vy3xp0" path="res://animations/blade/blade_0001.png" id="32_aeagw"]
+[ext_resource type="Texture2D" uid="uid://dfx4xh2nb5kk5" path="res://animations/blade/blade_0002.png" id="33_lphiu"]
+[ext_resource type="Texture2D" uid="uid://dlhssj5xsh2co" path="res://animations/blade/blade_0003.png" id="34_xc4g8"]
+[ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
+[ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
@@ -122,6 +128,29 @@ animations = [{
 }],
 "loop": 0,
 "name": &"slash",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("31_0fer6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_aeagw")
+}, {
+"duration": 4.0,
+"texture": ExtResource("33_lphiu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_xc4g8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_xc8pg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_aeagw")
+}],
+"loop": 0,
+"name": &"slash2",
 "speed": 24.0
 }]
 
@@ -315,8 +344,7 @@ attack_range = 350.0
 attack_damage = 3
 attack_cooldown = 0.0
 arc_angle_degrees = 200.0
-slash_offset_distance = 150.0
-slash_rotation_offset_degrees = 120.0
+slash_animation_name = "slash2"
 
 [node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
 process_mode = 3
@@ -329,16 +357,17 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
 process_mode = 1
-modulate = Color(1, 1, 0, 1)
+modulate = Color(1, 0, 0, 1)
 material = SubResource("ShaderMaterial_0yg4w")
-scale = Vector2(2, 2)
+position = Vector2(7.999977, 8.000001)
+scale = Vector2(0.41375002, 0.27)
 sprite_frames = SubResource("SpriteFrames_otjec")
-animation = &"slash"
-frame = 9
+animation = &"slash2"
+frame = 5
 frame_progress = 1.0
 
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 process_mode = 3
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
-combo_window = 0.2
+combo_window = 0.3

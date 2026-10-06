@@ -192,6 +192,7 @@ func end_aim_sequence() -> void:
 		return
 	_aim_phase = AimPhase.SHOOT
 	_aim_visible = true
+	_locked = false
 	var shoot_anim: String = aim_sequence.get("shoot", "")
 	if shoot_anim == "":
 		_end_aim()
@@ -233,6 +234,9 @@ func is_playing_scripted() -> bool:
 
 func is_aim_visible() -> bool:
 	return _aim_visible
+
+func is_in_shoot_phase() -> bool:
+	return _aim_phase == AimPhase.SHOOT
 
 func _end_aim() -> void:
 	_aim_phase = AimPhase.NONE
