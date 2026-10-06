@@ -11,7 +11,6 @@
 [ext_resource type="Resource" uid="uid://dtwo7orycdtp" path="res://resources/HitTween.tres" id="4_1r1pa"]
 [ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
 [ext_resource type="Resource" uid="uid://cv222cxw1eqte" path="res://resources/charge_Tween.tres" id="5_xvb2f"]
-[ext_resource type="Shader" uid="uid://be0yqxcwgshl8" path="res://shaders/white_flash.gdshader" id="7_8i6g0"]
 [ext_resource type="PackedScene" uid="uid://caiw4f7mcbfk5" path="res://resources/TeleportVFX.tscn" id="8_hvi53"]
 [ext_resource type="Material" uid="uid://3vj3351wdu2o" path="res://resources/flashMat.tres" id="9_xc8pg"]
 [ext_resource type="SpriteFrames" uid="uid://yxce0s5dcbm7" path="res://resources/PLAYER_ANIMATIONS.tres" id="10_5said"]
@@ -41,14 +40,6 @@ ease = 1
 script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_hh1h4"]
-shader = ExtResource("7_8i6g0")
-shader_parameter/flash_amount = 0.0
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/outline_amount = 0.0
-shader_parameter/outline_color = Color(1, 0.6, 0, 1)
-shader_parameter/outline_width = 1.5
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
 size = Vector2(126, 127)
@@ -254,17 +245,19 @@ z_index = -1
 position = Vector2(-9.536743e-07, -11.999999)
 scale = Vector2(0.4, 0.2)
 sprite_frames = ExtResource("10_5said")
-animation = &"DOWNSLASHLoop_A"
+animation = &"TPShoot"
+frame = 5
+frame_progress = 1.0
 script = ExtResource("10_pm3tn")
 target = NodePath("../AnimatedSprite2D")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
-material = SubResource("ShaderMaterial_hh1h4")
-position = Vector2(7.6293945e-06, -12.000001)
+light_mask = 2
+position = Vector2(7.6293945e-06, -8)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = ExtResource("10_5said")
-animation = &"recharging"
+animation = &"TPShoot"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -283,7 +276,7 @@ second_jump_force = 1200.0
 
 [node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
 script = ExtResource("4_wfnr8")
-line_color = Color(0, 11.311408, 16.732914, 1)
+line_color = Color(0, 16.732626, 13.28493, 1)
 
 [node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
 script = ExtResource("10_jb3kq")

@@ -85,9 +85,10 @@ func _on_body_entered(body: Node2D) -> void:
 func _apply_knockback(body: Node2D) -> void:
 	if not (body is CharacterBody2D):
 		return
-	# Empujar en la dirección del proyectil + un poco hacia arriba
 	body.velocity.x = _direction.x * knockback_force
 	body.velocity.y = -knockback_up_force
+	if "knockback_timer" in body:
+		body.knockback_timer = knockback_duration
 	
 func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 	if not destructible:

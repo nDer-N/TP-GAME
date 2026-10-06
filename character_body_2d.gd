@@ -33,7 +33,11 @@ extends CharacterBody2D
 @export var attack_brake_friction: float = 3000.0
 @export var side_slash_lunge_speed: float = 450.0      # velocidad inicial del empujón
 @export var side_slash_lunge_duration: float = 0.15
+@export var knockback_friction: float = 800.0       # qué tan rápido frena el empujón
+@export var knockback_gravity_mult: float = 1.0
+@export var hit_recoil_multiplier: float = 1.0
 
+var _last_attack_dir_x: float = 1.0
 var _slash_lunge_velocity: float = 0.0
 var _slash_lunge_timer: float = 0.0
 var _last_fall_speed: float = 0.0 
@@ -57,6 +61,7 @@ var death_barrier: CollisionShape2D
 var is_on_Ceiling: bool = false
 var is_on_basement: bool = false
 var knockback_timer: float = 0.0
+
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var collision_shape: CollisionShape2D = $PlayerHitbox
@@ -87,6 +92,12 @@ func _ready() -> void:
 func _on_attack_performed(direction: Vector2) -> void:
 	if animation_controller == null:
 		return
+	
+	if abs(direction.x) > 0.01:
+		_last_attack_dir_x = sign(direction.x)
+	else:
+		# Ataque vertical: usar la dirección en la que mira el sprite
+		_last_attack_dir_x = -1.0 if sprite.flip_h else 1.0
 
 	var angle_deg := rad_to_deg(direction.angle())
 	var dir_key: String
@@ -120,6 +131,8 @@ func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
 	flash_sprite(attack_flash_duration, attack_flash_color)
+	_slash_lunge_velocity = -_last_attack_dir_x * side_slash_lunge_speed * hit_recoil_multiplier
+	_slash_lunge_timer = side_slash_lunge_duration
 	
 func _on_enemy_died() -> void:
 	print("DEATH")
@@ -132,6 +145,7 @@ func _physics_process(delta: float) -> void:
 	
 	var is_moving = abs(velocity.x)>10
 	var on_ground = is_on_floor()
+	
 	
 	dust_particles.emitting = is_moving and on_ground
 	
@@ -156,10 +170,40 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 	
+	var in_knockback := invulnerable_timer > 0.0 and knockback_timer > 0.0
+	if knockback_timer > 0.0:
+		knockback_timer -= delta
+	
+	if in_knockback:
+		# Aplicar gravedad normal
+		if not is_on_floor():
+			velocity.y += gravity * knockback_gravity_mult * delta
+		# Frenar horizontalmente con fricción suave (para que se sienta el empujón)
+		velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
+		move_and_slide()
+		# Saltar el resto de la lógica de input/movimiento
+		# Pero seguir actualizando animación y chequeos
+		update_character_state()
+		_was_on_floor = is_on_floor()
+		if not is_on_floor():
+			_last_fall_speed = velocity.y
+		var now_on_floor := is_on_floor()
+		if not _was_on_floor and now_on_floor:
+			_play_landing_animation()
+		_was_on_floor = now_on_floor
+		check_enemy_contact()
+		check_height()
+		return
+	
 	var input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	
+	if invulnerable_timer > 0.0:
+		input_dir = Vector2.ZERO
+	
 	current_speed = speed
+	
+	
 	
 	if Input.is_action_pressed("sprint"):
 		noise_emitter.emit()
@@ -182,6 +226,9 @@ func _physics_process(delta: float) -> void:
 		velocity.x = _slash_lunge_velocity * t
 	elif movement_locked:
 		velocity.x = move_toward(velocity.x, 0.0, attack_brake_friction * delta)
+	elif invulnerable_timer > 0.0:
+		# Knockback: se frena suave para que se sienta el empujón
+		velocity.x = move_toward(velocity.x, 0.0, friction * 0.5 * delta)
 	elif input_dir:
 		velocity.x = input_dir.x * current_speed
 	else:
@@ -238,8 +285,13 @@ func _physics_process(delta: float) -> void:
 	
 	if invulnerable_timer > 0:
 		invulnerable_timer -= delta
+		# Parpadeo físico: visible / invisible alternando
+		sprite.visible = fmod(invulnerable_timer, 0.15) >= 0.075
+		# Si al terminar de parpadear quedó invisible, forzar visible
+		if invulnerable_timer <= 0.0:
+			sprite.visible = true
 	else:
-		sprite.modulate = Color(1, 1, 1, 1)
+		sprite.visible = true
 	
 	check_enemy_contact()
 	check_height()
@@ -325,7 +377,7 @@ func _update_visual_state() -> void:
 		animation_controller.set_state(animation_controller.VisualState.RUN)
 	else:
 		animation_controller.set_state(animation_controller.VisualState.WALK)
-
+	
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
@@ -463,11 +515,19 @@ func take_hit() -> void:
 	set_outline(false) 
 	_slash_lunge_timer = 0.0           # ← reset
 	_slash_lunge_velocity = 0.0
+	
 	if animation_controller and animation_controller.is_aiming():
 		animation_controller.cancel_aim_sequence()
 		_cancel_tp_charge()
 	current_hits += 1
 	invulnerable_timer = hit_invulnerability_time
+	
+	
+	animation_controller.force_state(
+		animation_controller.VisualState.HURT,
+		hit_invulnerability_time
+	)
+	
 	print("Golpe recibido: ", current_hits, "/", max_hits)
 	flash_sprite(damage_flash_duration, damage_flash_color)
 	if hits_display:
