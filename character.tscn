@@ -15,13 +15,13 @@
 [ext_resource type="Material" uid="uid://3vj3351wdu2o" path="res://resources/flashMat.tres" id="9_xc8pg"]
 [ext_resource type="SpriteFrames" uid="uid://yxce0s5dcbm7" path="res://resources/PLAYER_ANIMATIONS.tres" id="10_5said"]
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
-[ext_resource type="Script" uid="uid://b87uh60h7n8ct" path="res://outline_sprite.gd" id="10_pm3tn"]
 [ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
 [ext_resource type="Script" uid="uid://b2vu32r2n7pcp" path="res://slash_controller.gd" id="13_bwfjh"]
+[ext_resource type="Shader" uid="uid://diukr76648plh" path="res://resources/outliner.gdshader" id="13_uswop"]
 [ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="14_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
 [ext_resource type="Resource" uid="uid://bdbu68bfmohq7" path="res://resources/noise_hit.tres" id="15_3d8aq"]
@@ -72,6 +72,15 @@ alpha_curve = SubResource("CurveTexture_7tq60")
 hue_variation_min = -2.2351742e-08
 hue_variation_max = 0.009999977
 turbulence_enabled = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xvb2f"]
+shader = ExtResource("13_uswop")
+shader_parameter/flash_amount = 0.0
+shader_parameter/flash_color = Color(0, 1.2904384, 1.014124, 0.46666667)
+shader_parameter/outline_amount = 0.0
+shader_parameter/outline_color = Color(0, 1, 0.7833333, 1)
+shader_parameter/outline_width = 8.0
+shader_parameter/frame_size = Vector2(32, 32)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
 size = Vector2(126, 127)
@@ -254,23 +263,10 @@ script = ExtResource("4_wfnr8")
 dash_length = 20.0
 line_color = Color(0, 16.732626, 13.28493, 1)
 
-[node name="OutlineSprite" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1818357279 node_paths=PackedStringArray("target")]
-process_mode = 1
-visible = false
-modulate = Color(0, 1, 1, 1)
-z_index = -1
-position = Vector2(-9.536743e-07, -11.999999)
-scale = Vector2(0.4, 0.2)
-sprite_frames = ExtResource("10_5said")
-animation = &"TPShoot"
-frame = 5
-frame_progress = 1.0
-script = ExtResource("10_pm3tn")
-target = NodePath("../AnimatedSprite2D")
-
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
 light_mask = 2
+material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(7.6293945e-06, -8)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = ExtResource("10_5said")

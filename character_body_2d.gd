@@ -26,8 +26,6 @@ extends CharacterBody2D
 @export var HitCAM: PhantomCamera2D
 @export var HitCAM_duration: float = 1
 @export var teleport_vfx_scene: PackedScene
-@export var aim_outline_color: Color = Color(1.0, 0.6, 0.0, 1.0)
-@export var aim_outline_width: float = 1.5
 @export var landing_lock_time: float = 0.10
 @export var min_fall_speed_for_landing: float = 200.0
 @export var attack_brake_friction: float = 3000.0
@@ -76,11 +74,11 @@ var knockback_timer: float = 0.0
 @onready var slash_controller: Node = $SlashController
 @onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D2
 @onready var animation_controller: Node = $AnimationController
-@onready var outline_sprite: AnimatedSprite2D = $OutlineSprite
 @onready var dust_particles: GPUParticles2D = $dust_particles
 
 
 func _ready() -> void:
+	_update_shader_frame_size()
 	_sync_tp_orbs()
 	add_to_group("player");
 	hits_display = get_tree().get_first_node_in_group("hud")
@@ -129,16 +127,20 @@ func _start_side_slash_lunge(direction_x: float) -> void:
 	_slash_lunge_timer = side_slash_lunge_duration
 
 func set_outline(active: bool) -> void:
-	if outline_sprite == null:
+	_update_shader_frame_size()
+	if sprite == null or sprite.material == null:
+		return
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
 		return
 	if _outline_active == active:
 		return
 	_outline_active = active
-	outline_sprite.visible = active
+	mat.set_shader_parameter("outline_amount", 1.0 if active else 0.0)
 func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
-	flash_sprite(attack_flash_duration, attack_flash_color)
+	#flash_sprite(attack_flash_duration, attack_flash_color)
 	_slash_lunge_velocity = -_last_attack_dir_x * side_slash_lunge_speed * hit_recoil_multiplier
 	_slash_lunge_timer = side_slash_lunge_duration
 	
@@ -547,6 +549,7 @@ func take_hit() -> void:
 		die()
 
 func flash_sprite(duration: float, color: Color ) -> void:
+	_update_shader_frame_size()
 	if sprite == null or sprite.material == null:
 		return
 	var mat := sprite.material as ShaderMaterial
@@ -601,6 +604,24 @@ func _snap_all_tp_orbs() -> void:
 		if is_instance_valid(orb):
 			orb.snap_to_target()
 			
+func _update_shader_frame_size() -> void:
+	if sprite == null or sprite.material == null:
+		return
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
+		return
+	var anim := sprite.animation
+	if not sprite.sprite_frames.has_animation(anim):
+		return
+	var frame_count := sprite.sprite_frames.get_frame_count(anim)
+	if frame_count <= 0:
+		return
+	# Tamaño del primer frame de la animación actual
+	var tex: Texture2D = sprite.sprite_frames.get_frame_texture(anim, 0)
+	if tex == null:
+		return
+	mat.set_shader_parameter("frame_size", Vector2(tex.get_size()))
+	
 func die() -> void:
 	set_outline(false) 
 	_slash_lunge_timer = 0.0           # ← reset
