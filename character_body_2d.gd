@@ -426,6 +426,8 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	
 	
 func _on_tp_landed(landing_position: Vector2) -> void:
+	if ChargeCam.priority > 0:
+		ChargeCam.priority = 0
 	landing_position.y = landing_position.y - 64.0
 	if teleport_vfx_scene:
 		var vfx_out = teleport_vfx_scene.instantiate()
