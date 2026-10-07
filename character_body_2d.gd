@@ -251,20 +251,21 @@ func _physics_process(delta: float) -> void:
 				update_trajectory_preview()
 		#print("NO CHARGES LEFT!")
 	jump_controller.jump_processing(delta)
-	if Input.is_action_just_pressed("reload") and tp_charges < max_tp_charges and not is_recharging:
-		if animation_controller.is_aiming():
-			animation_controller.cancel_aim_sequence()
-			_cancel_tp_charge()
-		if animation_controller.is_in_sequence():
-			animation_controller.cancel_sequence()
-		is_recharging = true
-		recharge_timer = 0.0
-		ChargeCam.priority = 10
-		set_outline(true)
-		animation_controller.force_state(
-		animation_controller.VisualState.RECHARGING,
-		recharge_hold_time 
-	)
+	if Input.is_action_just_pressed("reload") and not is_recharging:
+		if(current_hits>0 or tp_charges < max_tp_charges):
+			if animation_controller.is_aiming():
+				animation_controller.cancel_aim_sequence()
+				_cancel_tp_charge()
+			if animation_controller.is_in_sequence():
+				animation_controller.cancel_sequence()
+			is_recharging = true
+			recharge_timer = 0.0
+			ChargeCam.priority = 10
+			set_outline(true)
+			animation_controller.force_state(
+			animation_controller.VisualState.RECHARGING,
+			recharge_hold_time 
+		)
 	if is_recharging:
 		if input_dir != Vector2.ZERO or Input.is_action_pressed("jump"):
 			is_recharging = false
@@ -474,7 +475,12 @@ func update_trajectory_preview():
 		trajectory_line.visible = true
 		
 func start_recharge():
-	tp_charges = min(tp_charges + 1, max_tp_charges)
+	if(tp_charges < max_tp_charges):
+		tp_charges = min(tp_charges + 1, max_tp_charges)
+	if (current_hits>0):
+		current_hits-=1
+	flash_sprite(0.5, Color(0.4, 0.8, 0.2, 1))
+	hits_display.update_hits(current_hits)
 	_sync_tp_orbs()
 	pass
 
@@ -508,7 +514,7 @@ func _on_tp_landed(landing_position: Vector2) -> void:
 	if ChargeCam.priority > 0:
 		ChargeCam.priority = 0
 	set_outline(false)
-	flash_sprite(0.5, Color(0, 1, 0.9))
+	flash_sprite(1, Color(0, 1, 0.9))
 	landing_position.y = landing_position.y - 64.0
 	if teleport_vfx_scene:
 		var vfx_out = teleport_vfx_scene.instantiate()

@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://qj82sbl1aprw" path="res://backgrounds/BagonGrandeP.png" id="10_tvjhf"]
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="11_4hjyh"]
 [ext_resource type="Texture2D" uid="uid://bl5i3pvpg76o3" path="res://backgrounds/escenatP.png" id="11_vmw6g"]
+[ext_resource type="PackedScene" uid="uid://dao48rqjx70o2" path="res://goomba.tscn" id="13_4hjyh"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_bhfnd"]
 
@@ -33,7 +34,7 @@ size = Vector2(60.384644, 19.554092)
 [node name="TUTORIAL" type="Node2D" unique_id=1592486691]
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-240, -320)
+position = Vector2(-336, -520)
 
 [node name="STUFF" type="TileMapLayer" parent="." unique_id=381624624]
 light_mask = 2
@@ -161,3 +162,6 @@ z_index = -2
 position = Vector2(2560, -920)
 scale = Vector2(1.2208333, 0.89629626)
 texture = ExtResource("11_vmw6g")
+
+[node name="Goomba" parent="." unique_id=506820675 instance=ExtResource("13_4hjyh")]
+position = Vector2(176, -208)

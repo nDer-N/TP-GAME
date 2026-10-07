@@ -341,11 +341,11 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
 process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 350.0
 attack_damage = 3
 attack_cooldown = 0.0
-arc_angle_degrees = 200.0
 slash_animation_name = "slash2"
+hit_radius = 370.0
+hit_arc_degrees = 180.0
 
 [node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
 process_mode = 3
@@ -366,6 +366,13 @@ sprite_frames = SubResource("SpriteFrames_otjec")
 animation = &"slash2"
 frame = 5
 frame_progress = 1.0
+
+[node name="SlashHitbox" type="Area2D" parent="CharacterBody2D" unique_id=1461213400]
+collision_mask = 15
+monitorable = false
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="CharacterBody2D/SlashHitbox" unique_id=1511599528]
+polygon = PackedVector2Array(0, 4, 184, -60, 184, 68)
 
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 process_mode = 3
