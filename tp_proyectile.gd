@@ -15,6 +15,7 @@ var time_elapsed: float = 0.0
 var target_half_height: float = 0.0
 var _afterimage_timer: float = 0.0
 signal landed(position: Vector2)
+signal died(did_die : bool)
 
 
 @onready var sprite: Sprite2D = $Sprite2D   # asegúrate de que exista
@@ -32,7 +33,7 @@ func launch(from: Vector2, to: Vector2, charge_power: float, half_height: float 
 func _physics_process(delta: float) -> void:
 	time_elapsed += delta
 	if time_elapsed >= lifetime:
-		queue_free()
+		die()
 		return
 
 	velocity.y += physics_config.gravity * delta
@@ -125,4 +126,5 @@ func _get_platform_top(collision_point: Vector2) -> Vector2:
 	return Vector2(collision_point.x, collision_point.y - target_half_height - 2.0)
 
 func die() -> void:
+	died.emit(true)
 	queue_free()

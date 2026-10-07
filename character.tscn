@@ -84,7 +84,7 @@ shader = ExtResource("13_uswop")
 shader_parameter/flash_amount = 0.0
 shader_parameter/flash_color = Color(0, 1.2904384, 1.014124, 0.46666667)
 shader_parameter/outline_amount = 0.0
-shader_parameter/outline_color = Color(0, 1, 0.7833333, 1)
+shader_parameter/outline_color = Color(0, 1, 0.78431374, 0.49803922)
 shader_parameter/outline_width = 8.0
 shader_parameter/frame_size = Vector2(32, 32)
 
@@ -290,7 +290,7 @@ process_material = SubResource("ParticleProcessMaterial_otjec")
 [node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
 script = ExtResource("4_wfnr8")
 dash_length = 20.0
-line_color = Color(0, 16.732626, 13.28493, 1)
+line_color = Color(0, 16.733, 13.285, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
@@ -299,7 +299,7 @@ material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(7.6293945e-06, -8)
 scale = Vector2(0.37250003, 0.18625002)
 sprite_frames = ExtResource("10_5said")
-animation = &"jump"
+animation = &"landing"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -318,6 +318,7 @@ second_jump_force = 1200.0
 
 [node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
 script = ExtResource("10_jb3kq")
+max_points = 100
 show_landing_marker = false
 landing_marker_scene = ExtResource("11_c1b4b")
 
@@ -368,6 +369,7 @@ frame_progress = 1.0
 
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 process_mode = 3
+light_mask = 2
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
 combo_window = 0.3

@@ -79,7 +79,6 @@
 [ext_resource type="Texture2D" uid="uid://tw5qrywxu05k" path="res://animations/shoot_tp/shoot/shoot_0002.png" id="77_qarlu"]
 [ext_resource type="Texture2D" uid="uid://d4b4wy41g0hkt" path="res://animations/shoot_tp/shoot/shoot_0003.png" id="78_amrhw"]
 [ext_resource type="Texture2D" uid="uid://cgsxibdb0hy4s" path="res://animations/shoot_tp/shoot/shoot_0004.png" id="79_mlpdi"]
-[ext_resource type="Texture2D" uid="uid://cau6twdvmdryo" path="res://animations/shoot_tp/shoot/shoot_0005.png" id="80_wgskn"]
 [ext_resource type="Texture2D" uid="uid://dr3qea8mjpoja" path="res://animations/slashes/up/loopA/loopAU_0000.png" id="87_kt7p4"]
 [ext_resource type="Texture2D" uid="uid://s0tvblnq6wci" path="res://animations/slashes/up/loopA/loopAU_0001.png" id="88_w53v0"]
 [ext_resource type="Texture2D" uid="uid://cqpjedqgo3tbp" path="res://animations/slashes/up/loopA/loopAU_0002.png" id="89_la1cq"]
@@ -252,10 +251,10 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("22_gvo0h")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("23_o5wfs")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("24_acy5s")
 }],
 "loop": 0,
@@ -275,10 +274,10 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("28_ofbn4")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("29_38vk3")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("30_hpj5q")
 }],
 "loop": 0,
@@ -364,10 +363,10 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("51_3u0dw")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("52_r8866")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("53_ohhf3")
 }],
 "loop": 0,
@@ -387,10 +386,10 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("57_v47vy")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("58_mr6x8")
 }, {
-"duration": 1.0,
+"duration": 0.1,
 "texture": ExtResource("59_7r0y0")
 }],
 "loop": 0,
@@ -467,9 +466,6 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": ExtResource("79_mlpdi")
-}, {
-"duration": 0.01,
-"texture": ExtResource("80_wgskn")
 }],
 "loop": 0,
 "name": &"TPShoot",

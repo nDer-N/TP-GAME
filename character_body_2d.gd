@@ -23,6 +23,7 @@ extends CharacterBody2D
 @export var damage_flash_duration: float = 0.7  # cuánto dura el destello
 @export var attack_flash_color: Color = Color(1, 1, 1, 1)
 @export var damage_flash_color: Color = Color(1, 1, 0, 1)
+@export var death_flash_color: Color = Color(1, 0, 0, 1)
 @export var HitCAM: PhantomCamera2D
 @export var HitCAM_duration: float = 1
 @export var teleport_vfx_scene: PackedScene
@@ -281,7 +282,7 @@ func _physics_process(delta: float) -> void:
 				is_recharging = false
 				animation_controller.unlock()
 				recharge_timer = 0.0
-	print(recharge_timer)
+	
 	update_character_state()
 	slash_controller.attack_processing(delta)
 	_was_on_floor = is_on_floor()
@@ -325,7 +326,7 @@ func _play_landing_animation() -> void:
 
 	animation_controller.force_state(animation_controller.VisualState.LANDING,dur)
 func check_height():
-	print(global_position)
+
 	if global_position.y <-1920:
 		is_on_Ceiling = true
 	else:
@@ -445,7 +446,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if charge_power >= min_power_threshold:
 					var mouse_world_pos = get_viewport().get_camera_2d().get_global_mouse_position()
 					shoot_tp(mouse_world_pos, charge_power)
-					print(charge_power)
+					
 				charge_power = 0.0
 				aim_pcam.priority = 0
 
@@ -482,6 +483,7 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	tp_charges-=1
 	_sync_tp_orbs()
 	var projectile = tp_projectile_scene.instantiate()
+	
 	get_tree().current_scene.add_child(projectile)
 
 	var half_height := 0.0
@@ -492,15 +494,21 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	elif collision_shape.shape is CircleShape2D:
 		half_height = collision_shape.shape.radius
 		
-		
-
+	
+	set_outline(true)
 	projectile.launch(global_position, target_position, charge_power2, half_height)
+	projectile.died.connect(_on_tp_expired)
 	projectile.landed.connect(_on_tp_landed)
 	
-	
+func _on_tp_expired(did_die : bool):
+	if (did_die):
+		set_outline(false)
+		
 func _on_tp_landed(landing_position: Vector2) -> void:
 	if ChargeCam.priority > 0:
 		ChargeCam.priority = 0
+	set_outline(false)
+	flash_sprite(0.5, Color(0, 1, 0.9))
 	landing_position.y = landing_position.y - 64.0
 	if teleport_vfx_scene:
 		var vfx_out = teleport_vfx_scene.instantiate()
@@ -633,7 +641,7 @@ func _update_shader_frame_size() -> void:
 	
 func die() -> void:
 	set_outline(false) 
-	_slash_lunge_timer = 0.0           # ← reset
+	_slash_lunge_timer = 0.0         
 	_slash_lunge_velocity = 0.0
 	if animation_controller and animation_controller.is_aiming():
 		animation_controller.cancel_aim_sequence()
@@ -643,5 +651,6 @@ func die() -> void:
 	hits_display.update_hits(current_hits)
 	is_dead = true
 	velocity = Vector2.ZERO
-	sprite.modulate = Color(1, 0, 0, 1)  # amarillo
+	sprite.modulate = Color(1, 0, 0, 1) 
+	flash_sprite(10, death_flash_color)
 	print("Jugador murió")
