@@ -90,6 +90,7 @@ func _process(delta: float) -> void:
 
 func is_movement_locked() -> bool:
 	return _combo_phase == SequencePhase.START or _combo_phase == SequencePhase.LOOP
+	
 func set_state(new_state: VisualState) -> void:
 	if _locked:
 		return

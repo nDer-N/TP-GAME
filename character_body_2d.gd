@@ -214,7 +214,7 @@ func _physics_process(delta: float) -> void:
 	var input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	
-	if invulnerable_timer > hit_invulnerability_time/3:
+	if invulnerable_timer > hit_invulnerability_time * 0.5:
 		input_dir = Vector2.ZERO
 	
 	current_speed = speed
@@ -242,9 +242,9 @@ func _physics_process(delta: float) -> void:
 		velocity.x = _slash_lunge_velocity * t
 	elif movement_locked:
 		velocity.x = move_toward(velocity.x, 0.0, attack_brake_friction * delta)
-	elif invulnerable_timer > 0.0:
+	#elif invulnerable_timer > 0.0:
 		# Knockback: se frena suave para que se sienta el empujón
-		velocity.x = move_toward(velocity.x, 0.0, friction * 0.5 * delta)
+	#	velocity.x = move_toward(velocity.x, 0.0, friction * 0.5 * delta)
 	elif input_dir:
 		velocity.x = input_dir.x * current_speed
 	else:
