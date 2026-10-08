@@ -372,7 +372,7 @@ collision_mask = 15
 monitorable = false
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="CharacterBody2D/SlashHitbox" unique_id=1511599528]
-polygon = PackedVector2Array(0, 4, 184, -60, 184, 68)
+polygon = PackedVector2Array(0, 4, 232, -32, 232, 40)
 
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 process_mode = 3
