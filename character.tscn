@@ -313,7 +313,7 @@ texture = ExtResource("2_wfnr8")
 script = ExtResource("3_wa5vi")
 coyote_time = 0.2
 jump_buffer_time = 0.2
-first_jump_force = 1200.0
+first_jump_force = 1300.0
 second_jump_force = 1200.0
 
 [node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
@@ -360,7 +360,7 @@ metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 process_mode = 1
 modulate = Color(1, 0, 0, 1)
 material = SubResource("ShaderMaterial_0yg4w")
-position = Vector2(7.999977, 8.000001)
+position = Vector2(9, 8)
 scale = Vector2(0.41375002, 0.27)
 sprite_frames = SubResource("SpriteFrames_otjec")
 animation = &"slash2"

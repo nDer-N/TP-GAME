@@ -481,7 +481,7 @@ func update_trajectory_preview():
 		
 func start_recharge():
 	if(tp_charges < max_tp_charges):
-		tp_charges = min(tp_charges + 1, max_tp_charges)
+		tp_charges = max_tp_charges
 	if (current_hits>0):
 		current_hits-=1
 	flash_sprite(0.5, Color(0.4, 0.8, 0.2, 1))

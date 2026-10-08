@@ -43,7 +43,7 @@ position = Vector2(10224, -320)
 position = Vector2(18416, -2440)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-336, -520)
+position = Vector2(19522, -660)
 
 [node name="STUFF" type="TileMapLayer" parent="." unique_id=381624624]
 light_mask = 2
