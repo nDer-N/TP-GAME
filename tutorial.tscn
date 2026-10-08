@@ -12,7 +12,6 @@
 [ext_resource type="Texture2D" uid="uid://qj82sbl1aprw" path="res://backgrounds/BagonGrandeP.png" id="10_tvjhf"]
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="11_4hjyh"]
 [ext_resource type="Texture2D" uid="uid://bl5i3pvpg76o3" path="res://backgrounds/escenatP.png" id="11_vmw6g"]
-[ext_resource type="PackedScene" uid="uid://dao48rqjx70o2" path="res://goomba.tscn" id="13_4hjyh"]
 [ext_resource type="PackedScene" uid="uid://cd0lacfw06m5n" path="res://checkpoint.tscn" id="14_bsk3x"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_bhfnd"]
@@ -120,9 +119,6 @@ position = Vector2(6312, -1000)
 [node name="Dasher2" parent="." unique_id=1065229859 instance=ExtResource("6_4t6hg")]
 position = Vector2(8456, -584)
 
-[node name="Dasher3" parent="." unique_id=1993458810 instance=ExtResource("6_4t6hg")]
-position = Vector2(744, -616)
-
 [node name="BG" type="Node2D" parent="." unique_id=212801690]
 
 [node name="BagonCargaP" type="Sprite2D" parent="BG" unique_id=1010580046]
@@ -172,6 +168,3 @@ z_index = -2
 position = Vector2(2560, -920)
 scale = Vector2(1.2208333, 0.89629626)
 texture = ExtResource("11_vmw6g")
-
-[node name="Goomba" parent="." unique_id=506820675 instance=ExtResource("13_4hjyh")]
-position = Vector2(176, -208)
