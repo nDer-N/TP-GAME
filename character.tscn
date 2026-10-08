@@ -160,8 +160,8 @@ animations = [{
 process_mode = 3
 physics_interpolation_mode = 1
 top_level = true
-position = Vector2(750, -8)
-zoom = Vector2(0.4, 0.4)
+position = Vector2(750, -208)
+zoom = Vector2(0.41, 0.41)
 editor_draw_limits = true
 
 [node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
@@ -188,14 +188,14 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 [node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
 process_mode = 3
 top_level = true
-position = Vector2(750, -8)
+position = Vector2(750, -208)
 script = ExtResource("2_jb3kq")
 priority = 1
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.4, 0.4)
+zoom = Vector2(0.41, 0.41)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, 0)
+follow_offset = Vector2(750, -200)
 follow_damping = true
 draw_limits = true
 noise_emitter_layer = 1
