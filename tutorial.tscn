@@ -1,7 +1,10 @@
 [gd_scene format=4 uid="uid://dr4w74ui3y013"]
 
+[ext_resource type="PackedScene" uid="uid://ct175x5ru4s1k" path="res://parallax_background.tscn" id="1_bsk3x"]
+[ext_resource type="Script" uid="uid://bupq3wlrflpd1" path="res://pillar_spawner.gd" id="1_r4o0u"]
 [ext_resource type="PackedScene" uid="uid://d3flmlart0sj6" path="res://character.tscn" id="1_rwowx"]
 [ext_resource type="TileSet" uid="uid://mqbj30gda0hv" path="res://resources/BUILDING.tres" id="2_hu44a"]
+[ext_resource type="PackedScene" uid="uid://bptmy5226xsn1" path="res://pillar.tscn" id="2_k08xv"]
 [ext_resource type="PackedScene" uid="uid://tbwvgat4fi4w" path="res://hits_display.tscn" id="3_0cr88"]
 [ext_resource type="Script" uid="uid://bpn4djkdyokry" path="res://breakable.gd" id="3_hu44a"]
 [ext_resource type="PackedScene" uid="uid://cr3qx240w6sv2" path="res://Cursor.tscn" id="4_4t6hg"]
@@ -33,6 +36,22 @@ size = Vector2(60.384644, 19.554092)
 
 [node name="TUTORIAL" type="Node2D" unique_id=1592486691]
 
+[node name="PillarSpawner" type="Node2D" parent="." unique_id=579031592]
+z_index = -100
+position = Vector2(-16, -856)
+script = ExtResource("1_r4o0u")
+pillar_scene = ExtResource("2_k08xv")
+interval = 10.0
+speed = 3000.0
+speed_variation = 0.0
+spawn_distance_right = 5000.0
+travel_distance = 10000.0
+
+[node name="Timer" type="Timer" parent="PillarSpawner" unique_id=1176308343]
+
+[node name="ParallaxBackground" parent="." unique_id=2014581814 instance=ExtResource("1_bsk3x")]
+position = Vector2(-32, -856)
+
 [node name="Checkpoint" parent="." unique_id=581297913 instance=ExtResource("14_bsk3x")]
 position = Vector2(5352, -1048)
 
@@ -43,7 +62,7 @@ position = Vector2(10224, -320)
 position = Vector2(18416, -2440)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-383, -249)
+position = Vector2(-368, -248)
 
 [node name="STUFF" type="TileMapLayer" parent="." unique_id=381624624]
 light_mask = 2

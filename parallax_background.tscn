@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://ct175x5ru4s1k"]
+
+[ext_resource type="Texture2D" uid="uid://dyoh3b2oe4u2y" path="res://textures/backgrounds/sky_mountian/FondoTrenNoche.png" id="1_2pwms"]
+[ext_resource type="Texture2D" uid="uid://bmp0qxo5jefhl" path="res://textures/backgrounds/sky_mountian/FondoTrenMontañas3.png" id="1_6h8ff"]
+[ext_resource type="Texture2D" uid="uid://dmgn7raombcfq" path="res://textures/backgrounds/sky_mountian/FondoTrenMontañas2.png" id="2_2pwms"]
+[ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="2_xoild"]
+[ext_resource type="Texture2D" uid="uid://dvlfhgs7mpqkm" path="res://textures/backgrounds/sky_mountian/FondoTrenMontañas.png" id="3_xoild"]
+
+[node name="ParallaxBackground" type="Node2D" unique_id=2014581814]
+light_mask = 2
+z_index = -100
+
+[node name="LayerVeryFar" type="Parallax2D" parent="." unique_id=1841136264]
+scroll_scale = Vector2(0.01, 0.01)
+scroll_offset = Vector2(-2776, -176)
+
+[node name="Sprite2D" type="Sprite2D" parent="LayerVeryFar" unique_id=322957207]
+light_mask = 4
+visibility_layer = 5
+position = Vector2(0, -1464)
+scale = Vector2(2, 2)
+texture = ExtResource("1_2pwms")
+centered = false
+
+[node name="PointLight2D" type="PointLight2D" parent="LayerVeryFar" unique_id=775168003]
+light_mask = 4
+visibility_layer = 7
+position = Vector2(1168, -376)
+energy = 3.44
+texture = ExtResource("2_xoild")
+texture_scale = 4.3
+
+[node name="LayerFar" type="Parallax2D" parent="." unique_id=1867389965]
+modulate = Color(0.51223195, 0.5065821, 0.7827375, 1)
+light_mask = 2
+scroll_scale = Vector2(0.1, 0.1)
+scroll_offset = Vector2(0, -224)
+repeat_size = Vector2(3840, 0)
+autoscroll = Vector2(-100, 0)
+repeat_times = 3
+
+[node name="Sprite2D" type="Sprite2D" parent="LayerFar" unique_id=1461193160]
+light_mask = 0
+texture = ExtResource("1_6h8ff")
+centered = false
+
+[node name="LayerMid" type="Parallax2D" parent="." unique_id=890516041]
+modulate = Color(0.40392157, 0.34117648, 0.654902, 1)
+light_mask = 2
+scroll_scale = Vector2(0.3, 0.15)
+scroll_offset = Vector2(-3832, 16)
+repeat_size = Vector2(3840, 0)
+autoscroll = Vector2(-200, 0)
+repeat_times = 3
+
+[node name="Sprite2D" type="Sprite2D" parent="LayerMid" unique_id=1878098506]
+light_mask = 0
+texture = ExtResource("2_2pwms")
+centered = false
+
+[node name="LayerNear" type="Parallax2D" parent="." unique_id=877953843]
+modulate = Color(0.2463566, 0.2373816, 0.4268178, 1)
+light_mask = 2
+scroll_scale = Vector2(0.5, 0.4)
+scroll_offset = Vector2(-1520, 400)
+repeat_size = Vector2(3840, 0)
+autoscroll = Vector2(-600, 0)
+repeat_times = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="LayerNear" unique_id=457200776]
+light_mask = 0
+texture = ExtResource("3_xoild")
+centered = false
+
+[node name="LayerVeryNear" type="Parallax2D" parent="." unique_id=741507806]
