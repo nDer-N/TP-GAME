@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bwr3oeeiacjil" path="res://tp_charge_orb.gd" id="1_3hc83"]
 [ext_resource type="Texture2D" uid="uid://d26opdo5l67x" path="res://animations/projectileTP/following/following.png" id="2_3hc83"]
+[ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="3_on82e"]
 
 [node name="TPChargeOrb" type="Node2D" unique_id=1033478212]
 script = ExtResource("1_3hc83")
@@ -10,3 +11,7 @@ script = ExtResource("1_3hc83")
 position = Vector2(4.0000005, 5.0000005)
 scale = Vector2(0.6833333, 0.6833333)
 texture = ExtResource("2_3hc83")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=26277411]
+energy = 0.16
+texture = ExtResource("3_on82e")

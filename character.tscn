@@ -36,6 +36,7 @@
 [ext_resource type="Texture2D" uid="uid://dlhssj5xsh2co" path="res://animations/blade/blade_0003.png" id="34_xc4g8"]
 [ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
 [ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
+[ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="38_lphiu"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
@@ -294,7 +295,6 @@ line_color = Color(0, 16.733, 13.285, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
-light_mask = 2
 material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
@@ -380,3 +380,10 @@ light_mask = 2
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
 combo_window = 0.3
+
+[node name="PointLight2D" type="PointLight2D" parent="CharacterBody2D" unique_id=1381479636]
+visible = false
+position = Vector2(0, 4)
+scale = Vector2(2.3551495, -1.6392627)
+energy = 0.83
+texture = ExtResource("38_lphiu")
