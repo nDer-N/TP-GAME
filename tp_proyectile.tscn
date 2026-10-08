@@ -1,11 +1,21 @@
 [gd_scene format=3 uid="uid://co3kec6w521np"]
 
 [ext_resource type="Script" uid="uid://csxgm0rvftb52" path="res://tp_proyectile.gd" id="1_7m7ok"]
-[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_51htx"]
 [ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="2_xuoj6"]
+[ext_resource type="Texture2D" uid="uid://xuw3nymssfkb" path="res://animations/projectileTP/shot/tp.png" id="3_xuoj6"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_xuoj6"]
-size = Vector2(127.26747, 127.85031)
+[sub_resource type="Gradient" id="Gradient_xuoj6"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_uestw"]
+gradient = SubResource("Gradient_xuoj6")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.52730376, 0.5341297)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ddicg"]
+radius = 76.0
 
 [node name="Tp_proyectile" type="CharacterBody2D" unique_id=1992403906]
 scale = Vector2(0.5, 0.5)
@@ -14,9 +24,15 @@ motion_mode = 1
 safe_margin = 0.001
 script = ExtResource("1_7m7ok")
 physics_config = ExtResource("2_xuoj6")
+afterimage_scale = 0.9
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=989121238]
+energy = 0.13
+texture = SubResource("GradientTexture2D_uestw")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="." unique_id=1707837034]
+shape = SubResource("CircleShape2D_ddicg")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=796744853]
-texture = ExtResource("1_51htx")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1990059418]
-shape = SubResource("RectangleShape2D_xuoj6")
+scale = Vector2(1.2893751, 1.2893751)
+texture = ExtResource("3_xuoj6")

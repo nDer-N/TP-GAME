@@ -2,10 +2,23 @@ extends CharacterBody2D
 
 @export var lifetime: float = 5.0
 @export var physics_config: ProjectilePhysicsConfig
+@export_group("Afterimage")
+@export var afterimage_enabled: bool = true
+@export var afterimage_interval: float = 0.03   # cada cuánto spawnea un fantasma
+@export var afterimage_lifetime: float = 0.25   # cuánto tarda en desaparecer
+@export var afterimage_start_alpha: float = 0.6 # alpha inicial del fantasma
+@export var afterimage_color: Color = Color(0.6, 0.9, 1.0, 1.0)  # tinte cian
+@export var afterimage_scale: float = 1.0            # scale del fantasma (relativo al proyectil)
+@export var afterimage_scale_end: float = 0.6
 
 var time_elapsed: float = 0.0
 var target_half_height: float = 0.0
+var _afterimage_timer: float = 0.0
 signal landed(position: Vector2)
+signal died(did_die : bool)
+
+
+@onready var sprite: Sprite2D = $Sprite2D   # asegúrate de que exista
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
@@ -20,7 +33,7 @@ func launch(from: Vector2, to: Vector2, charge_power: float, half_height: float 
 func _physics_process(delta: float) -> void:
 	time_elapsed += delta
 	if time_elapsed >= lifetime:
-		queue_free()
+		die()
 		return
 
 	velocity.y += physics_config.gravity * delta
@@ -32,7 +45,48 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
 		_bounce(collision, velocity_before_collision)
+	_update_afterimage(delta)
+		
+func _update_afterimage(delta: float) -> void:
+	if not afterimage_enabled or sprite == null:
+		return
 
+	_afterimage_timer -= delta
+	if _afterimage_timer > 0.0:
+		return
+	_afterimage_timer = afterimage_interval
+
+	_spawn_afterimage()
+
+func _spawn_afterimage() -> void:
+	var ghost := Sprite2D.new()
+	ghost.texture = sprite.texture
+	ghost.global_position = sprite.global_position
+	ghost.global_rotation = sprite.global_rotation
+	ghost.scale = sprite.scale
+	ghost.flip_h = sprite.flip_h
+	ghost.flip_v = sprite.flip_v
+	ghost.z_index = sprite.z_index - 1     # por detrás del proyectil real
+	
+	var base_scale: Vector2 = sprite.scale * afterimage_scale
+	var end_scale: Vector2 = sprite.scale * afterimage_scale_end
+	ghost.scale = base_scale
+	# Alpha inicial + tinte
+	var c := afterimage_color
+	c.a = afterimage_start_alpha
+	ghost.modulate = c
+
+	# Añadirlo al mundo (no al proyectil, para que no se mueva con él)
+	get_tree().current_scene.add_child(ghost)
+
+	# Tween de fade out + un pequeño encogimiento opcional
+	var tween := ghost.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ghost, "modulate:a", 0.0, afterimage_lifetime)
+	tween.tween_property(ghost, "scale", sprite.scale * 0.6, afterimage_lifetime)  # opcional
+	tween.tween_property(ghost, "scale", end_scale, afterimage_lifetime)
+	tween.chain().tween_callback(ghost.queue_free)
+	
 func _bounce(collision: KinematicCollision2D, incoming_velocity: Vector2) -> void:
 	var normal = collision.get_normal()
 	
@@ -70,3 +124,7 @@ func _get_platform_top(collision_point: Vector2) -> Vector2:
 	if result:
 		return Vector2(collision_point.x, result.position.y - target_half_height - 2.0)
 	return Vector2(collision_point.x, collision_point.y - target_half_height - 2.0)
+
+func die() -> void:
+	died.emit(true)
+	queue_free()

@@ -8,21 +8,38 @@
 [ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="3_0qfo5"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="3_c1b4b"]
 [ext_resource type="Script" uid="uid://db2yu04lj06te" path="res://node.gd" id="3_wa5vi"]
+[ext_resource type="Resource" uid="uid://dtwo7orycdtp" path="res://resources/HitTween.tres" id="4_1r1pa"]
 [ext_resource type="Script" uid="uid://dbqmquiwnyn6x" path="res://guide_line.gd" id="4_wfnr8"]
+[ext_resource type="Resource" uid="uid://cv222cxw1eqte" path="res://resources/charge_Tween.tres" id="5_xvb2f"]
+[ext_resource type="PackedScene" uid="uid://caiw4f7mcbfk5" path="res://resources/TeleportVFX.tscn" id="8_hvi53"]
+[ext_resource type="Material" uid="uid://3vj3351wdu2o" path="res://resources/flashMat.tres" id="9_xc8pg"]
+[ext_resource type="SpriteFrames" uid="uid://yxce0s5dcbm7" path="res://resources/PLAYER_ANIMATIONS.tres" id="10_5said"]
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
+[ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
 [ext_resource type="Script" uid="uid://b2vu32r2n7pcp" path="res://slash_controller.gd" id="13_bwfjh"]
+[ext_resource type="Shader" uid="uid://diukr76648plh" path="res://resources/outliner.gdshader" id="13_uswop"]
+[ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="14_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dteehmelyo4fu" path="res://resources/pixil-frame-2.png" id="14_y0ipg"]
+[ext_resource type="Resource" uid="uid://bdbu68bfmohq7" path="res://resources/noise_hit.tres" id="15_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://dmpcv106qu38r" path="res://resources/pixil-frame-3.png" id="15_kjduu"]
+[ext_resource type="Resource" uid="uid://3mvngijot75w" path="res://resources/noise_sprint.tres" id="15_r5wlx"]
 [ext_resource type="Texture2D" uid="uid://cks6pkajqggnw" path="res://resources/pixil-frame-4.png" id="16_3d8aq"]
 [ext_resource type="Texture2D" uid="uid://cl603msw13le7" path="res://resources/pixil-frame-5.png" id="17_8i6g0"]
+[ext_resource type="Texture2D" uid="uid://trqj7j7d4wbh" path="res://animations/blade/blade_0000.png" id="31_0fer6"]
+[ext_resource type="Texture2D" uid="uid://dt71oc3mfvnfk" path="res://resources/dust.png" id="31_uswop"]
+[ext_resource type="Texture2D" uid="uid://bj21bi1vy3xp0" path="res://animations/blade/blade_0001.png" id="32_aeagw"]
+[ext_resource type="Texture2D" uid="uid://dfx4xh2nb5kk5" path="res://animations/blade/blade_0002.png" id="33_lphiu"]
+[ext_resource type="Texture2D" uid="uid://dlhssj5xsh2co" path="res://animations/blade/blade_0003.png" id="34_xc4g8"]
+[ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
+[ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
+[ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
 script = ExtResource("3_c1b4b")
-duration = 2.0
 transition = 5
 ease = 1
 
@@ -31,10 +48,50 @@ script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
 
+[sub_resource type="Curve" id="Curve_k2app"]
+_data = [Vector2(0.003759399, 0.86153847), 0.0, 0.0, 0, 0, Vector2(0.9924812, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_7tq60"]
+curve = SubResource("Curve_k2app")
+
+[sub_resource type="Curve" id="Curve_shm3m"]
+_data = [Vector2(0, 0.4846154), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_f4g2i"]
+curve = SubResource("Curve_shm3m")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_otjec"]
+particle_flag_disable_z = true
+angle_min = -4.9999895
+angle_max = 20.000011
+direction = Vector3(1, -1, 0)
+initial_velocity_min = 20.0
+initial_velocity_max = 40.0
+gravity = Vector3(0, -100, 0)
+damping_min = 5.0
+damping_max = 10.0
+scale_max = 1.4
+scale_curve = SubResource("CurveTexture_f4g2i")
+alpha_curve = SubResource("CurveTexture_7tq60")
+hue_variation_min = -2.2351742e-08
+hue_variation_max = 0.009999977
+turbulence_enabled = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xvb2f"]
+shader = ExtResource("13_uswop")
+shader_parameter/flash_amount = 0.0
+shader_parameter/flash_color = Color(0, 1.2904384, 1.014124, 0.46666667)
+shader_parameter/outline_amount = 0.0
+shader_parameter/outline_color = Color(0, 1, 0.78431374, 0.49803922)
+shader_parameter/outline_width = 8.0
+shader_parameter/frame_size = Vector2(32, 32)
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0qfo5"]
 size = Vector2(126, 127)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_bwfjh"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0yg4w"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_otjec"]
 animations = [{
@@ -72,50 +129,81 @@ animations = [{
 "loop": 0,
 "name": &"slash",
 "speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("31_0fer6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_aeagw")
+}, {
+"duration": 4.0,
+"texture": ExtResource("33_lphiu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_xc4g8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_xc8pg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_aeagw")
+}],
+"loop": 0,
+"name": &"slash2",
+"speed": 24.0
 }]
 
 [node name="Node2D" type="Node2D" unique_id=1720170991]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
+process_mode = 3
 physics_interpolation_mode = 1
 top_level = true
-position = Vector2(750, 0)
-zoom = Vector2(0.35, 0.35)
+position = Vector2(750, -208)
+zoom = Vector2(0.41, 0.41)
 editor_draw_limits = true
 
 [node name="PhantomCameraHost" type="Node" parent="Camera2D" unique_id=1255686272]
+process_mode = 3
 process_priority = 300
 process_physics_priority = 300
 script = ExtResource("1_qi5as")
 metadata/_custom_type_script = "uid://bd046eokvcnu2"
 
-[node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
+[node name="HitCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1936468053 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 0)
+position = Vector2(750, -8)
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.45, 0.45)
+tween_resource = ExtResource("4_1r1pa")
+follow_offset = Vector2(750, 0)
+follow_damping = true
+draw_limits = true
+noise_emitter_layer = 1
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
+process_mode = 3
+top_level = true
+position = Vector2(750, -208)
 script = ExtResource("2_jb3kq")
 priority = 1
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.35, 0.35)
+zoom = Vector2(0.41, 0.41)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, 0)
+follow_offset = Vector2(750, -200)
 follow_damping = true
 draw_limits = true
-metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
-
-[node name="TPHITCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=719054145 node_paths=PackedStringArray("follow_target")]
-top_level = true
-script = ExtResource("2_jb3kq")
-follow_mode = 5
-follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.25, 0.25)
-tween_resource = SubResource("Resource_qi5as")
-draw_limits = true
-_preview_noise = false
+noise_emitter_layer = 1
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="TPCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=207274216 node_paths=PackedStringArray("follow_target")]
 top_level = true
+position = Vector2(0, -8)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -127,7 +215,7 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="CeilingCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1637117747 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, -300)
+position = Vector2(750, -308)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -140,7 +228,7 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="BasementCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1688982036 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 300)
+position = Vector2(750, 292)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
@@ -151,44 +239,86 @@ follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "trajectory_line")]
+[node name="ChargeCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=652712317 node_paths=PackedStringArray("follow_target")]
+top_level = true
+position = Vector2(0, -8)
+script = ExtResource("2_jb3kq")
+follow_mode = 1
+follow_target = NodePath("../../../CharacterBody2D")
+tween_resource = ExtResource("5_xvb2f")
+draw_limits = true
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM") groups=["player"]]
+light_mask = 2
+position = Vector2(0, -8)
 scale = Vector2(1, 2)
 collision_layer = 2
 script = ExtResource("1_wa5vi")
-speed = 500.0
-sprint_multiplier = 2.5
+speed = 700.0
+sprint_multiplier = 1.78
 gravity = 3000.0
 low_jump_multiplier = 4.0
+friction = 3000.0
 tp_projectile_scene = ExtResource("2_px5sl")
 physics_config = ExtResource("3_0qfo5")
 aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
 CeilingCam = NodePath("../Camera2D/PhantomCameraHost/CeilingCam")
 BasementCam = NodePath("../Camera2D/PhantomCameraHost/BasementCam")
+ChargeCam = NodePath("../Camera2D/PhantomCameraHost/ChargeCam")
 trajectory_line = NodePath("Preview")
 max_hits = 5
+HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
+HitCAM_duration = 0.5
+teleport_vfx_scene = ExtResource("8_hvi53")
+landing_lock_time = 0.5
+min_fall_speed_for_landing = 2000.0
+side_slash_lunge_speed = 2000.0
+side_slash_lunge_duration = 0.1
+tp_charge_orb_scene = ExtResource("10_uswop")
+tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
+
+[node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
+position = Vector2(7.9999995, 59.999996)
+scale = Vector2(0.7, 0.7)
+emitting = false
+amount = 16
+texture = ExtResource("31_uswop")
+lifetime = 0.7
+process_material = SubResource("ParticleProcessMaterial_otjec")
+
+[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
+script = ExtResource("4_wfnr8")
+dash_length = 20.0
+line_color = Color(0, 16.733, 13.285, 1)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
+process_mode = 1
+light_mask = 2
+material = SubResource("ShaderMaterial_xvb2f")
+position = Vector2(-12.499978, -16.749992)
+scale = Vector2(0.42625, 0.208125)
+sprite_frames = ExtResource("10_5said")
+animation = &"idle"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=563234074]
-sprite_frames = SubResource("SpriteFrames_bwfjh")
-
 [node name="Sprite2D" type="Sprite2D" parent="CharacterBody2D" unique_id=288962317]
+visible = false
+material = ExtResource("9_xc8pg")
 texture = ExtResource("2_wfnr8")
 
 [node name="JumpController" type="Node" parent="CharacterBody2D" unique_id=1822103920]
 script = ExtResource("3_wa5vi")
 coyote_time = 0.2
 jump_buffer_time = 0.2
-first_jump_force = 1200.0
+first_jump_force = 1300.0
 second_jump_force = 1200.0
-
-[node name="Guide_Line" type="Node2D" parent="CharacterBody2D" unique_id=493121754]
-script = ExtResource("4_wfnr8")
-line_color = Color(0, 11.311408, 16.732914, 1)
 
 [node name="Preview" type="Line2D" parent="CharacterBody2D" unique_id=1324713044]
 script = ExtResource("10_jb3kq")
+max_points = 100
 show_landing_marker = false
 landing_marker_scene = ExtResource("11_c1b4b")
 
@@ -199,15 +329,54 @@ offset = Vector2(120, -20)
 bg_color = Color(0, 0.7176471, 0, 0.6)
 fill_color = Color(0, 1, 0, 1)
 
+[node name="PhantomCameraNoiseEmitter2D2" type="Node2D" parent="CharacterBody2D" unique_id=1896032420]
+process_mode = 3
+scale = Vector2(2, 2)
+script = ExtResource("14_3d8aq")
+noise = ExtResource("15_r5wlx")
+duration = 5.0
+decay_time = 0.1
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
+
 [node name="SlashController" type="Node" parent="CharacterBody2D" unique_id=726098330 groups=["HUD"]]
+process_mode = 3
 script = ExtResource("13_bwfjh")
-attack_range = 270.0
-slash_offset_distance = 120.0
-slash_rotation_offset_degrees = 120.0
+attack_damage = 3
+attack_cooldown = 0.0
+slash_animation_name = "slash2"
+hit_radius = 370.0
+hit_arc_degrees = 180.0
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
+process_mode = 3
+scale = Vector2(2, 4)
+script = ExtResource("14_3d8aq")
+noise = ExtResource("15_3d8aq")
+duration = 0.3
+decay_time = 0.1
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="SlashEffect" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1613244707]
-scale = Vector2(2, 2)
+process_mode = 1
+modulate = Color(1, 0, 0, 1)
+material = SubResource("ShaderMaterial_0yg4w")
+position = Vector2(9, 8)
+scale = Vector2(0.41375002, 0.27)
 sprite_frames = SubResource("SpriteFrames_otjec")
-animation = &"slash"
-frame = 9
+animation = &"slash2"
+frame = 5
 frame_progress = 1.0
+
+[node name="SlashHitbox" type="Area2D" parent="CharacterBody2D" unique_id=1461213400]
+collision_mask = 15
+monitorable = false
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="CharacterBody2D/SlashHitbox" unique_id=1511599528]
+polygon = PackedVector2Array(0, 4, 232, -32, 232, 40)
+
+[node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
+process_mode = 3
+light_mask = 2
+script = ExtResource("40_xc8pg")
+animated_sprite = NodePath("../AnimatedSprite2D")
+combo_window = 0.3

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PhantomCameraTween" format=3 uid="uid://dtwo7orycdtp"]
+
+[ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="1_fr3s8"]
+
+[resource]
+script = ExtResource("1_fr3s8")
+duration = 0.0
+transition = 5
+ease = 1
+metadata/_custom_type_script = "uid://8umksf8e80fw"

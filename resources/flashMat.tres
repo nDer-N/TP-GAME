@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://3vj3351wdu2o"]
+
+[ext_resource type="Shader" uid="uid://be0yqxcwgshl8" path="res://shaders/white_flash.gdshader" id="1_hh1h4"]
+
+[resource]
+shader = ExtResource("1_hh1h4")
+shader_parameter/flash_amount = 0.0
+shader_parameter/flash_color = Color(1, 1, 0.972549, 1)
+shader_parameter/outline_amount = 50.000002375
+shader_parameter/outline_color = Color(0, 0, 1, 1)
+shader_parameter/outline_width = 50.000002375
