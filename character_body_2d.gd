@@ -41,6 +41,9 @@ extends CharacterBody2D
 	Vector2(-30,  12),   # orbe 2: atrás y abajo
 	Vector2(-55,   0),   # orbe 3: más atrás
 ]
+@export var respawn_delay : float = 5.0
+@export var respawn_invulnerability : float = 1.5
+
 
 var _tp_orbs: Array[Node2D] = []
 var _last_attack_dir_x: float = 1.0
@@ -67,6 +70,7 @@ var death_barrier: CollisionShape2D
 var is_on_Ceiling: bool = false
 var is_on_basement: bool = false
 var knockback_timer: float = 0.0
+var _respawn_position : Vector2 = Vector2.ZERO
 
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -79,6 +83,7 @@ var knockback_timer: float = 0.0
 
 
 func _ready() -> void:
+	_respawn_position = global_position
 	_update_shader_frame_size()
 	_sync_tp_orbs()
 	add_to_group("player");
@@ -645,7 +650,78 @@ func _update_shader_frame_size() -> void:
 		return
 	mat.set_shader_parameter("frame_size", Vector2(tex.get_size()))
 	
+	
+func set_checkpoint(new_position : Vector2):
+	_respawn_position = new_position
+	print("Nuevo checkpoint")
+	flash_sprite(1.0, Color(1,1,1))
+	
+func _schedule_respawn() -> void:
+	await get_tree().create_timer(respawn_delay).timeout
+	if not is_inside_tree():
+		return
+	_respawn()
+
+func _respawn() -> void:
+	# --- Posición: usar el checkpoint guardado ---
+	global_position = _respawn_position
+	velocity = Vector2.ZERO
+
+	# --- Flags y estado ---
+	is_dead = false
+	invulnerable_timer = respawn_invulnerability
+	knockback_timer = 0.0
+	_slash_lunge_timer = 0.0
+	_slash_lunge_velocity = 0.0
+
+	# --- Input / TP ---
+	is_charging = false
+	is_recharging = false
+	charge_power = 0.0
+	recharge_timer = 0.0
+	tp_charges = 0
+	_sync_tp_orbs()
+
+	# --- Hits ---
+	current_hits = 0
+	if hits_display:
+		hits_display.update_hits(current_hits)
+
+	# --- Sprite y shader ---
+	sprite.visible = true
+	sprite.modulate = Color(1, 1, 1, 1)
+
+	# Matar el tween del flash de muerte (que duraba 10 segundos)
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+		_flash_tween = null
+	if sprite.material:
+		var mat := sprite.material as ShaderMaterial
+		if mat:
+			mat.set_shader_parameter("flash_amount", 0.0)
+
+	# --- Animación ---
+	if animation_controller:
+		animation_controller.cancel_sequence()
+		animation_controller.unlock()
+		animation_controller._set_state(animation_controller.VisualState.IDLE)
+
+	# --- Cámaras ---
+	aim_pcam.priority = 0
+	ChargeCam.priority = 0
+	HitCAM.priority = 0
+	CeilingCam.priority = 0
+	BasementCam.priority = 0
+	_hit_timer = 0.0
+
+	_snap_all_tp_orbs()
+
+	print("Jugador reapareció en ", _respawn_position)
+	
 func die() -> void:
+	if is_dead:
+		return
+	
 	set_outline(false) 
 	_slash_lunge_timer = 0.0         
 	_slash_lunge_velocity = 0.0
@@ -660,3 +736,4 @@ func die() -> void:
 	sprite.modulate = Color(1, 0, 0, 1) 
 	flash_sprite(10, death_flash_color)
 	print("Jugador murió")
+	_schedule_respawn()

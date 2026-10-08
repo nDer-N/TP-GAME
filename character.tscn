@@ -296,10 +296,10 @@ line_color = Color(0, 16.733, 13.285, 1)
 process_mode = 1
 light_mask = 2
 material = SubResource("ShaderMaterial_xvb2f")
-position = Vector2(7.6293945e-06, -8)
-scale = Vector2(0.37250003, 0.18625002)
+position = Vector2(-12.499978, -16.749992)
+scale = Vector2(0.42625, 0.208125)
 sprite_frames = ExtResource("10_5said")
-animation = &"landing"
+animation = &"idle"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
