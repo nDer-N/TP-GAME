@@ -580,7 +580,7 @@ texture = ExtResource("23_dyhf1")
 texture_scale = 3.44
 
 [node name="PointLight2D6" type="PointLight2D" parent="BG" unique_id=737326702]
-position = Vector2(22400, -872)
+position = Vector2(22400.002, -911)
 scale = Vector2(2.712, 1)
 color = Color(1.0662901, 1.0662901, 1.0662901, 0.58431375)
 energy = 12.37

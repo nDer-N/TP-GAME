@@ -28,7 +28,7 @@ scroll_scale = Vector2(0.1, 0.1)
 scroll_offset = Vector2(0, -224)
 repeat_size = Vector2(3840, 0)
 autoscroll = Vector2(-100, 0)
-repeat_times = 3
+repeat_times = 5
 
 [node name="Sprite2D" type="Sprite2D" parent="LayerFar" unique_id=1461193160]
 modulate = Color(0.42, 0.42, 0.42, 1)
