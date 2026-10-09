@@ -31,6 +31,7 @@ autoscroll = Vector2(-100, 0)
 repeat_times = 3
 
 [node name="Sprite2D" type="Sprite2D" parent="LayerFar" unique_id=1461193160]
+modulate = Color(0.42, 0.42, 0.42, 1)
 light_mask = 0
 texture = ExtResource("1_6h8ff")
 centered = false
@@ -45,6 +46,7 @@ autoscroll = Vector2(-200, 0)
 repeat_times = 3
 
 [node name="Sprite2D" type="Sprite2D" parent="LayerMid" unique_id=1878098506]
+modulate = Color(0.29, 0.29, 0.29, 1)
 light_mask = 0
 texture = ExtResource("2_2pwms")
 centered = false
@@ -60,6 +62,7 @@ autoscroll = Vector2(-600, 0)
 repeat_times = 2
 
 [node name="Sprite2D" type="Sprite2D" parent="LayerNear" unique_id=457200776]
+modulate = Color(0.05, 0.05, 0.05, 1)
 light_mask = 0
 texture = ExtResource("3_xoild")
 centered = false

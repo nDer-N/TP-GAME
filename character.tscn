@@ -295,6 +295,7 @@ line_color = Color(0, 16.733, 13.285, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CharacterBody2D" unique_id=1684535544]
 process_mode = 1
+light_mask = 2
 material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
