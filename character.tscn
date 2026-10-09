@@ -300,7 +300,7 @@ material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
 sprite_frames = ExtResource("10_5said")
-animation = &"idle"
+animation = &"DOWNSLASHStart"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
