@@ -36,6 +36,11 @@
 [ext_resource type="Texture2D" uid="uid://c8onakr7tuow" path="res://textures/tiles/floor/floorCorner.png" id="28_qi7kk"]
 [ext_resource type="Texture2D" uid="uid://ylqpoai7lucq" path="res://textures/tiles/BoxesMisc/Box.png" id="29_fksij"]
 [ext_resource type="Texture2D" uid="uid://c1an65v6oj73w" path="res://textures/tiles/BoxesMisc/Pallet.png" id="30_p0fmx"]
+[ext_resource type="Texture2D" uid="uid://dxkrf6fd84bes" path="res://textures/tiles/walls/v2/wallBorderD.png" id="31_1ee00"]
+[ext_resource type="Texture2D" uid="uid://dh3s8ouaeoyw5" path="res://textures/tiles/walls/v2/wallBorderStartD.png" id="32_ib50q"]
+[ext_resource type="Texture2D" uid="uid://b6u87kjrpqdun" path="res://textures/tiles/walls/v2/wallMidD.png" id="33_rs4lv"]
+[ext_resource type="Texture2D" uid="uid://cca2axlq4aynf" path="res://textures/tiles/walls/v2/wallEndD.png" id="34_rs4lv"]
+[ext_resource type="Texture2D" uid="uid://36hf625lpq8o" path="res://textures/tiles/walls/v2/wallEndI.png" id="36_0op5q"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tytxx"]
 texture = ExtResource("1_5d7wg")
@@ -2528,8 +2533,56 @@ texture_region_size = Vector2i(64, 64)
 1:0/0 = 0
 1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_26eip"]
+texture = ExtResource("31_1ee00")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2psta"]
+texture = ExtResource("32_ib50q")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3d76s"]
+texture = ExtResource("33_rs4lv")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ih4sm"]
+texture = ExtResource("34_rs4lv")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_30pht"]
 texture = ExtResource("18_oa843")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6yhgb"]
+texture = ExtResource("36_0op5q")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
@@ -2634,3 +2687,8 @@ sources/32 = SubResource("TileSetAtlasSource_f2t6c")
 sources/33 = SubResource("TileSetAtlasSource_b2nf2")
 sources/34 = SubResource("TileSetAtlasSource_h6w2h")
 sources/35 = SubResource("TileSetAtlasSource_rbmny")
+sources/36 = SubResource("TileSetAtlasSource_26eip")
+sources/37 = SubResource("TileSetAtlasSource_2psta")
+sources/38 = SubResource("TileSetAtlasSource_3d76s")
+sources/39 = SubResource("TileSetAtlasSource_ih4sm")
+sources/40 = SubResource("TileSetAtlasSource_6yhgb")
