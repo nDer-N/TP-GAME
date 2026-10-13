@@ -256,6 +256,7 @@ func _physics_process(delta: float) -> void:
 				update_trajectory_preview()
 		#print("NO CHARGES LEFT!")
 	jump_controller.jump_processing(delta)
+	
 	if Input.is_action_just_pressed("reload") and not is_recharging:
 		if(current_hits>0 or tp_charges < max_tp_charges):
 			if animation_controller.is_aiming():
@@ -268,11 +269,20 @@ func _physics_process(delta: float) -> void:
 			ChargeCam.priority = 10
 			set_outline(true)
 			animation_controller.force_state(
-			animation_controller.VisualState.RECHARGING,
-			recharge_hold_time 
-		)
+				animation_controller.VisualState.RECHARGING,
+				recharge_hold_time 
+			)
 	if is_recharging:
-		if input_dir != Vector2.ZERO or Input.is_action_pressed("jump"):
+		var cancel_recharge := false
+
+		# Si soltó el botón → cancelar
+		if not Input.is_action_pressed("reload"):
+			cancel_recharge = true
+		# Si se movió o saltó → cancelar
+		elif input_dir != Vector2.ZERO or Input.is_action_pressed("jump"):
+			cancel_recharge = true
+
+		if cancel_recharge:
 			is_recharging = false
 			recharge_timer = 0.0
 			ChargeCam.priority = 0
