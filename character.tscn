@@ -256,6 +256,7 @@ light_mask = 2
 position = Vector2(0, -8)
 scale = Vector2(1, 2)
 collision_layer = 2
+collision_mask = 17
 script = ExtResource("1_wa5vi")
 speed = 700.0
 sprint_multiplier = 1.78
