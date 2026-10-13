@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://2drx1upee216"]
+
+[ext_resource type="Script" uid="uid://c2tdrtsjsusij" path="res://holo_tutorial.gd" id="1_34iuo"]
+[ext_resource type="Shader" uid="uid://bwsmrgoabgmel" path="res://holo_scanlines.gdshader" id="2_x0nxo"]
+[ext_resource type="FontFile" uid="uid://nl5axbr7t361" path="res://VT323-Regular.ttf" id="3_5oda8"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hftqc"]
+size = Vector2(267, 111)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drsjc"]
+shader = ExtResource("2_x0nxo")
+shader_parameter/color = Color(0.2, 0.9, 1, 0.25)
+shader_parameter/linea_densidad = 80.0
+shader_parameter/velocidad = 0.5
+
+[node name="HoloTutorial" type="Area2D" unique_id=855051901]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_34iuo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=791116451 groups=["player"]]
+position = Vector2(-0.5, 0.5)
+shape = SubResource("RectangleShape2D_hftqc")
+
+[node name="Panel" type="Node2D" parent="." unique_id=544396490]
+
+[node name="Fondo" type="ColorRect" parent="Panel" unique_id=1803543384]
+material = SubResource("ShaderMaterial_drsjc")
+offset_left = -150.0
+offset_top = -60.0
+offset_right = 150.0
+offset_bottom = 60.0
+color = Color(0.2, 0.9019608, 1, 0.18039216)
+
+[node name="Label" type="Label" parent="Panel" unique_id=1518213953]
+offset_left = -150.0
+offset_top = -60.0
+offset_right = 150.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.6666667, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_5oda8")
+theme_override_font_sizes/font_size = 34
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Linea" type="ColorRect" parent="Panel" unique_id=562706078]
+offset_left = -150.0
+offset_top = -60.0
+offset_right = 150.0
+offset_bottom = -58.0
+color = Color(0.2, 0.9019608, 1, 0.9019608)
+
+[node name="Timer" type="Timer" parent="." unique_id=1207450959]
