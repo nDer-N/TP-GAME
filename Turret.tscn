@@ -15,10 +15,10 @@ radius = 2376.8618
 script = ExtResource("1_iwplw")
 hits_to_die = 5
 projectile_scene = ExtResource("2_wvatt")
+charge_time = 1.5
 muzzle = NodePath("CannonPivot/Muzzle")
 cannon_pivot = NodePath("CannonPivot")
 cannon_sprite = NodePath("CannonPivot/CannonSprite")
-turn_speed = 20.0
 
 [node name="Base" type="Sprite2D" parent="." unique_id=1059566795]
 position = Vector2(-2.861023e-06, 2.861023e-06)
@@ -43,6 +43,7 @@ shape = SubResource("RectangleShape2D_ddicg")
 
 [node name="DetectionArea" type="Area2D" parent="." unique_id=558651919]
 collision_mask = 2
+monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=1054156528]
 shape = SubResource("CircleShape2D_ddicg")

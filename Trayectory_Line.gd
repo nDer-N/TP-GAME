@@ -32,7 +32,7 @@ func apply_fade_gradient() -> void:
 	var offsets := PackedFloat32Array()
 	var colors := PackedColorArray()
 	
-	var half_index = float(point_count) * 0.7
+	var half_index = float(point_count) * 0.5
 	
 	for i in range(point_count):
 		# alpha 1.0 en el punto 0, baja lineal y llega a 0.0 en point_count/2

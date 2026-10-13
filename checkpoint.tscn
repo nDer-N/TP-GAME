@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://cd0lacfw06m5n"]
+
+[ext_resource type="Script" uid="uid://bvecyspbm7dnh" path="res://checkpoint.gd" id="1_r6hke"]
+[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="2_tnhlw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_otjec"]
+radius = 192.0
+
+[node name="Checkpoint" type="Area2D" unique_id=581297913 node_paths=PackedStringArray("sprite")]
+collision_layer = 4
+collision_mask = 2
+monitorable = false
+script = ExtResource("1_r6hke")
+sprite = NodePath("Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1405968729]
+position = Vector2(-4.0000076, 4)
+scale = Vector2(2.0625, 2.8125)
+texture = ExtResource("2_tnhlw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=466202975]
+shape = SubResource("CircleShape2D_otjec")
