@@ -974,9 +974,6 @@ sources/13 = SubResource("TileSetAtlasSource_foqjq")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rwowx"]
 size = Vector2(136.3158, 12.339172)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hu44a"]
-size = Vector2(278.01624, 12.602325)
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
 size = Vector2(33.19837, 49.766083)
 
@@ -1100,13 +1097,8 @@ position = Vector2(10791.999, -1960.0001)
 scale = Vector2(9.88, 6.84)
 shape = SubResource("RectangleShape2D_rwowx")
 
-[node name="CollisionShape2D4" type="CollisionShape2D" parent="Area2D" unique_id=2036478932]
-position = Vector2(8432, -1959.9999)
-scale = Vector2(9.88, 6.84)
-shape = SubResource("RectangleShape2D_hu44a")
-
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="Area2D" unique_id=1964607472]
-position = Vector2(11735.999, -656)
+position = Vector2(11744, -727.99994)
 scale = Vector2(9.88, 6.84)
 shape = SubResource("RectangleShape2D_ddicg")
 
@@ -1176,7 +1168,7 @@ texture = ExtResource("20_tfgte")
 [node name="SmallVagon" type="Sprite2D" parent="BG" unique_id=20817023]
 modulate = Color(0.5803922, 0.3019608, 0.18039216, 1)
 z_index = -5
-position = Vector2(11092, -988)
+position = Vector2(11064, -904)
 scale = Vector2(0.52163464, 0.516827)
 texture = ExtResource("19_5gpbq")
 

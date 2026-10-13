@@ -198,6 +198,7 @@ zoom = Vector2(0.41, 0.41)
 tween_resource = SubResource("Resource_7tnxx")
 follow_offset = Vector2(750, -200)
 follow_damping = true
+follow_damping_value = Vector2(0.2, 0.15)
 draw_limits = true
 noise_emitter_layer = 1
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
