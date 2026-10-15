@@ -1300,7 +1300,7 @@ blend_mode = 1
 
 [node name="HoloTutorial" parent="." unique_id=855051901 instance=ExtResource("33_pm7ge")]
 position = Vector2(-347, -217)
-texto = "WASD To Move"
+texto = "A-D To Move"
 
 [node name="HoloTutorial2" parent="." unique_id=1483438472 instance=ExtResource("33_pm7ge")]
 position = Vector2(895, -309)
