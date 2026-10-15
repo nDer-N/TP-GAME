@@ -87,8 +87,7 @@ func _ready() -> void:
 		_player = get_tree().get_first_node_in_group("player")
 
 	# Conexiones
-	if detection_area:
-		detection_area.body_entered.connect(_on_detection_body_entered)
+	
 	if hitbox:
 		hitbox.body_entered.connect(_on_hitbox_body_entered)
 		
