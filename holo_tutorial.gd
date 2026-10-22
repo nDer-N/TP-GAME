@@ -1,7 +1,7 @@
 extends Area2D
 
 @export_multiline var texto: String = "WASD para moverte"
-@export_multiline var paginas: Array[String] = []   # NUEVO: si hay 2+ se activan las flechas
+@export_multiline var paginas: Array[String] = []   # si hay 2+ se activan las flechas
 @export var una_sola_vez: bool = true
 @export var ancho_panel: float = 420.0
 @export var padding: float = 20.0
@@ -10,6 +10,10 @@ extends Area2D
 @export var tecla_repetir: Key = KEY_E
 @export var texto_hint: String = "[E] Ver tutorial"
 @export var hint_offset: Vector2 = Vector2(0, -80)
+
+# NUEVO: teclas para cambiar de página (configurables desde el Inspector)
+@export var tecla_pagina_izq: Key = KEY_A
+@export var tecla_pagina_der: Key = KEY_D
 
 @onready var panel: Node2D = $Panel
 @onready var fondo: ColorRect = $Panel/Fondo
@@ -26,7 +30,6 @@ var abierto_ms := 0
 var tween: Tween
 var flicker_tween: Tween
 
-# NUEVO
 var lista_paginas: Array[String] = []
 var pagina_actual := 0
 var flecha_izq: Label
@@ -36,7 +39,7 @@ var indicador: Label
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# NUEVO: si no hay páginas, usa el texto simple como única página
+	# si no hay páginas, usa el texto simple como única página
 	if paginas.is_empty():
 		lista_paginas = [texto]
 	else:
@@ -59,7 +62,7 @@ func _ready() -> void:
 	panel.visible = false
 
 	_crear_hint()
-	_crear_flechas()   # NUEVO
+	_crear_flechas()
 	_acomodar()
 
 	body_entered.connect(_on_body_entered)
@@ -80,7 +83,6 @@ func _crear_hint() -> void:
 	hint.visible = false
 	add_child(hint)
 
-# NUEVO
 func _nuevo_label_ui(tam: int) -> Label:
 	var l := Label.new()
 	l.add_theme_font_override("font", label.get_theme_font("font"))
@@ -91,7 +93,6 @@ func _nuevo_label_ui(tam: int) -> Label:
 	panel.add_child(l)
 	return l
 
-# NUEVO
 func _crear_flechas() -> void:
 	flecha_izq = _nuevo_label_ui(34)
 	flecha_izq.text = "<"
@@ -100,11 +101,9 @@ func _crear_flechas() -> void:
 	indicador = _nuevo_label_ui(20)
 	_mostrar_pagina(0)
 
-# NUEVO
 func _es_multipagina() -> bool:
 	return lista_paginas.size() > 1
 
-# NUEVO
 func _mostrar_pagina(i: int) -> void:
 	pagina_actual = clampi(i, 0, lista_paginas.size() - 1)
 	label.text = lista_paginas[pagina_actual]
@@ -114,7 +113,6 @@ func _mostrar_pagina(i: int) -> void:
 	indicador.visible = multi
 	indicador.text = "%d/%d" % [pagina_actual + 1, lista_paginas.size()]
 
-# NUEVO
 func _cambiar_pagina(dir: int) -> void:
 	var nueva := pagina_actual + dir
 	if nueva < 0 or nueva >= lista_paginas.size():
@@ -128,7 +126,7 @@ func _acomodar() -> void:
 	var ancho_texto := ancho_panel - padding * 2.0
 	label.size = Vector2(ancho_texto, 0)
 
-	# NUEVO: medimos TODAS las páginas y usamos la más alta
+	# medimos TODAS las páginas y usamos la más alta
 	var alto_texto := 0.0
 	for i in lista_paginas.size():
 		label.text = lista_paginas[i]
@@ -146,7 +144,7 @@ func _acomodar() -> void:
 	label.size = Vector2(ancho_texto, alto - padding * 2.0 - extra)
 	label.position = fondo.position + Vector2(padding, padding)
 
-	# NUEVO: posición de flechas e indicador
+	# posición de flechas e indicador
 	var centro_y := fondo.position.y + (alto - extra) / 2.0
 	flecha_izq.size = Vector2(padding, 40)
 	flecha_izq.position = Vector2(fondo.position.x, centro_y - 20)
@@ -183,7 +181,7 @@ func _input(event: InputEvent) -> void:
 	if abierto:
 		if Time.get_ticks_msec() - abierto_ms < 400:
 			return
-		# NUEVO: flechas cambian de página (solo si hay más de una)
+		# las teclas de página cambian de página (solo si hay más de una)
 		if _es_multipagina():
 			var dir := _dir_pagina(event)
 			if dir != 0:
@@ -197,12 +195,13 @@ func _input(event: InputEvent) -> void:
 				and event.physical_keycode == tecla_repetir:
 			abrir()
 
-# NUEVO: devuelve -1, 1 o 0
+# CAMBIADO: ahora usa tecla_pagina_izq / tecla_pagina_der (A y D por defecto)
+# devuelve -1, 1 o 0
 func _dir_pagina(event: InputEvent) -> int:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_LEFT:
+		if event.physical_keycode == tecla_pagina_izq:
 			return -1
-		if event.physical_keycode == KEY_RIGHT:
+		if event.physical_keycode == tecla_pagina_der:
 			return 1
 	if event is InputEventJoypadButton and event.pressed:
 		if event.button_index == JOY_BUTTON_DPAD_LEFT:
@@ -229,7 +228,7 @@ func abrir() -> void:
 	abierto_ms = Time.get_ticks_msec()
 	get_tree().paused = true
 
-	_mostrar_pagina(0)   # NUEVO: siempre empieza en la primera página
+	_mostrar_pagina(0)   # siempre empieza en la primera página
 
 	panel.position = get_viewport().get_visible_rect().size / 2.0
 	panel.visible = true
