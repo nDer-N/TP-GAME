@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://b5xlwbkbi1dlw"]
+
+[ext_resource type="Texture2D" uid="uid://bjhhqeycchx2h" path="res://textures/UI/NOHIT.png" id="1_q06nk"]
+[ext_resource type="Texture2D" uid="uid://chpuitbp3tjwc" path="res://animations/Flame/flame_0000.png" id="2_x3guu"]
+[ext_resource type="Texture2D" uid="uid://ut5np0nev4qa" path="res://animations/Flame/flame_0001.png" id="3_v3blu"]
+[ext_resource type="Texture2D" uid="uid://rdpqljpq61iy" path="res://animations/Flame/flame_0002.png" id="4_wt0r8"]
+[ext_resource type="Texture2D" uid="uid://6xuipwq51wyt" path="res://animations/Flame/flame_0003.png" id="5_8pq73"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ddicg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_q06nk")
+}],
+"loop": 1,
+"name": &"empty",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_x3guu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_v3blu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_wt0r8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_8pq73")
+}],
+"loop": 1,
+"name": &"full",
+"speed": 12.0
+}]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=1474146917]
+sprite_frames = SubResource("SpriteFrames_ddicg")
+animation = &"empty"

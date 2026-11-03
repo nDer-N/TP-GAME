@@ -36,6 +36,7 @@
 [ext_resource type="Texture2D" uid="uid://dlhssj5xsh2co" path="res://animations/blade/blade_0003.png" id="34_xc4g8"]
 [ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
 [ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
+[ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="38_lphiu"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
@@ -197,6 +198,7 @@ zoom = Vector2(0.41, 0.41)
 tween_resource = SubResource("Resource_7tnxx")
 follow_offset = Vector2(750, -200)
 follow_damping = true
+follow_damping_value = Vector2(0.2, 0.15)
 draw_limits = true
 noise_emitter_layer = 1
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
@@ -254,6 +256,7 @@ light_mask = 2
 position = Vector2(0, -8)
 scale = Vector2(1, 2)
 collision_layer = 2
+collision_mask = 17
 script = ExtResource("1_wa5vi")
 speed = 700.0
 sprint_multiplier = 1.78
@@ -299,7 +302,7 @@ material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
 sprite_frames = ExtResource("10_5said")
-animation = &"idle"
+animation = &"DOWNSLASHStart"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -380,3 +383,10 @@ light_mask = 2
 script = ExtResource("40_xc8pg")
 animated_sprite = NodePath("../AnimatedSprite2D")
 combo_window = 0.3
+
+[node name="PointLight2D" type="PointLight2D" parent="CharacterBody2D" unique_id=1381479636]
+visible = false
+position = Vector2(0, 4)
+scale = Vector2(2.3551495, -1.6392627)
+energy = 0.83
+texture = ExtResource("38_lphiu")

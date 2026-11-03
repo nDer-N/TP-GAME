@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://bptmy5226xsn1"]
+
+[ext_resource type="Texture2D" uid="uid://bwahwkcdw4eit" path="res://textures/backgrounds/sky_mountian/FondoTrenTorreTren.png" id="1_rjv88"]
+
+[node name="Pillar" type="Sprite2D" unique_id=1836947921]
+modulate = Color(0.4911909, 0.4911909, 0.4911909, 1)
+light_mask = 8
+z_index = -100
+scale = Vector2(3, 3.1891437)
+texture = ExtResource("1_rjv88")
