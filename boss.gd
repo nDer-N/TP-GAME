@@ -189,6 +189,7 @@ func _physics_process(delta: float) -> void:
 				and absf(p.global_position.y - global_position.y) <= activation_height:
 			active = true
 			_show_health_bar()
+			_boss_cam_on() 
 			_music_start()
 			_attack_loop()
 
@@ -245,6 +246,7 @@ func _die() -> void:
 	dead = true
 	velocity = Vector2.ZERO
 	_hide_marker()
+	_boss_cam_off()  
 	_hide_dash_path()
 	_dash_vfx_stop(0.0, false)
 	_music_stop()
@@ -1134,3 +1136,13 @@ func _show_marker(target: Vector2) -> void:
 func _hide_marker() -> void:
 	if _marker:
 		_marker.hide()
+
+func _boss_cam_on() -> void:
+	var p := _get_player()
+	if p and p.has_method("activate_boss_cam"):
+		p.activate_boss_cam()
+
+func _boss_cam_off() -> void:
+	var p := _get_player()
+	if p and p.has_method("deactivate_boss_cam"):
+		p.deactivate_boss_cam()

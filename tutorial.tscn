@@ -1062,7 +1062,7 @@ position = Vector2(30358, -321)
 position = Vector2(36651, -338)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-368, -248)
+position = Vector2(35765, -476)
 
 [node name="MiscL1" type="TileMapLayer" parent="." unique_id=505294020]
 light_mask = 2
@@ -1408,5 +1408,17 @@ texture = ExtResource("23_dyhf1")
 texture_scale = 3.44
 
 [node name="Boss1" parent="." unique_id=718000262 instance=ExtResource("34_brok5")]
-position = Vector2(40193, -575)
+position = Vector2(40270, -530)
+max_health = 100
+phase2_threshold = 0.6
+projectile_damage = 3
+parry_damage = 10
+parry_speed_multiplier = 2.0
+jump_time = 0.6
+jump_time_phase2 = 0.4
+jump_windup = 0.5
+jump_windup_phase2 = 0.3
+second_jump_windup = 0.2
+dash_speed = 2000.0
+dash_windup = 0.5
 boss_music = ExtResource("35_e3xdn")

@@ -43,8 +43,10 @@ extends CharacterBody2D
 ]
 @export var respawn_delay : float = 5.0
 @export var respawn_invulnerability : float = 1.5
+@export var BossCAM: PhantomCamera2D
 
-
+var _boss_cam_active: bool = false
+var _boss_cam_previous_priority: int = 0
 var _tp_orbs: Array[Node2D] = []
 var _last_attack_dir_x: float = 1.0
 var _slash_lunge_velocity: float = 0.0
@@ -665,6 +667,22 @@ func set_checkpoint(new_position : Vector2):
 	_respawn_position = new_position
 	print("Nuevo checkpoint")
 	flash_sprite(1.0, Color(1,1,1))
+
+## Llamado por el jefe al empezar la pelea.
+func activate_boss_cam() -> void:
+	if BossCAM == null or _boss_cam_active:
+		return
+	_boss_cam_active = true
+	_boss_cam_previous_priority = BossCAM.priority
+	BossCAM.priority = 20          # más alta que HitCAM(10), aim(10), etc.
+
+## Llamado por el jefe al morir (o si se sale de la pelea sin matarlo).
+func deactivate_boss_cam() -> void:
+	if not _boss_cam_active:
+		return
+	_boss_cam_active = false
+	if BossCAM:
+		BossCAM.priority = _boss_cam_previous_priority
 	
 func _schedule_respawn() -> void:
 	await get_tree().create_timer(respawn_delay).timeout
@@ -673,6 +691,7 @@ func _schedule_respawn() -> void:
 	_respawn()
 
 func _respawn() -> void:
+	deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
 	global_position = _respawn_position
 	velocity = Vector2.ZERO
