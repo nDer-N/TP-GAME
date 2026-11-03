@@ -691,7 +691,7 @@ func _schedule_respawn() -> void:
 	_respawn()
 
 func _respawn() -> void:
-	deactivate_boss_cam()
+	#deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
 	global_position = _respawn_position
 	velocity = Vector2.ZERO

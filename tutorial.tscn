@@ -1409,7 +1409,7 @@ texture_scale = 3.44
 
 [node name="Boss1" parent="." unique_id=718000262 instance=ExtResource("34_brok5")]
 position = Vector2(40270, -530)
-max_health = 100
+max_health = 200
 phase2_threshold = 0.6
 projectile_damage = 3
 parry_damage = 10
