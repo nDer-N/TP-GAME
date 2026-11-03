@@ -106,6 +106,31 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var duck_bus := ""
 @export var duck_amount_db := -40.0
 
+@export_group("Moverse entre plataformas")
+## Cada cierto tiempo el jefe salta a otra plataforma (o al piso) para no quedarse siempre en el mismo lugar.
+@export var reposition_enabled := true
+@export_range(0.0, 1.0) var reposition_chance := 0.3    # probabilidad de moverse antes de cada ataque
+@export var reposition_min_attacks := 2                  # minimo de ataques entre un movimiento y otro
+@export var reposition_windup := 0.6                     # aviso antes de saltar (se marca donde caera)
+@export var reposition_max_up := 450.0                   # hasta que altura puede subir (pixeles)
+@export var reposition_max_down := 700.0                 # hasta que profundidad puede bajar
+@export var reposition_min_distance := 250.0             # distancia minima horizontal respecto a donde esta
+@export var reposition_scan_step := 40.0                 # cada cuantos pixeles busca plataformas
+
+@export_group("Anti-spam (onda de choque)")
+## Si le pegan `spam_hits_needed` golpes seguidos sin que se haya movido, suelta una onda que empuja al jugador y se mueve.
+@export var spam_defense_enabled := true
+@export var spam_hits_needed := 8
+@export var spam_window := 6.0                           # los golpes tienen que ser dentro de estos segundos
+@export var spam_position_tolerance := 200.0             # si se mueve mas que esto, el conteo se reinicia
+@export var shockwave_windup := 0.8                      # aviso antes de la onda (tiembla y brilla)
+@export var shockwave_speed := 1000.0
+@export var shockwave_range := 900.0                     # hasta donde llega a cada lado
+@export var shockwave_height := 70.0                     # altura de la onda (se puede saltar por encima)
+@export var shockwave_damage := 1
+@export var shockwave_push_distance := 420.0             # cuanto empuja al jugador
+@export var shockwave_color := Color(1.0, 0.85, 0.5, 0.85)
+
 @export_group("Variedad (fase 2)")
 ## Maximo de veces SEGUIDAS que puede repetir el mismo ataque en fase 2 (2 = puede hacerlo dos veces y luego cambia).
 @export var max_repeats_phase2 := 2
@@ -141,6 +166,10 @@ var _music_player: AudioStreamPlayer
 var _music_tween: Tween
 var _duck_original_db := 0.0
 var _ducked := false
+var _recent_hits: Array[float] = []
+var _spam_anchor := Vector2.ZERO
+var _attacks_since_move := 0
+var _push_prev := 0.0
 var _player: Node2D
 var _arena_left := 0.0
 var _arena_right := 0.0
@@ -189,7 +218,7 @@ func _physics_process(delta: float) -> void:
 				and absf(p.global_position.y - global_position.y) <= activation_height:
 			active = true
 			_show_health_bar()
-			_boss_cam_on() 
+			_boss_cam_on()
 			_music_start()
 			_attack_loop()
 
@@ -202,9 +231,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---------------------------------------------------------------- VIDA
 
-func take_damage(amount = 1, _a = null, _b = null) -> void:
+func take_damage(amount = 1, a = null, _b = null) -> void:
 	if dead:
 		return
+	if not (a is String and a == "parry"):
+		_register_hit()
 	var dmg := 1
 	if amount is int or amount is float:
 		dmg = maxi(int(amount), 1)
@@ -246,7 +277,7 @@ func _die() -> void:
 	dead = true
 	velocity = Vector2.ZERO
 	_hide_marker()
-	_boss_cam_off()  
+	_boss_cam_off()
 	_hide_dash_path()
 	_dash_vfx_stop(0.0, false)
 	_music_stop()
@@ -438,6 +469,26 @@ func _attack_loop() -> void:
 			if dead:
 				return
 
+		# Defensa anti-spam: si lo estan golpeando sin parar, suelta una onda y se reubica.
+		if spam_defense_enabled and _recent_hits.size() >= spam_hits_needed:
+			await _attack_shockwave()
+			if dead:
+				return
+			await _attack_reposition()
+			if dead:
+				return
+			_after_special()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
+		# De vez en cuando se mueve a otra plataforma en lugar de atacar.
+		if reposition_enabled and _attacks_since_move >= reposition_min_attacks and randf() < reposition_chance:
+			await _attack_reposition()
+			if dead:
+				return
+			_after_special()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
+
 		var attack := _choose_attack()
 		# Un dash cuenta como tantos usos como cruces haga (ida y vuelta = 2), para que el limite de repeticiones sea real.
 		var weight := dash_passes if (attack == Attack.DASH and dash_passes_count_as_repeats) else 1
@@ -453,6 +504,7 @@ func _attack_loop() -> void:
 				await _attack_jump()
 			Attack.DASH:
 				await _attack_dash()
+		_attacks_since_move += 1
 		if dead:
 			return
 		# Nunca se queda quieto: persigue al jugador hasta el siguiente ataque.
@@ -700,6 +752,174 @@ func _ground_at(x: float, surface_y: float) -> bool:
 	query.exclude = ex
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
 	return not hit.is_empty() and absf(hit.position.y - surface_y) < 30.0
+
+
+# ---------------------------------------------------------------- MOVERSE ENTRE PLATAFORMAS
+
+## Despues de moverse / soltar la onda se reinicia el conteo de golpes y de ataques.
+func _after_special() -> void:
+	_attacks_since_move = 0
+	_recent_hits.clear()
+	_last_attack = Attack.JUMP        # un movimiento cuenta como salto
+	_repeat_count = 1
+
+
+## Salto tactico: va a otra plataforma (o al piso). Marca en rojo donde va a caer.
+func _attack_reposition() -> void:
+	var spot := _find_reposition_spot()
+	if spot == Vector2.INF:
+		await _wait(0.3)
+		return
+	velocity.x = 0.0
+	_telegraph_tween(reposition_windup, Color(0.5, 0.85, 1.0))
+	_show_marker(spot)
+	await _wait(reposition_windup)
+	if dead:
+		return
+	await _do_jump(spot, jump_time_phase2 if phase == 2 else jump_time)
+
+
+## Busca superficies planas dentro de la arena a las que pueda saltar y elige una al azar.
+func _find_reposition_spot() -> Vector2:
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	var p := _get_player()
+	if p is CollisionObject2D:
+		ex.append(p.get_rid())
+	var body_h := visual.size.y
+	var y_min := global_position.y - reposition_max_up
+	var y_max := global_position.y + reposition_max_down
+	var spots: Array[Vector2] = []
+	var x := _arena_left + 40.0
+	while x <= _arena_right - 40.0:
+		if absf(x - global_position.x) >= reposition_min_distance:
+			var y := y_min - 20.0
+			var guard := 0
+			while y < y_max and guard < 8:
+				guard += 1
+				var q := PhysicsRayQueryParameters2D.create(Vector2(x, y), Vector2(x, y_max + 60.0), collision_mask)
+				q.exclude = ex
+				var hit := space.intersect_ray(q)
+				if hit.is_empty():
+					break
+				var top: Vector2 = hit.position
+				if hit.normal.y < -0.7 and top.y >= y_min and top.y <= y_max and _spot_is_free(top, body_h, space, ex):
+					if p == null or absf(top.x - p.global_position.x) > 120.0 or absf(top.y - p.global_position.y) > 150.0:
+						spots.append(top)
+				y = top.y + 45.0       # sigue buscando superficies mas abajo (atraviesa el grosor de la plataforma)
+		x += reposition_scan_step
+	if spots.is_empty():
+		return Vector2.INF
+	return spots.pick_random()
+
+
+## Que haya espacio para el cuerpo del jefe y que no este en la orilla de la plataforma.
+func _spot_is_free(top: Vector2, body_h: float, space: PhysicsDirectSpaceState2D, ex: Array[RID]) -> bool:
+	var q := PhysicsRayQueryParameters2D.create(top + Vector2(0, -2), top + Vector2(0, -body_h), collision_mask)
+	q.exclude = ex
+	if not space.intersect_ray(q).is_empty():
+		return false          # hay techo encima
+	return _ground_at(top.x - 40.0, top.y) and _ground_at(top.x + 40.0, top.y)
+
+
+# ---------------------------------------------------------------- ANTI-SPAM: ONDA DE CHOQUE
+
+## Cuenta los golpes recibidos mientras el jefe no se mueve de lugar.
+func _register_hit() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if _recent_hits.is_empty() or global_position.distance_to(_spam_anchor) > spam_position_tolerance:
+		_recent_hits.clear()
+		_spam_anchor = global_position
+	_recent_hits.append(now)
+	while not _recent_hits.is_empty() and now - _recent_hits[0] > spam_window:
+		_recent_hits.pop_front()
+
+
+func _attack_shockwave() -> void:
+	if _get_player() == null:
+		return
+	velocity.x = 0.0
+	_telegraph_tween(shockwave_windup, Color(0.5, 0.85, 1.0))
+	await _dash_warning(shockwave_windup)     # tiembla y parpadea
+	if dead:
+		return
+	await _shockwave_blast()
+
+
+## Dos ondas bajas que corren por el piso hacia los lados; se esquivan saltando. Empujan al jugador.
+func _shockwave_blast() -> void:
+	var origin := global_position
+	if jump_vfx:
+		for side in [-1.0, 1.0]:
+			_spawn_burst(side, 40, dust_color, 150.0, 420.0, 12.0, 26.0, Vector2(0, -40), 55.0)
+	if jump_camera_shake > 0.0:
+		_shake_camera(jump_camera_shake)
+
+	var waves: Array[ColorRect] = []
+	var alive := [true, true]
+	for i in 2:
+		var r := ColorRect.new()
+		r.top_level = true
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		r.color = shockwave_color
+		r.size = Vector2(30.0, shockwave_height)
+		add_child(r)
+		waves.append(r)
+
+	var traveled := 0.0
+	var hit_player := false
+	while traveled < shockwave_range and not dead:
+		var delta := get_physics_process_delta_time()
+		traveled += shockwave_speed * delta
+		for i in 2:
+			if not alive[i]:
+				continue
+			var side := -1.0 if i == 0 else 1.0
+			var wx := origin.x + side * (20.0 + traveled)
+			if dash_stop_at_edges and not _ground_at(wx, origin.y):
+				alive[i] = false          # se acaba el piso: la onda desaparece
+				waves[i].hide()
+				continue
+			waves[i].global_position = Vector2(wx - 15.0, origin.y - shockwave_height)
+		var p := _get_player()
+		if p and not hit_player:
+			var pr := _player_rect(p)
+			for i in 2:
+				if alive[i] and Rect2(waves[i].global_position, waves[i].size).intersects(pr):
+					hit_player = true
+					apply_damage(p, shockwave_damage)
+					var push_dir := signf(p.global_position.x - origin.x)
+					if push_dir == 0.0:
+						push_dir = 1.0
+					_push_player(push_dir, shockwave_push_distance)
+					break
+		await get_tree().physics_frame
+	for r in waves:
+		r.queue_free()
+
+
+## Empuja al jugador en horizontal (respeta paredes si es CharacterBody2D).
+func _push_player(dir: float, distance: float, duration := 0.25) -> void:
+	var p := _get_player()
+	if p == null:
+		return
+	if p.has_method("apply_knockback"):
+		p.apply_knockback(Vector2(dir, -0.3) * distance * 2.0)
+		return
+	_push_prev = 0.0
+	var tw := create_tween()
+	tw.tween_method(_push_step.bind(p, dir, distance), 0.0, 1.0, duration).set_ease(Tween.EASE_OUT)
+
+
+func _push_step(progress: float, p: Node2D, dir: float, distance: float) -> void:
+	if not is_instance_valid(p):
+		return
+	var dx := (progress - _push_prev) * distance * dir
+	_push_prev = progress
+	if p is CharacterBody2D:
+		p.move_and_collide(Vector2(dx, 0.0))
+	else:
+		p.global_position.x += dx
 
 
 # ---------------------------------------------------------------- DAÑO AL JUGADOR (por codigo, sin depender de capas)
