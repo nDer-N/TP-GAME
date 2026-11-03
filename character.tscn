@@ -349,6 +349,7 @@ attack_cooldown = 0.0
 slash_animation_name = "slash2"
 hit_radius = 370.0
 hit_arc_degrees = 180.0
+hit_detect_Timer = 0.5
 
 [node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
 process_mode = 3
