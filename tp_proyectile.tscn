@@ -27,6 +27,7 @@ physics_config = ExtResource("2_xuoj6")
 afterimage_scale = 0.9
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=989121238]
+z_index = 2
 energy = 0.13
 texture = SubResource("GradientTexture2D_uestw")
 

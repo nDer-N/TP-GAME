@@ -9,7 +9,7 @@
 size = Vector2(272, 284)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ddicg"]
-radius = 2376.8618
+radius = 1159.0522
 
 [node name="Turret" type="Node2D" unique_id=707328617 node_paths=PackedStringArray("muzzle", "cannon_pivot", "cannon_sprite") groups=["enemies"]]
 script = ExtResource("1_iwplw")

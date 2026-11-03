@@ -46,7 +46,9 @@
 [ext_resource type="Texture2D" uid="uid://c38q5c0t5d7dl" path="res://textures/tiles/ceiling/v2/RoofEnd.png" id="39_vt245"]
 [ext_resource type="Texture2D" uid="uid://c51u8ibh54iwq" path="res://textures/tiles/floor/FloorConnector.png" id="40_vt245"]
 [ext_resource type="Texture2D" uid="uid://07mexeh5r7yw" path="res://textures/tiles/brekable/Window/glass.png" id="41_nibsf"]
+[ext_resource type="Shader" uid="uid://bk88t2xahcgyg" path="res://shaders/electricity.gdshader" id="42_b2nf2"]
 [ext_resource type="Texture2D" uid="uid://diaq58rmj134g" path="res://textures/tiles/brekable/box/Breack Box.png" id="42_drsjc"]
+[ext_resource type="Texture2D" uid="uid://2y7fokfv7h4c" path="res://textures/tiles/BoxesMisc/Electricidad.png" id="43_h6w2h"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_tytxx"]
 texture = ExtResource("1_5d7wg")
@@ -2705,6 +2707,18 @@ texture_region_size = Vector2i(64, 64)
 5:5/0 = 0
 5:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_praug"]
+texture = ExtResource("29_fksij")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_q8aq7"]
 texture = ExtResource("40_vt245")
 texture_region_size = Vector2i(64, 64)
@@ -2738,6 +2752,23 @@ texture = ExtResource("41_nibsf")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x0k71"]
+shader = ExtResource("42_b2nf2")
+shader_parameter/base_color = Color(0.05, 0.1, 0.25, 1)
+shader_parameter/glow_color = Color(0.4, 0.9, 1, 1)
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/scale = 0.02
+shader_parameter/speed = 0.6
+shader_parameter/line_width = 0.06
+shader_parameter/glow_amount = 2.0
+shader_parameter/flicker_speed = 12.0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_p6f6u"]
+texture = ExtResource("43_h6w2h")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/material = SubResource("ShaderMaterial_x0k71")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i5m7u"]
 texture = ExtResource("42_drsjc")
@@ -2850,3 +2881,5 @@ sources/43 = SubResource("TileSetAtlasSource_k5nxg")
 sources/45 = SubResource("TileSetAtlasSource_q8aq7")
 sources/46 = SubResource("TileSetAtlasSource_56hqj")
 sources/49 = SubResource("TileSetAtlasSource_i5m7u")
+sources/44 = SubResource("TileSetAtlasSource_praug")
+sources/47 = SubResource("TileSetAtlasSource_p6f6u")

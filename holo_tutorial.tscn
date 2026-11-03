@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://2drx1upee216"]
 
 [ext_resource type="Script" uid="uid://c2tdrtsjsusij" path="res://holo_tutorial.gd" id="1_34iuo"]
-[ext_resource type="Shader" uid="uid://bwsmrgoabgmel" path="res://holo_scanlines.gdshader" id="2_x0nxo"]
+[ext_resource type="Shader" uid="uid://bwsmrgoabgmel" path="res://shaders/holo_scanlines.gdshader" id="2_x0nxo"]
 [ext_resource type="FontFile" uid="uid://nl5axbr7t361" path="res://VT323-Regular.ttf" id="3_5oda8"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hftqc"]
