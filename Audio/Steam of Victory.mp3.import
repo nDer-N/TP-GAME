@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ia2l2wkdi65c"
+path="res://.godot/imported/Steam of Victory.mp3-b32991cc1463333177a42c0fb6c96c20.mp3str"
+
+[deps]
+
+source_file="res://Audio/Steam of Victory.mp3"
+dest_files=["res://.godot/imported/Steam of Victory.mp3-b32991cc1463333177a42c0fb6c96c20.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
