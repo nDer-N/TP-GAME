@@ -49,6 +49,7 @@ ease = 1
 [sub_resource type="Resource" id="Resource_lphiu"]
 script = ExtResource("3_c1b4b")
 transition = 5
+ease = 1
 metadata/_custom_type_script = "uid://8umksf8e80fw"
 
 [sub_resource type="Resource" id="Resource_qi5as"]
@@ -217,7 +218,7 @@ position = Vector2(0, -58)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.38, 0.38)
+zoom = Vector2(0.31, 0.31)
 tween_resource = SubResource("Resource_lphiu")
 follow_offset = Vector2(0, -50)
 follow_damping = true
