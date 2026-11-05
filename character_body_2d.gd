@@ -246,8 +246,8 @@ func _physics_process(delta: float) -> void:
 	var input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("move_left", "move_right")
 	
-	if invulnerable_timer > hit_invulnerability_time * 0.5:
-		input_dir = Vector2.ZERO
+	#if invulnerable_timer > hit_invulnerability_time * 0.9:
+	#	input_dir = Vector2.ZERO
 	
 	current_speed = speed
 	
