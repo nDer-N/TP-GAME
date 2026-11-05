@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bgwxtqhpq7ohk"]
+
+[ext_resource type="Texture2D" uid="uid://tarx8kt3ecuj" path="res://resources/HitSprite.png" id="1_4xvey"]
+
+[node name="Sprite2D" type="Sprite2D" unique_id=163074409]
+position = Vector2(0, -7.9999924)
+scale = Vector2(1, 0.93703705)
+texture = ExtResource("1_4xvey")

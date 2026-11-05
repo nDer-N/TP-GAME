@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
 [ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
+[ext_resource type="PackedScene" uid="uid://dmlwse5x03oql" path="res://PlayerHitPaticles.tscn" id="11_xc4g8"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
@@ -37,6 +38,7 @@
 [ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
 [ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="38_lphiu"]
+[ext_resource type="Resource" uid="uid://qodueyo88gdl" path="res://resources/noise_damage.tres" id="40_grlnq"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
@@ -215,7 +217,7 @@ position = Vector2(0, -58)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
-zoom = Vector2(0.41, 0.41)
+zoom = Vector2(0.38, 0.38)
 tween_resource = SubResource("Resource_lphiu")
 follow_offset = Vector2(0, -50)
 follow_damping = true
@@ -238,26 +240,26 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="CeilingCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1637117747 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, -308)
+position = Vector2(0, -308)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
 zoom = Vector2(0.2, 0.2)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, -300)
+follow_offset = Vector2(0, -300)
 follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="BasementCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1688982036 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 292)
+position = Vector2(0, 292)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
 zoom = Vector2(0.4, 0.4)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, 300)
+follow_offset = Vector2(0, 300)
 follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
@@ -272,7 +274,7 @@ tween_resource = ExtResource("5_xvb2f")
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM", "BossCAM") groups=["player"]]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("RegularCamera", "aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM", "BossCAM", "hit_noise_emitter") groups=["player"]]
 light_mask = 2
 position = Vector2(0, -8)
 scale = Vector2(1, 2)
@@ -286,12 +288,15 @@ low_jump_multiplier = 4.0
 friction = 3000.0
 tp_projectile_scene = ExtResource("2_px5sl")
 physics_config = ExtResource("3_0qfo5")
+RegularCamera = NodePath("../Camera2D/PhantomCameraHost/RegularCamera")
 aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
 CeilingCam = NodePath("../Camera2D/PhantomCameraHost/CeilingCam")
 BasementCam = NodePath("../Camera2D/PhantomCameraHost/BasementCam")
 ChargeCam = NodePath("../Camera2D/PhantomCameraHost/ChargeCam")
 trajectory_line = NodePath("Preview")
 max_hits = 5
+damage_flash_color = Color(1, 0, 0, 1)
+death_flash_color = Color(0.40518534, 0.9999997, 0.9974949, 1)
 HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
 HitCAM_duration = 0.5
 teleport_vfx_scene = ExtResource("8_hvi53")
@@ -302,6 +307,9 @@ side_slash_lunge_duration = 0.1
 tp_charge_orb_scene = ExtResource("10_uswop")
 tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
 BossCAM = NodePath("../Camera2D/PhantomCameraHost/BossCAM")
+pogo_bounce_velocity = 1600.0
+hit_vfx_scene = ExtResource("11_xc4g8")
+hit_noise_emitter = NodePath("../PhantomCameraNoiseEmitter2D")
 
 [node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
 position = Vector2(7.9999995, 59.999996)
@@ -414,3 +422,10 @@ position = Vector2(0, 4)
 scale = Vector2(2.3551495, -1.6392627)
 energy = 0.83
 texture = ExtResource("38_lphiu")
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="." unique_id=976211622]
+process_mode = 3
+script = ExtResource("14_3d8aq")
+noise = ExtResource("40_grlnq")
+duration = 0.3
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"

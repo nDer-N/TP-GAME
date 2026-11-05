@@ -10,6 +10,7 @@ extends CharacterBody2D
 @export var min_power_threshold: float = 0.08
 @export var max_charge: float = 7.0
 @export var physics_config: ProjectilePhysicsConfig
+@export var RegularCamera: PhantomCamera2D
 @export var aim_pcam: PhantomCamera2D
 @export var CeilingCam: PhantomCamera2D
 @export var BasementCam: PhantomCamera2D
@@ -37,14 +38,21 @@ extends CharacterBody2D
 @export var hit_recoil_multiplier: float = 1.0
 @export var tp_charge_orb_scene: PackedScene
 @export var tp_charge_offsets: Array[Vector2] = [
-	Vector2(-30, -12),   # orbe 1: atrás y arriba
-	Vector2(-30,  12),   # orbe 2: atrás y abajo
-	Vector2(-55,   0),   # orbe 3: más atrás
+	Vector2(-30, -12),   
+	Vector2(-30,  12),   
+	Vector2(-55,   0),  
 ]
 @export var respawn_delay : float = 5.0
 @export var respawn_invulnerability : float = 1.5
 @export var BossCAM: PhantomCamera2D
+@export var pogo_bounce_velocity: float = 650.0   
+@export var pogo_cancel_side_lunge: bool = true  
+@export var hit_vfx_scene: PackedScene
+@export var hit_vfx_offset: Vector2 = Vector2(0, -40)   
+@export var hit_noise_emitter: PhantomCameraNoiseEmitter2D
+	
 
+var _pogo_jump_active: bool = false
 var _boss_cam_active: bool = false
 var _boss_cam_previous_priority: int = 0
 var _tp_orbs: Array[Node2D] = []
@@ -59,6 +67,8 @@ var _flash_tween: Tween = null
 var current_speed: float = speed
 var jumps_left: int = 2
 var facing_direction: int = 1
+var _base_cam_offset_x: float = 0.0
+var _last_cam_facing: int = 1
 var is_charging: bool = false
 var charge_power: float = 0.0
 var tp_charges: int = 0
@@ -102,6 +112,12 @@ func _ready() -> void:
 			slash_controller.attack_connected.connect(_on_attack_connected)
 		if slash_controller.has_signal("attack_performed"):
 			slash_controller.attack_performed.connect(_on_attack_performed)
+		if slash_controller.has_signal("pogo_triggered"):         
+			slash_controller.pogo_triggered.connect(_on_pogo_triggered)
+	if RegularCamera:
+		# Guardamos el valor base (750.0 en tu caso)
+		_base_cam_offset_x = abs(RegularCamera.follow_offset.x)
+		_last_cam_facing = facing_direction
 
 func _on_attack_performed(direction: Vector2) -> void:
 	if animation_controller == null:
@@ -134,6 +150,15 @@ func _start_side_slash_lunge(direction_x: float) -> void:
 	_slash_lunge_velocity = sign(direction_x) * side_slash_lunge_speed
 	_slash_lunge_timer = side_slash_lunge_duration
 
+func _on_pogo_triggered() -> void:
+	if is_dead:
+		return
+	velocity.y = -pogo_bounce_velocity
+	_pogo_jump_active = true
+	if pogo_cancel_side_lunge:
+		_slash_lunge_timer = 0.0
+		_slash_lunge_velocity = 0.0
+
 func set_outline(active: bool) -> void:
 	_update_shader_frame_size()
 	if sprite == null or sprite.material == null:
@@ -148,6 +173,8 @@ func set_outline(active: bool) -> void:
 func _on_attack_connected(did_connect: bool) -> void:
 	if not did_connect:
 		return
+	if _pogo_jump_active:
+		return 
 	#flash_sprite(attack_flash_duration, attack_flash_color)
 	_slash_lunge_velocity = -_last_attack_dir_x * side_slash_lunge_speed * hit_recoil_multiplier
 	_slash_lunge_timer = side_slash_lunge_duration
@@ -163,6 +190,9 @@ func _physics_process(delta: float) -> void:
 	
 	var is_moving = abs(velocity.x)>10
 	var on_ground = is_on_floor()
+	
+	if on_ground:
+		_pogo_jump_active = false
 	
 	
 	dust_particles.emitting = is_moving and on_ground
@@ -228,7 +258,7 @@ func _physics_process(delta: float) -> void:
 		current_speed *= sprint_multiplier
 	
 	if not is_on_floor():
-		if velocity.y < 0 and not Input.is_action_pressed("jump"):
+		if velocity.y < 0 and not Input.is_action_pressed("jump") and not _pogo_jump_active:
 			velocity.y += gravity * low_jump_multiplier * delta
 		else:
 			velocity.y += gravity * delta
@@ -366,6 +396,15 @@ func update_character_state():
 		elif velocity.x < -10:
 			facing_direction = -1
 			sprite.flip_h = true
+	if RegularCamera and _last_cam_facing != facing_direction:
+		_last_cam_facing = facing_direction
+		
+		var target_x = _base_cam_offset_x * facing_direction
+		
+		# Creamos un tween rápido de 0.3 segundos para deslizar la cámara
+		var tw = create_tween()
+		tw.tween_property(RegularCamera, "follow_offset:x", target_x, 1.5)\
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 	_update_visual_state()
 
@@ -583,10 +622,43 @@ func take_hit() -> void:
 	
 	print("Golpe recibido: ", current_hits, "/", max_hits)
 	flash_sprite(damage_flash_duration, damage_flash_color)
+	
 	if hits_display:
 		hits_display.update_hits(current_hits)
 	if current_hits >= max_hits:
 		die()
+		
+	if hit_noise_emitter:
+		hit_noise_emitter.emit()
+	HitStop.request(1)
+	_spawn_hit_vfx()
+
+func _spawn_hit_vfx() -> void:
+	if hit_vfx_scene == null:
+		return
+	var vfx := hit_vfx_scene.instantiate()
+	get_tree().current_scene.add_child(vfx)
+	vfx.global_position = global_position + hit_vfx_offset
+
+	# Recoger TODAS las partículas que haya dentro de la escena.
+	var particles: Array = []
+	if vfx is GPUParticles2D or vfx is CPUParticles2D:
+		particles.append(vfx)
+	particles.append_array(vfx.find_children("*", "GPUParticles2D", true, false))
+	particles.append_array(vfx.find_children("*", "CPUParticles2D", true, false))
+
+	if particles.is_empty():
+		# Sin partículas: liberar tras un tiempo prudencial.
+		get_tree().create_timer(2.0).timeout.connect(vfx.queue_free)
+		return
+
+	var finished_connected := false
+	for p in particles:
+		p.emitting = true
+		p.restart()   # <-- clave: dispara el one_shot desde el frame 0
+		if not finished_connected and p.has_signal("finished"):
+			p.finished.connect(vfx.queue_free)
+			finished_connected = true
 
 func flash_sprite(duration: float, color: Color ) -> void:
 	_update_shader_frame_size()
@@ -691,6 +763,7 @@ func _schedule_respawn() -> void:
 	_respawn()
 
 func _respawn() -> void:
+	_pogo_jump_active = false
 	#deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
 	global_position = _respawn_position

@@ -20,6 +20,7 @@ extends Node
 
 signal attack_performed(direction: Vector2)
 signal attack_connected(didConnect: bool)
+signal pogo_triggered
 
 @onready var body: CharacterBody2D = get_parent()
 @onready var slash_sprite: AnimatedSprite2D = get_parent().get_node("SlashEffect")
@@ -37,6 +38,8 @@ var _pending_direction: Vector2 = Vector2.ZERO
 var _already_hit := {}
 var _hit_active: bool = false
 var _hit_any: bool = false
+
+var _pogo_triggered: bool = false
 
 
 func _ready() -> void:
@@ -69,6 +72,10 @@ func attack_processing(delta: float) -> void:
 			_hit_active = false
 			if not _hit_any:
 				attack_connected.emit(false)
+				
+func _is_downward(dir: Vector2) -> bool:
+	var angle_deg := rad_to_deg(dir.angle())
+	return angle_deg >= 45.0 and angle_deg <= 135.0
 
 
 func try_attack() -> void:
@@ -77,6 +84,7 @@ func try_attack() -> void:
 		
 	_already_hit.clear()
 	_hit_any = false
+	_pogo_triggered = false 
 
 	cooldown_timer = attack_cooldown
 	is_attacking = true
@@ -118,6 +126,9 @@ func _apply_hit() -> void:
 			_already_hit[target] = true
 			target.take_damage(attack_damage, _pending_direction)
 			_register_hit()
+			if not _pogo_triggered and _is_downward(_pending_direction):
+				_pogo_triggered = true
+				pogo_triggered.emit()
 			
 func _register_hit() -> void:
 	_hit_any = true

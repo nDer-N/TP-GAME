@@ -9,6 +9,7 @@ size = Vector2(160, 260)
 size = Vector2(260, 219)
 
 [node name="Boss1" type="CharacterBody2D" unique_id=718000262]
+process_mode = 3
 collision_layer = 3
 script = ExtResource("1_a8swx")
 
