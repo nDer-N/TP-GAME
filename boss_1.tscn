@@ -12,6 +12,7 @@ size = Vector2(260, 219)
 process_mode = 3
 collision_layer = 3
 script = ExtResource("1_a8swx")
+bar_height = 25.0
 
 [node name="Visual" type="ColorRect" parent="." unique_id=2075780140]
 offset_left = -80.0
