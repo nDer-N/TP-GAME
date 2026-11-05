@@ -16,6 +16,8 @@ radius = 448.0714
 radius = 96.0
 
 [node name="Dasher" type="CharacterBody2D" unique_id=1512360025 groups=["enemies"]]
+light_mask = 4
+visibility_layer = 8
 collision_mask = 3
 script = ExtResource("1_aji8u")
 hits_to_die = 6
@@ -26,6 +28,8 @@ hit_effect_scene = ExtResource("2_c6idp")
 knockback_force = 1000.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1837698814]
+light_mask = 2
+visibility_layer = 2
 position = Vector2(7.1525574e-07, 6.8530694e-06)
 scale = Vector2(0.122137405, 0.22456141)
 texture = ExtResource("2_d7dph")

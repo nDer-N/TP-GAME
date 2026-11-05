@@ -82,14 +82,11 @@ func _on_body_entered(body: Node2D) -> void:
 	if reflected:
 		# Devuelto: solo le hace daño al jefe (no al jugador).
 		if body is Boss:
-			body.take_damage(reflect_damage)
-			queue_free()
-		elif body is StaticBody2D or body is TileMapLayer or body is TileMap:
+			body.take_damage(reflect_damage, "parry")   # "parry" = no cuenta para el anti-spam
 			queue_free()
 		return
 
 	if body.is_in_group("player"):
 		Boss.apply_damage(body, damage)
 		queue_free()
-	elif body is StaticBody2D or body is TileMapLayer or body is TileMap:
-		queue_free()   # choca con el piso/pared
+	# Ya NO se destruye contra el piso ni las paredes: las atraviesa (se borra por tiempo de vida).
