@@ -5,6 +5,25 @@
 [ext_resource type="Texture2D" uid="uid://biem1sk422r6t" path="res://Captura de pantalla 2026-07-28 135759.png" id="2_d7dph"]
 [ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="4_ddfrq"]
 [ext_resource type="Resource" uid="uid://djr0dktr7mlyt" path="res://resources/noise_shake.tres" id="5_jopxj"]
+[ext_resource type="Texture2D" uid="uid://bvfc3xkb8fkwt" path="res://animations/dasher/idle/idle_0000.png" id="6_qrgdl"]
+[ext_resource type="Texture2D" uid="uid://cuauxaxwyutao" path="res://animations/dasher/alerted/alerted_0000.png" id="6_xc8jg"]
+[ext_resource type="Texture2D" uid="uid://dq3d24am0fnwb" path="res://animations/dasher/alerted/alerted_0001.png" id="7_2pwsl"]
+[ext_resource type="Texture2D" uid="uid://c8cy27kaki0qc" path="res://animations/dasher/idle/idle_0001.png" id="7_kgijl"]
+[ext_resource type="Script" uid="uid://dvqrag0otalw1" path="res://dasher_animation_controller.gd" id="7_y4sm7"]
+[ext_resource type="Texture2D" uid="uid://c416t313borq1" path="res://animations/dasher/alerted/alerted_0002.png" id="8_18w3f"]
+[ext_resource type="Texture2D" uid="uid://g77oljbbcv72" path="res://animations/dasher/idle/idle_0002.png" id="8_wd6rn"]
+[ext_resource type="Texture2D" uid="uid://uk8su2kyv6b3" path="res://animations/dasher/idle/idle_0003.png" id="9_1wycu"]
+[ext_resource type="Texture2D" uid="uid://dp1yry8tc707h" path="res://animations/dasher/alerted/alerted_0003.png" id="9_3mlgc"]
+[ext_resource type="Texture2D" uid="uid://k8h2b4cq2e2r" path="res://animations/dasher/alerted/alerted_0004.png" id="10_3v6uo"]
+[ext_resource type="Texture2D" uid="uid://my74i7lbnmtb" path="res://animations/dasher/idle/idle_0004.png" id="10_11say"]
+[ext_resource type="Texture2D" uid="uid://coswt1hgv1gwx" path="res://animations/dasher/alerted/alerted_0005.png" id="11_1cpvs"]
+[ext_resource type="Texture2D" uid="uid://bxn023empw26b" path="res://animations/dasher/idle/idle_0005.png" id="11_lorl5"]
+[ext_resource type="Texture2D" uid="uid://bat0fug55jl7n" path="res://animations/dasher/idle/idle_0006.png" id="12_xc8jg"]
+[ext_resource type="Texture2D" uid="uid://byl5jydpgf0yw" path="res://animations/dasher/idle/idle_0007.png" id="13_2pwsl"]
+[ext_resource type="Texture2D" uid="uid://bla77okmt3txv" path="res://animations/dasher/idle/idle_0008.png" id="14_18w3f"]
+[ext_resource type="Texture2D" uid="uid://c0hft0env8py1" path="res://animations/dasher/idle/idle_0009.png" id="15_3mlgc"]
+[ext_resource type="Texture2D" uid="uid://dqhlavl65y0b7" path="res://animations/dasher/idle/idle_0010.png" id="16_3v6uo"]
+[ext_resource type="Texture2D" uid="uid://r3n4dcwbogg0" path="res://animations/dasher/idle/idle_0011.png" id="17_1cpvs"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f4g2i"]
 radius = 80.399
@@ -14,6 +33,73 @@ radius = 448.0714
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_d7dph"]
 radius = 96.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ddfrq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_xc8jg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_2pwsl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_18w3f")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_3mlgc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_3v6uo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_1cpvs")
+}],
+"loop": 0,
+"name": &"alerted",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_qrgdl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_kgijl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_wd6rn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_1wycu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_11say")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_lorl5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_xc8jg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_2pwsl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_18w3f")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_3mlgc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_3v6uo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_1cpvs")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 12.0
+}]
 
 [node name="Dasher" type="CharacterBody2D" unique_id=1512360025 groups=["enemies"]]
 light_mask = 4
@@ -28,6 +114,7 @@ hit_effect_scene = ExtResource("2_c6idp")
 knockback_force = 1000.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1837698814]
+visible = false
 light_mask = 2
 visibility_layer = 2
 position = Vector2(7.1525574e-07, 6.8530694e-06)
@@ -56,3 +143,13 @@ noise = ExtResource("5_jopxj")
 duration = 0.3
 decay_time = 0.1
 metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1322422182]
+position = Vector2(-1.9073486e-06, 7.999996)
+scale = Vector2(0.46585906, 0.46585903)
+sprite_frames = SubResource("SpriteFrames_ddfrq")
+animation = &"alerted"
+
+[node name="DasherAnimationController" type="Node" parent="." unique_id=150242187 node_paths=PackedStringArray("animated_sprite")]
+script = ExtResource("7_y4sm7")
+animated_sprite = NodePath("../AnimatedSprite2D")

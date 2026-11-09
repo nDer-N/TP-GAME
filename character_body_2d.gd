@@ -50,6 +50,8 @@ extends CharacterBody2D
 @export var hit_vfx_scene: PackedScene
 @export var hit_vfx_offset: Vector2 = Vector2(0, -40)   
 @export var hit_noise_emitter: PhantomCameraNoiseEmitter2D
+@export var death_noise_emitter: PhantomCameraNoiseEmitter2D
+@export var death_cam: PhantomCamera2D
 	
 
 var _pogo_jump_active: bool = false
@@ -195,7 +197,7 @@ func _physics_process(delta: float) -> void:
 		_pogo_jump_active = false
 	
 	
-	dust_particles.emitting = is_moving and on_ground
+	dust_particles.emitting = is_moving and on_ground and not is_dead
 	
 	if _slash_lunge_timer > 0.0:
 		_slash_lunge_timer -= delta
@@ -763,6 +765,7 @@ func _schedule_respawn() -> void:
 	_respawn()
 
 func _respawn() -> void:
+	death_cam.priority = 0
 	_pogo_jump_active = false
 	#deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
@@ -823,19 +826,40 @@ func _respawn() -> void:
 func die() -> void:
 	if is_dead:
 		return
+		
+	is_dead = true  # ← Se pone primero para que nada más interfiera
 	
+	dust_particles.emitting = false
+	if death_noise_emitter:
+		death_noise_emitter.emit()
+	
+	death_cam.priority = 100
 	set_outline(false) 
 	_slash_lunge_timer = 0.0         
 	_slash_lunge_velocity = 0.0
-	if animation_controller and animation_controller.is_aiming():
-		animation_controller.cancel_aim_sequence()
-	if animation_controller and animation_controller.is_in_sequence():
-		animation_controller.cancel_sequence()
+	
 	current_hits = max_hits
-	hits_display.update_hits(current_hits)
-	is_dead = true
+	if hits_display:
+		hits_display.update_hits(current_hits)
+	
 	velocity = Vector2.ZERO
-	sprite.modulate = Color(1, 0, 0, 1) 
-	flash_sprite(10, death_flash_color)
+	
+	# --- 1. Limpiar estados primero ---
+	if animation_controller:
+		if animation_controller.is_aiming():
+			animation_controller.cancel_aim_sequence()
+		if animation_controller.is_in_sequence():
+			animation_controller.cancel_sequence()
+			
+		# --- 2. FORZAR la animación de muerte al final ---
+		if is_on_floor():
+			animation_controller.force_state(animation_controller.VisualState.DEATH, 999.0)
+			print("MUERTE EN SUELO")
+		else:
+			animation_controller.force_state(animation_controller.VisualState.AIRDEATH, 999.0)
+			print("MUERTE AEREA")
+	
+	#sprite.modulate = Color(1, 0, 0, 1) 
+	#flash_sprite(10, death_flash_color)
 	print("Jugador murió")
 	_schedule_respawn()

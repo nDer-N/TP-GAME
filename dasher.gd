@@ -32,14 +32,16 @@ enum State { IDLE, ALERTED, CHARGING, DASHING, STUNNED }
 
 ## --- Efectos ---
 @export var hit_effect_scene: PackedScene
+@export var death_vfx_scene: PackedScene
 
 ## --- Grupo ---
 @export var enemy_group: String = "enemies"
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var detection_area: Area2D = $DetectionArea
 @onready var hitbox: Area2D = $Hitbox
 @onready var noise_emitter: PhantomCameraNoiseEmitter2D = $PhantomCameraNoiseEmitter2D
+@onready var animation_controller: Node = $DasherAnimationController
 
 @export var knockback_force: float = 500.0        # fuerza horizontal del empujón
 @export var knockback_up_force: float = 220.0     # componente vertical del empujón
@@ -141,9 +143,10 @@ func _enter_charging() -> void:
 		_dash_direction = (_player.global_position - global_position).normalized()
 	else:
 		_dash_direction = Vector2.DOWN
-	if sprite:
-		sprite.modulate = Color(1, 0.3, 0.3, 1)
-
+		
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.CHARGING)
+	# (Tu lógica de modular para el parpadeo rojo sigue acá si la tenés)
 
 func _process_charging(delta: float) -> void:
 	velocity = Vector2.ZERO
@@ -173,8 +176,10 @@ func _enter_dashing() -> void:
 	velocity = _dash_direction * dash_speed
 
 	if sprite:
-		sprite.modulate = Color(1, 1, 1, 1)
 		sprite.rotation = _dash_direction.angle() + _sprite_base_rotation
+		
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.DASHING)
 
 
 func _process_dashing(delta: float) -> void:
@@ -217,7 +222,7 @@ func _on_hit_wall(collision: KinematicCollision2D) -> void:
 	velocity = _dash_direction * dash_speed
 
 	if sprite:
-		sprite.rotation = _dash_direction.angle() + _sprite_base_rotation
+		#sprite.rotation = _dash_direction.angle() + _sprite_base_rotation
 		sprite.modulate = Color(1, 0.9, 0.3, 1)
 
 	_bounces_left -= 1
@@ -256,30 +261,40 @@ func _enter_stunned(duration: float) -> void:
 	_state = State.STUNNED
 	_stun_timer = duration
 	velocity = Vector2.ZERO
-
-	if sprite:
-		sprite.modulate = Color(0.6, 0.6, 0.6, 1)
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.STUNNED)
 	
 
 
 
 
 func _process_stunned(delta: float) -> void:
-	# Sin gravedad: se queda quieto donde está.
+	# Sin gravedad: se queda quieto donde está, manteniendo la rotación del choque.
 	velocity = Vector2.ZERO
 
 	_stun_timer -= delta
+	
+	# Solo cuando el stun está por terminar, se acomoda
 	if _stun_timer <= 0.0:
 		if sprite:
 			sprite.modulate = Color(1, 1, 1, 1)
+			
+			# Hace un giro rápido de 0.15s al acomodarse
+			var tw = create_tween()
+			tw.tween_property(sprite, "rotation", _sprite_base_rotation, 0.15)\
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			
 		# Actualizar origen de flotado a la posición actual
 		_idle_origin_y = global_position.y
 		_float_phase = 0.0
 		_state = State.IDLE
+		
+		if animation_controller:
+			animation_controller.force_state(animation_controller.VisualState.IDLE)
+			
 		if _player_in_detection:
 			_start_attack()
-		else:
-			_state = State.IDLE
 
 
 # ---------- DETECCIÓN ----------
@@ -300,8 +315,8 @@ func _on_detection_body_exited(body: Node2D) -> void:
 func _start_attack() -> void:
 	_state = State.ALERTED
 	_charge_timer = 0.0
-	if sprite:
-		sprite.modulate = Color(1, 0.8, 0.2, 1)
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.ALERTED, 0.15)
 
 
 # ---------- HITBOX ----------
@@ -314,8 +329,20 @@ func _on_hitbox_body_entered(_body: Node2D) -> void:
 # ---------- DAÑO AL ENEMIGO ----------
 
 func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
+	if _hp <= 0:
+		return  # Evitar que reciba más daño si ya está muriendo
+
 	_hp -= amount
 
+	if _hp <= 0:
+		die()
+		return
+
+	# 1. Reproducir animación de daño (bloquea la animación por 0.2s)
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.HURT, 0.2)
+
+	# 2. Feedback visual (parpadeo rojo)
 	if sprite:
 		var original := sprite.modulate
 		sprite.modulate = Color(1, 0.3, 0.3, 1)
@@ -323,15 +350,10 @@ func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 		if is_instance_valid(sprite):
 			sprite.modulate = original
 
-	if _hp <= 0:
-		die()
-		return
-
+	# 3. Interrupción de lógica
 	if _state == State.DASHING or _state == State.CHARGING:
 		_enter_stunned(0.6)
-
-	# Aplicar knockback si nos dieron una dirección
-	if _hit_direction != Vector2.ZERO:
+	elif _hit_direction != Vector2.ZERO:
 		_apply_knockback(_hit_direction)
 
 func _apply_knockback(hit_direction: Vector2) -> void:
@@ -348,9 +370,20 @@ func _apply_knockback(hit_direction: Vector2) -> void:
 		
 		
 func die() -> void:
-	_spawn_hit_effect()
+	# 1. Instanciar las partículas de muerte
+	if death_vfx_scene:
+		var vfx := death_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx)
+		vfx.global_position = global_position
+		
+	# 2. Tu efecto de golpe normal (opcional, si quieres que salgan chispas también)
+	# _spawn_hit_effect()
+
+	# 3. Avisar al resto del juego y aplicar HitStop
 	Events.enemy_died.emit(true)
 	HitStop.request(0.4)
+	
+	# 4. Destruir al Dasher inmediatamente (esto elimina también sus hitboxes)
 	queue_free()
 
 

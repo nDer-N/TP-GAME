@@ -40,6 +40,7 @@
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="38_lphiu"]
 [ext_resource type="Resource" uid="uid://qodueyo88gdl" path="res://resources/noise_damage.tres" id="40_grlnq"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
+[ext_resource type="Script" uid="uid://dimvdouy8g0sv" path="res://addons/phantom_camera/scripts/resources/phantom_camera_noise_2d.gd" id="41_grlnq"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
 script = ExtResource("3_c1b4b")
@@ -56,6 +57,13 @@ metadata/_custom_type_script = "uid://8umksf8e80fw"
 script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
+
+[sub_resource type="Resource" id="Resource_grlnq"]
+script = ExtResource("3_c1b4b")
+duration = 0.8
+transition = 5
+ease = 1
+metadata/_custom_type_script = "uid://8umksf8e80fw"
 
 [sub_resource type="Curve" id="Curve_k2app"]
 _data = [Vector2(0.003759399, 0.86153847), 0.0, 0.0, 0, 0, Vector2(0.9924812, 0), 0.0, 0.0, 0, 0]
@@ -163,6 +171,14 @@ animations = [{
 "speed": 24.0
 }]
 
+[sub_resource type="Resource" id="Resource_xc8pg"]
+script = ExtResource("41_grlnq")
+amplitude = 40.0
+frequency = 10.0
+positional_noise = false
+rotational_noise = true
+metadata/_custom_type_script = "uid://dimvdouy8g0sv"
+
 [node name="Node2D" type="Node2D" unique_id=1720170991]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
@@ -239,6 +255,18 @@ draw_limits = true
 _preview_noise = false
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
+[node name="DeathCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1181137375 node_paths=PackedStringArray("follow_target")]
+top_level = true
+position = Vector2(0, -8)
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+tween_resource = SubResource("Resource_grlnq")
+draw_limits = true
+_preview_noise = false
+noise_emitter_layer = 1
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
 [node name="CeilingCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1637117747 node_paths=PackedStringArray("follow_target")]
 top_level = true
 position = Vector2(0, -308)
@@ -275,7 +303,7 @@ tween_resource = ExtResource("5_xvb2f")
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("RegularCamera", "aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM", "BossCAM", "hit_noise_emitter") groups=["player"]]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("RegularCamera", "aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM", "BossCAM", "hit_noise_emitter", "death_noise_emitter", "death_cam") groups=["player"]]
 light_mask = 2
 position = Vector2(0, -8)
 scale = Vector2(1, 2)
@@ -295,7 +323,7 @@ CeilingCam = NodePath("../Camera2D/PhantomCameraHost/CeilingCam")
 BasementCam = NodePath("../Camera2D/PhantomCameraHost/BasementCam")
 ChargeCam = NodePath("../Camera2D/PhantomCameraHost/ChargeCam")
 trajectory_line = NodePath("Preview")
-max_hits = 5
+max_hits = 4
 damage_flash_color = Color(1, 0, 0, 1)
 death_flash_color = Color(0.40518534, 0.9999997, 0.9974949, 1)
 HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
@@ -311,6 +339,8 @@ BossCAM = NodePath("../Camera2D/PhantomCameraHost/BossCAM")
 pogo_bounce_velocity = 1600.0
 hit_vfx_scene = ExtResource("11_xc4g8")
 hit_noise_emitter = NodePath("../PhantomCameraNoiseEmitter2D")
+death_noise_emitter = NodePath("../DeathNoise")
+death_cam = NodePath("../Camera2D/PhantomCameraHost/DeathCamera")
 
 [node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
 position = Vector2(7.9999995, 59.999996)
@@ -333,7 +363,7 @@ material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
 sprite_frames = ExtResource("10_5said")
-animation = &"DOWNSLASHStart"
+animation = &"airdeath"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -429,4 +459,11 @@ process_mode = 3
 script = ExtResource("14_3d8aq")
 noise = ExtResource("40_grlnq")
 duration = 0.3
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
+
+[node name="DeathNoise" type="Node2D" parent="." unique_id=1147396732]
+process_mode = 3
+script = ExtResource("14_3d8aq")
+noise = SubResource("Resource_xc8pg")
+duration = 3.0
 metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
