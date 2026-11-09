@@ -12,6 +12,15 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	if sprite:
 		sprite.modulate = inactive_color
+	# Si esta partida ya había pasado por este checkpoint, se ve activado.
+	if SaveManager.in_game and SaveManager.session_activated.has(_key()):
+		_activated = true
+		if sprite:
+			sprite.modulate = active_color
+
+
+func _key() -> String:
+	return str(get_path())
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -21,6 +30,7 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	_activated = true
 	body.set_checkpoint(global_position)
+	SaveManager.register_checkpoint(_key(), global_position)
 
 	if sprite:
 		sprite.modulate = active_color
