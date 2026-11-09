@@ -18,21 +18,39 @@
 [ext_resource type="Texture2D" uid="uid://my74i7lbnmtb" path="res://animations/dasher/idle/idle_0004.png" id="10_11say"]
 [ext_resource type="Texture2D" uid="uid://coswt1hgv1gwx" path="res://animations/dasher/alerted/alerted_0005.png" id="11_1cpvs"]
 [ext_resource type="Texture2D" uid="uid://bxn023empw26b" path="res://animations/dasher/idle/idle_0005.png" id="11_lorl5"]
+[ext_resource type="Texture2D" uid="uid://bdaelao5xfpgq" path="res://animations/dasher/charge/charge_0000.png" id="12_1cpvs"]
 [ext_resource type="Texture2D" uid="uid://bat0fug55jl7n" path="res://animations/dasher/idle/idle_0006.png" id="12_xc8jg"]
 [ext_resource type="Texture2D" uid="uid://byl5jydpgf0yw" path="res://animations/dasher/idle/idle_0007.png" id="13_2pwsl"]
+[ext_resource type="Texture2D" uid="uid://ribwru0iukx8" path="res://animations/dasher/charge/charge_0001.png" id="13_jtggn"]
 [ext_resource type="Texture2D" uid="uid://bla77okmt3txv" path="res://animations/dasher/idle/idle_0008.png" id="14_18w3f"]
+[ext_resource type="Texture2D" uid="uid://djbespb222id3" path="res://animations/dasher/charge/charge_0002.png" id="14_n62so"]
+[ext_resource type="Texture2D" uid="uid://djr0xcbvy7hnn" path="res://animations/dasher/charge/charge_0003.png" id="15_00sml"]
 [ext_resource type="Texture2D" uid="uid://c0hft0env8py1" path="res://animations/dasher/idle/idle_0009.png" id="15_3mlgc"]
 [ext_resource type="Texture2D" uid="uid://dqhlavl65y0b7" path="res://animations/dasher/idle/idle_0010.png" id="16_3v6uo"]
+[ext_resource type="Texture2D" uid="uid://dgahbdjbrw2re" path="res://animations/dasher/charge/charge_0004.png" id="16_kc51t"]
 [ext_resource type="Texture2D" uid="uid://r3n4dcwbogg0" path="res://animations/dasher/idle/idle_0011.png" id="17_1cpvs"]
+[ext_resource type="Texture2D" uid="uid://bwel414hmrv4i" path="res://animations/dasher/hurt/hurt_0000.png" id="17_3pil0"]
+[ext_resource type="Texture2D" uid="uid://3tagrs0abrqb" path="res://animations/dasher/dashing/Línea de tiempo 1_0000.png" id="17_ps7im"]
+[ext_resource type="Texture2D" uid="uid://beuiww7y8uy34" path="res://animations/dasher/dashing/Línea de tiempo 1_0001.png" id="18_8wins"]
+[ext_resource type="Texture2D" uid="uid://c5q4l3p08hp54" path="res://animations/dasher/hurt/hurt_0001.png" id="18_q46vd"]
+[ext_resource type="Texture2D" uid="uid://7rd2cqy0ygin" path="res://animations/dasher/hurt/hurt_0002.png" id="19_8paif"]
+[ext_resource type="Texture2D" uid="uid://gok1q4bpnsv4" path="res://animations/dasher/dashing/Línea de tiempo 1_0002.png" id="19_mtoys"]
+[ext_resource type="Texture2D" uid="uid://dnx1c723sgj1w" path="res://animations/dasher/hurt/hurt_0003.png" id="20_ps7im"]
+[ext_resource type="Texture2D" uid="uid://dau4qx64glknj" path="res://animations/dasher/hurt/hurt_0004.png" id="21_8wins"]
+[ext_resource type="Texture2D" uid="uid://b4x6rgbifleaa" path="res://animations/dasher/hurt/hurt_0005.png" id="22_mtoys"]
+[ext_resource type="Texture2D" uid="uid://datlge8f0wks2" path="res://animations/dasher/stunned/stun_0000.png" id="38_lj13r"]
+[ext_resource type="Texture2D" uid="uid://dj0picy0ywotl" path="res://animations/dasher/stunned/stun_0001.png" id="39_iwg1g"]
+[ext_resource type="Texture2D" uid="uid://b7082uyuk4n6n" path="res://animations/dasher/stunned/stun_0002.png" id="40_m5jsc"]
+[ext_resource type="Texture2D" uid="uid://ch1gcpkepsjmv" path="res://animations/dasher/stunned/stun_0003.png" id="41_ct33x"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f4g2i"]
-radius = 80.399
+radius = 72.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_otjec"]
 radius = 448.0714
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_d7dph"]
-radius = 96.0
+radius = 64.0
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ddfrq"]
 animations = [{
@@ -57,6 +75,63 @@ animations = [{
 }],
 "loop": 0,
 "name": &"alerted",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_1cpvs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_jtggn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_n62so")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_00sml")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_kc51t")
+}],
+"loop": 0,
+"name": &"charge",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("17_ps7im")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_8wins")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_mtoys")
+}],
+"loop": 1,
+"name": &"dash",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("17_3pil0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_q46vd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_8paif")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_ps7im")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_8wins")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_mtoys")
+}],
+"loop": 1,
+"name": &"hurt",
 "speed": 12.0
 }, {
 "frames": [{
@@ -99,6 +174,23 @@ animations = [{
 "loop": 1,
 "name": &"idle",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("38_lj13r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_iwg1g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_m5jsc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_ct33x")
+}],
+"loop": 1,
+"name": &"stunned",
+"speed": 24.0
 }]
 
 [node name="Dasher" type="CharacterBody2D" unique_id=1512360025 groups=["enemies"]]
@@ -106,8 +198,10 @@ light_mask = 4
 visibility_layer = 8
 collision_mask = 3
 script = ExtResource("1_aji8u")
-hits_to_die = 6
-dash_speed = 1200.0
+hits_to_die = 9
+float_amplitude = 12.0
+float_speed = 5.0
+dash_speed = 1700.0
 bounce_decay = 1.0
 max_bounces = 1
 hit_effect_scene = ExtResource("2_c6idp")
@@ -145,10 +239,12 @@ decay_time = 0.1
 metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1322422182]
+light_mask = 512
 position = Vector2(-1.9073486e-06, 7.999996)
 scale = Vector2(0.46585906, 0.46585903)
 sprite_frames = SubResource("SpriteFrames_ddfrq")
-animation = &"alerted"
+animation = &"stunned"
+frame_progress = 0.20558256
 
 [node name="DasherAnimationController" type="Node" parent="." unique_id=150242187 node_paths=PackedStringArray("animated_sprite")]
 script = ExtResource("7_y4sm7")

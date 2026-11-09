@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b5xlwbkbi1dlw"]
 
 [ext_resource type="Texture2D" uid="uid://c8k3ebwd0nxq1" path="res://animations/HP/HP_EMPTY/POINT/POINTE_0000.png" id="1_cebrv"]
+[ext_resource type="Texture2D" uid="uid://crysyqkdaufd5" path="res://animations/HP/HP_EMPTY/POINT/PointZ.png" id="1_nkaty"]
 [ext_resource type="Texture2D" uid="uid://bjhhqeycchx2h" path="res://textures/UI/NOHIT.png" id="1_q06nk"]
 [ext_resource type="Texture2D" uid="uid://o46u17d2ghwl" path="res://animations/HP/HP_FULL/Point/HP_0000.png" id="2_3t3c8"]
 [ext_resource type="Texture2D" uid="uid://cyk6q7sy5a5yl" path="res://animations/HP/HP_EMPTY/POINT/POINTE_0001.png" id="2_nkaty"]
@@ -38,6 +39,14 @@ animations = [{
 "loop": 1,
 "name": &"empty",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_nkaty")
+}],
+"loop": 1,
+"name": &"empty3",
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,

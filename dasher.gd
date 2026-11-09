@@ -74,6 +74,9 @@ var _stun_timer: float = 0.0
 # rotación base del sprite (para orientar durante el dash)
 var _sprite_base_rotation: float = 0.0
 
+var _taking_hit: bool = false;
+var _last_hit_normal: Vector2 = Vector2.ZERO
+
 
 func _ready() -> void:
 	_hp = hits_to_die
@@ -216,6 +219,7 @@ func _on_hit_wall(collision: KinematicCollision2D) -> void:
 	# Separar de la superficie para evitar re-colisión en el próximo frame
 	var normal := collision.get_normal()
 	global_position += normal * 4.0
+	_last_hit_normal = normal
 
 	# Rebote inverso
 	_dash_direction = -_dash_direction
@@ -248,6 +252,8 @@ func _on_hit_player(player: Node2D) -> void:
 	var bounce_dir := (-_dash_direction + Vector2.UP * 0.5).normalized()
 	velocity = bounce_dir * (dash_speed * 0.6)
 	_dash_direction = velocity.normalized()
+	
+	_last_hit_normal = (global_position - player.global_position).normalized()
 
 	_spawn_hit_effect()
 
@@ -262,7 +268,7 @@ func _enter_stunned(duration: float) -> void:
 	_stun_timer = duration
 	velocity = Vector2.ZERO
 	
-	if animation_controller:
+	if animation_controller and not _taking_hit:
 		animation_controller.force_state(animation_controller.VisualState.STUNNED)
 	
 
@@ -270,22 +276,26 @@ func _enter_stunned(duration: float) -> void:
 
 
 func _process_stunned(delta: float) -> void:
-	# Sin gravedad: se queda quieto donde está, manteniendo la rotación del choque.
 	velocity = Vector2.ZERO
-
 	_stun_timer -= delta
 	
-	# Solo cuando el stun está por terminar, se acomoda
 	if _stun_timer <= 0.0:
 		if sprite:
 			sprite.modulate = Color(1, 1, 1, 1)
 			
-			# Hace un giro rápido de 0.15s al acomodarse
 			var tw = create_tween()
 			tw.tween_property(sprite, "rotation", _sprite_base_rotation, 0.15)\
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		
+		# --- NUEVO: Separarse de la superficie de forma segura ---
+		if _last_hit_normal != Vector2.ZERO:
+			for i in range(3): # Intentar hasta 3 veces (por si está en una esquina)
+				var col = move_and_collide(_last_hit_normal * 16.0)
+				if not col:
+					break # Si ya no choca, dejamos de empujar
+			_last_hit_normal = Vector2.ZERO
+		# --------------------------------------------------------
 			
-		# Actualizar origen de flotado a la posición actual
 		_idle_origin_y = global_position.y
 		_float_phase = 0.0
 		_state = State.IDLE
@@ -329,6 +339,7 @@ func _on_hitbox_body_entered(_body: Node2D) -> void:
 # ---------- DAÑO AL ENEMIGO ----------
 
 func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
+	_taking_hit = true
 	if _hp <= 0:
 		return  # Evitar que reciba más daño si ya está muriendo
 
@@ -340,7 +351,7 @@ func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 
 	# 1. Reproducir animación de daño (bloquea la animación por 0.2s)
 	if animation_controller:
-		animation_controller.force_state(animation_controller.VisualState.HURT, 0.2)
+		animation_controller.force_state(animation_controller.VisualState.HURT, 0.5)
 
 	# 2. Feedback visual (parpadeo rojo)
 	if sprite:
@@ -353,6 +364,7 @@ func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 	# 3. Interrupción de lógica
 	if _state == State.DASHING or _state == State.CHARGING:
 		_enter_stunned(0.6)
+		_taking_hit = false
 	elif _hit_direction != Vector2.ZERO:
 		_apply_knockback(_hit_direction)
 

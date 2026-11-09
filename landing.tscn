@@ -36,6 +36,8 @@ animations = [{
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=886728696]
 top_level = true
+z_index = 9
+z_as_relative = false
 position = Vector2(0, -8)
 rotation = -2.3775115
 sprite_frames = SubResource("SpriteFrames_ddicg")
