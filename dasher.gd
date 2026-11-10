@@ -33,6 +33,7 @@ enum State { IDLE, ALERTED, CHARGING, DASHING, STUNNED }
 ## --- Efectos ---
 @export var hit_effect_scene: PackedScene
 @export var death_vfx_scene: PackedScene
+@export var sparks_scene: PackedScene
 
 ## --- Grupo ---
 @export var enemy_group: String = "enemies"
@@ -48,7 +49,16 @@ enum State { IDLE, ALERTED, CHARGING, DASHING, STUNNED }
 @export var knockback_duration: float = 0.35      # cuánto dura el empujón antes de frenar
 @export var knockback_friction: float = 900.0 
 
+@export_group("Afterimage")
+@export var afterimage_enabled: bool = true
+@export var afterimage_interval: float = 0.03    # cada cuánto spawnea un fantasma
+@export var afterimage_lifetime: float = 0.25    # cuánto tarda en desaparecer
+@export var afterimage_start_alpha: float = 0.6  # alpha inicial del fantasma
+@export var afterimage_color: Color = Color(1.0, 0.7, 0.3, 1.0)  # tinte naranja
+@export var afterimage_scale_end: float = 0.6    # escala final, relativa a la del sprite
 
+
+var _afterimage_timer: float = 0.0
 var _state: State = State.IDLE
 var _hp: int
 var _player: Node2D = null
@@ -176,6 +186,7 @@ func _enter_dashing() -> void:
 	_state = State.DASHING
 	_dash_timer = 0.0
 	_bounces_left = max_bounces
+	_afterimage_timer = 0.0
 	velocity = _dash_direction * dash_speed
 
 	if sprite:
@@ -187,6 +198,7 @@ func _enter_dashing() -> void:
 
 func _process_dashing(delta: float) -> void:
 	_dash_timer += delta
+	_update_afterimage(delta)
 
 	# Sin gravedad: la velocidad se mantiene constante salvo por rebotes.
 
@@ -218,6 +230,7 @@ func _on_hit_wall(collision: KinematicCollision2D) -> void:
 
 	# Separar de la superficie para evitar re-colisión en el próximo frame
 	var normal := collision.get_normal()
+	_spawn_sparks(collision.get_position(), normal)
 	global_position += normal * 4.0
 	_last_hit_normal = normal
 
@@ -254,6 +267,7 @@ func _on_hit_player(player: Node2D) -> void:
 	_dash_direction = velocity.normalized()
 	
 	_last_hit_normal = (global_position - player.global_position).normalized()
+	_spawn_sparks((global_position + player.global_position) * 0.5, _last_hit_normal)
 
 	_spawn_hit_effect()
 
@@ -344,6 +358,9 @@ func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
 		return  # Evitar que reciba más daño si ya está muriendo
 
 	_hp -= amount
+	
+	var spark_dir := -_hit_direction if _hit_direction != Vector2.ZERO else Vector2.UP
+	_spawn_sparks(global_position, spark_dir.normalized())
 
 	if _hp <= 0:
 		die()
@@ -408,3 +425,57 @@ func _spawn_hit_effect(at_position: Vector2 = global_position) -> void:
 	var fx := hit_effect_scene.instantiate()
 	get_tree().current_scene.add_child(fx)
 	fx.global_position = at_position
+
+func _spawn_sparks(at: Vector2, normal: Vector2) -> void:
+	if sparks_scene == null:
+		return
+	var sparks := sparks_scene.instantiate()
+	get_tree().current_scene.add_child(sparks)
+	sparks.fire(at, normal)
+	
+func _update_afterimage(delta: float) -> void:
+	if not afterimage_enabled or sprite == null:
+		return
+
+	_afterimage_timer -= delta
+	if _afterimage_timer > 0.0:
+		return
+	_afterimage_timer = afterimage_interval
+
+	_spawn_afterimage()
+
+
+func _spawn_afterimage() -> void:
+	if sprite.sprite_frames == null:
+		return
+
+	# Frame actual de la animación
+	var tex := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if tex == null:
+		return
+
+	var ghost := Sprite2D.new()
+	ghost.texture = tex
+	ghost.centered = sprite.centered
+	ghost.offset = sprite.offset
+	ghost.flip_h = sprite.flip_h
+	ghost.flip_v = sprite.flip_v
+	ghost.global_position = sprite.global_position
+	ghost.global_rotation = sprite.global_rotation
+	ghost.z_index = z_index + sprite.z_index - 1   # por detrás del dasher
+
+	var base_scale: Vector2 = sprite.global_scale
+	ghost.global_scale = base_scale
+
+	var c := afterimage_color
+	c.a = afterimage_start_alpha
+	ghost.modulate = c
+
+	# Al mundo, no al dasher, para que no se mueva con él
+	get_tree().current_scene.add_child(ghost)
+
+	var tween := ghost.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ghost, "modulate:a", 0.0, afterimage_lifetime)
+	tween.tween_property(ghost, "scale", base_scale * afterimage_scale_end, afterimage_lifetime)
+	tween.chain().tween_callback(ghost.queue_free)

@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cw1cxvd04dgh0" path="res://resources/TILE2.png" id="1_uijts"]
 [ext_resource type="Texture2D" uid="uid://chbi01pv3teoi" path="res://resources/green.png" id="2_iwplw"]
 [ext_resource type="PackedScene" uid="uid://b5ygye7aitqkv" path="res://TurretProjectile.tscn" id="2_wvatt"]
+[ext_resource type="PackedScene" uid="uid://mu5kcc0ik5tm" path="res://sparks.tscn" id="3_vc5tq"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
 size = Vector2(272, 284)
@@ -19,6 +20,7 @@ charge_time = 1.5
 muzzle = NodePath("CannonPivot/Muzzle")
 cannon_pivot = NodePath("CannonPivot")
 cannon_sprite = NodePath("CannonPivot/CannonSprite")
+sparks_scene = ExtResource("3_vc5tq")
 
 [node name="Base" type="Sprite2D" parent="." unique_id=1059566795]
 position = Vector2(-2.861023e-06, 2.861023e-06)
