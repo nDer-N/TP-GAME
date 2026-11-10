@@ -9,8 +9,12 @@
 [ext_resource type="Texture2D" uid="uid://cqbv0s6dsajc7" path="res://diagrams/shoot/aim_01.png" id="5_pvimh"]
 [ext_resource type="Texture2D" uid="uid://0wwa0gbudxtd" path="res://diagrams/shoot/aim_02.png" id="6_msu1p"]
 [ext_resource type="Texture2D" uid="uid://04xe2kkws2qi" path="res://diagrams/Slash/slash_01.png" id="7_bgvkf"]
+[ext_resource type="Texture2D" uid="uid://bq44u6dwhqxu" path="res://diagrams/diagramparry.png" id="7_igdtv"]
 [ext_resource type="Texture2D" uid="uid://b52wmdy4xqo3b" path="res://diagrams/Slash/slash_02.png" id="8_52knb"]
 [ext_resource type="Texture2D" uid="uid://cid0jjurwhqiw" path="res://diagrams/diagramwalk.png" id="9_bgtce"]
+[ext_resource type="Texture2D" uid="uid://cgqbidmvyrfd" path="res://diagrams/diagramsprint.png" id="11_bgtce"]
+[ext_resource type="Texture2D" uid="uid://dey082dst1aen" path="res://diagrams/tp_below/tp_01.png" id="12_igdtv"]
+[ext_resource type="Texture2D" uid="uid://cos36dt0us2ak" path="res://diagrams/tp_below/tp_02.png" id="13_7xi8r"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hftqc"]
 size = Vector2(267, 111)
@@ -47,7 +51,10 @@ animations = [{
 "name": &"jump",
 "speed": 5.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_igdtv")
+}],
 "loop": 1,
 "name": &"parry",
 "speed": 5.0
@@ -74,15 +81,24 @@ animations = [{
 "name": &"slash",
 "speed": 1.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("11_bgtce")
+}],
 "loop": 1,
 "name": &"sprint",
 "speed": 5.0
 }, {
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_igdtv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_7xi8r")
+}],
 "loop": 1,
 "name": &"tp_below",
-"speed": 5.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,

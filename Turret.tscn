@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://bc15esx4347n2"]
 
 [ext_resource type="Script" uid="uid://b33m4crlkgqe4" path="res://turret.gd" id="1_iwplw"]
-[ext_resource type="Texture2D" uid="uid://cw1cxvd04dgh0" path="res://resources/TILE2.png" id="1_uijts"]
-[ext_resource type="Texture2D" uid="uid://chbi01pv3teoi" path="res://resources/green.png" id="2_iwplw"]
 [ext_resource type="PackedScene" uid="uid://b5ygye7aitqkv" path="res://TurretProjectile.tscn" id="2_wvatt"]
 [ext_resource type="PackedScene" uid="uid://mu5kcc0ik5tm" path="res://sparks.tscn" id="3_vc5tq"]
+[ext_resource type="Texture2D" uid="uid://dgluf2vhp4i7e" path="res://animations/turret/turret_body.png" id="4_vc5tq"]
+[ext_resource type="Texture2D" uid="uid://cujvmwloes1jo" path="res://animations/turret/barrel.png" id="5_d3wxe"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
-size = Vector2(272, 284)
+size = Vector2(384, 264)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ddicg"]
 radius = 1159.0522
@@ -23,29 +23,40 @@ cannon_sprite = NodePath("CannonPivot/CannonSprite")
 sparks_scene = ExtResource("3_vc5tq")
 
 [node name="Base" type="Sprite2D" parent="." unique_id=1059566795]
-position = Vector2(-2.861023e-06, 2.861023e-06)
-scale = Vector2(0.08888889, 0.08888889)
-texture = ExtResource("1_uijts")
+light_mask = 512
+z_index = 5
+z_as_relative = false
+position = Vector2(8, -8)
+scale = Vector2(0.39814815, 0.39814815)
+texture = ExtResource("4_vc5tq")
 
 [node name="CannonPivot" type="Node2D" parent="." unique_id=1315881737]
+position = Vector2(0, -56)
 
 [node name="CannonSprite" type="Sprite2D" parent="CannonPivot" unique_id=708113103]
-position = Vector2(-11.826085, 0)
-scale = Vector2(3.6249998, 1)
-texture = ExtResource("2_iwplw")
-offset = Vector2(26.434784, 0)
+light_mask = 512
+z_index = 10
+z_as_relative = false
+position = Vector2(-4.7683716e-07, 0)
+rotation = -1.5707964
+scale = Vector2(0.37755263, 0.40089092)
+texture = ExtResource("5_d3wxe")
+offset = Vector2(7.7088127, 411.97137)
 
 [node name="CharacterBody2D" type="CharacterBody2D" parent="CannonPivot" unique_id=1403105253]
 collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CannonPivot/CharacterBody2D" unique_id=380442055]
+position = Vector2(8, 68)
 shape = SubResource("RectangleShape2D_ddicg")
 
 [node name="Muzzle" type="Node2D" parent="CannonPivot" unique_id=1986641513]
 
 [node name="DetectionArea" type="Area2D" parent="." unique_id=558651919]
+position = Vector2(7.9999924, -56)
 collision_mask = 2
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=1054156528]
+visible = false
 shape = SubResource("CircleShape2D_ddicg")
