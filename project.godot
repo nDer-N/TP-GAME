@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="TP_PROJECT"
-run/main_scene="uid://dr4w74ui3y013"
+run/main_scene="uid://btkndpiwofu8u"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -21,6 +21,8 @@ PhantomCameraManager="*uid://duq6jhf6unyis"
 HitStop="*uid://pgg45igwi3u0"
 Events="*uid://ddx6nudbypxq8"
 ScreenFlashLayer="*uid://daam8swpglrgf"
+SaveManager="*uid://c8uhx1umai5ax"
+PauseMenu="*uid://dwpy5s6dusk0h"
 
 [display]
 

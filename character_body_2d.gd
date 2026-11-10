@@ -98,6 +98,13 @@ var _respawn_position : Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	_respawn_position = global_position
+	print("PLAYER _ready: in_game=", SaveManager.in_game, " has_checkpoint=", SaveManager.session_has_checkpoint, " pos=", SaveManager.session_checkpoint_pos)
+	if SaveManager.in_game and SaveManager.session_has_checkpoint:
+		print("RESTAURANDO checkpoint en ", SaveManager.session_checkpoint_pos)
+		_respawn_position = SaveManager.session_checkpoint_pos
+		global_position = _respawn_position
+		if RegularCamera and RegularCamera.has_method("teleport_position"):
+			RegularCamera.call_deferred("teleport_position")
 	_update_shader_frame_size()
 	_sync_tp_orbs()
 	add_to_group("player");
