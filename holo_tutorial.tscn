@@ -3,6 +3,14 @@
 [ext_resource type="Script" uid="uid://c2tdrtsjsusij" path="res://holo_tutorial.gd" id="1_34iuo"]
 [ext_resource type="Shader" uid="uid://bwsmrgoabgmel" path="res://shaders/holo_scanlines.gdshader" id="2_x0nxo"]
 [ext_resource type="FontFile" uid="uid://nl5axbr7t361" path="res://VT323-Regular.ttf" id="3_5oda8"]
+[ext_resource type="Texture2D" uid="uid://3k0kcwa1ryfo" path="res://diagrams/diagramcharge.png" id="4_msu1p"]
+[ext_resource type="Texture2D" uid="uid://hye3wbstoqs3" path="res://diagrams/diagramjump.png" id="4_xufny"]
+[ext_resource type="Texture2D" uid="uid://6ln1nvtundy4" path="res://diagrams/diagramdjump.png" id="5_bgvkf"]
+[ext_resource type="Texture2D" uid="uid://cqbv0s6dsajc7" path="res://diagrams/shoot/aim_01.png" id="5_pvimh"]
+[ext_resource type="Texture2D" uid="uid://0wwa0gbudxtd" path="res://diagrams/shoot/aim_02.png" id="6_msu1p"]
+[ext_resource type="Texture2D" uid="uid://04xe2kkws2qi" path="res://diagrams/Slash/slash_01.png" id="7_bgvkf"]
+[ext_resource type="Texture2D" uid="uid://b52wmdy4xqo3b" path="res://diagrams/Slash/slash_02.png" id="8_52knb"]
+[ext_resource type="Texture2D" uid="uid://cid0jjurwhqiw" path="res://diagrams/diagramwalk.png" id="9_bgtce"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hftqc"]
 size = Vector2(267, 111)
@@ -12,6 +20,78 @@ shader = ExtResource("2_x0nxo")
 shader_parameter/color = Color(0.2, 0.9, 1, 0.25)
 shader_parameter/linea_densidad = 80.0
 shader_parameter/velocidad = 0.5
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_5oda8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_msu1p")
+}],
+"loop": 1,
+"name": &"charge",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_bgvkf")
+}],
+"loop": 1,
+"name": &"djump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_xufny")
+}],
+"loop": 1,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"parry",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_pvimh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_msu1p")
+}],
+"loop": 1,
+"name": &"shoot",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_bgvkf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_52knb")
+}],
+"loop": 1,
+"name": &"slash",
+"speed": 1.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"sprint",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"tp_below",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_bgtce")
+}],
+"loop": 1,
+"name": &"walk",
+"speed": 5.0
+}]
 
 [node name="HoloTutorial" type="Area2D" unique_id=855051901]
 collision_layer = 16
@@ -49,5 +129,10 @@ offset_top = -60.0
 offset_right = 150.0
 offset_bottom = -58.0
 color = Color(0.2, 0.9019608, 1, 0.9019608)
+
+[node name="Diagrama" type="AnimatedSprite2D" parent="Panel" unique_id=937455435]
+scale = Vector2(0.12, 0.12)
+sprite_frames = SubResource("SpriteFrames_5oda8")
+animation = &"parry"
 
 [node name="Timer" type="Timer" parent="." unique_id=1207450959]

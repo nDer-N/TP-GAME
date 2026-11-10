@@ -34,7 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="28_0yspx"]
 [ext_resource type="PackedScene" uid="uid://2drx1upee216" path="res://holo_tutorial.tscn" id="33_pm7ge"]
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
-[ext_resource type="AudioStream" uid="uid://ia2l2wkdi65c" path="res://Audio/Steam of Victory.mp3" id="35_e3xdn"]
+[ext_resource type="AudioStream" uid="uid://gl2ighfhup0o" path="res://Audio/FREE DL Flamewall Symphonic Speed Metal.mp3" id="35_e3xdn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
 texture = ExtResource("6_g52lx")
@@ -1074,7 +1074,7 @@ position = Vector2(30358, -321)
 position = Vector2(36651, -338)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-350, -419)
+position = Vector2(36648, -696)
 
 [node name="MiscL1" type="TileMapLayer" parent="." unique_id=505294020]
 light_mask = 2
@@ -1366,22 +1366,26 @@ occluder = SubResource("OccluderPolygon2D_e3xdn")
 [node name="HoloTutorial" parent="." unique_id=855051901 instance=ExtResource("33_pm7ge")]
 position = Vector2(-347, -217)
 texto = "A-D To Move"
+animacion = &"walk"
 
 [node name="HoloTutorial2" parent="." unique_id=1483438472 instance=ExtResource("33_pm7ge")]
 position = Vector2(621, -298)
 scale = Vector2(2, 2)
 texto = "SPACEBAR To Jump"
+animacion = &"jump"
 
 [node name="HoloTutorial3" parent="." unique_id=1682829840 instance=ExtResource("33_pm7ge")]
 position = Vector2(3654, -749)
 scale = Vector2(2, 2)
 texto = "Doble SPACEBAR To double Jump"
+animacion = &"djump"
 
 [node name="HoloTutorial5" parent="." unique_id=2059810040 instance=ExtResource("33_pm7ge")]
 position = Vector2(5908, -770)
 scale = Vector2(2, 2)
 texto = ""
 paginas = Array[String](["Hold C to Charge the heal and the TP", "Hold Right Click to Aim the Tp"])
+animaciones = Array[StringName]([&"charge", &"shoot"])
 
 [node name="HoloTutorial6" parent="." unique_id=972421841 instance=ExtResource("33_pm7ge")]
 position = Vector2(11311, -1306)
@@ -1393,7 +1397,10 @@ texto = "You Can hit The bullet to Break it"
 
 [node name="HoloTutorial8" parent="." unique_id=1794888032 instance=ExtResource("33_pm7ge")]
 position = Vector2(4587, -1018)
-texto = "Left Click To Attack"
+texto = "Left Click To Attack
+Attack follows the Cursor
+"
+animacion = &"slash"
 
 [node name="HoloTutorial9" parent="." unique_id=725095743 instance=ExtResource("33_pm7ge")]
 position = Vector2(11977, -2099)
@@ -1421,7 +1428,7 @@ texture_scale = 3.44
 process_mode = 0
 process_priority = 1
 position = Vector2(40270, -530)
-max_health = 100
+max_health = 150
 phase2_threshold = 0.5
 projectile_damage = 3
 parry_damage = 10
@@ -1434,6 +1441,10 @@ second_jump_windup = 0.2
 dash_speed = 2000.0
 dash_windup = 0.5
 boss_music = ExtResource("35_e3xdn")
+music_volume_db = -12.0
+spam_hits_needed = 4
+rest_time = 0.2
+rest_time_phase2 = 0.1
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1378087107]
 environment = SubResource("Environment_e3xdn")
