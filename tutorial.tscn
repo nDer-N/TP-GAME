@@ -1025,6 +1025,18 @@ polygon = PackedVector2Array(28861, -893, 28863, -769, 28480, -769, 28479, -895)
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_e3xdn"]
 polygon = PackedVector2Array(28481, -511, 28481, -383, 28607, -383, 28608, -512)
 
+[sub_resource type="Environment" id="Environment_e3xdn"]
+background_mode = 3
+ambient_light_source = 1
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 16.0
+tonemap_mode = 3
+glow_enabled = true
+glow_intensity = 8.0
+glow_hdr_threshold = 0.47
+glow_hdr_scale = 1.76
+glow_hdr_luminance_cap = 87.53
+
 [node name="TUTORIAL" type="Node2D" unique_id=1592486691]
 
 [node name="PillarSpawner" type="Node2D" parent="." unique_id=579031592]
@@ -1062,7 +1074,7 @@ position = Vector2(30358, -321)
 position = Vector2(36651, -338)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(-368, -248)
+position = Vector2(-350, -419)
 
 [node name="MiscL1" type="TileMapLayer" parent="." unique_id=505294020]
 light_mask = 2
@@ -1101,8 +1113,6 @@ grow_vertical = 1
 offset_transform_enabled = true
 offset_transform_position = Vector2(100, 30)
 mouse_filter = 2
-icon_size = Vector2(0.78, 0.78)
-icon_spacing = 67.0
 metadata/_edit_use_anchors_ = true
 
 [node name="CURSOR" parent="CanvasLayer" unique_id=857868883 instance=ExtResource("4_4t6hg")]
@@ -1166,7 +1176,7 @@ position = Vector2(34183, -606)
 position = Vector2(32757, -1243)
 
 [node name="Dasher" parent="." unique_id=1512360025 instance=ExtResource("6_4t6hg")]
-position = Vector2(9229, -1351)
+position = Vector2(7840, -504)
 
 [node name="Dasher2" parent="." unique_id=1065229859 instance=ExtResource("6_4t6hg")]
 position = Vector2(10655, -1111)
@@ -1408,5 +1418,22 @@ texture = ExtResource("23_dyhf1")
 texture_scale = 3.44
 
 [node name="Boss1" parent="." unique_id=718000262 instance=ExtResource("34_brok5")]
-position = Vector2(40193, -575)
+process_mode = 0
+process_priority = 1
+position = Vector2(40270, -530)
+max_health = 100
+phase2_threshold = 0.5
+projectile_damage = 3
+parry_damage = 10
+parry_speed_multiplier = 2.0
+jump_time = 0.6
+jump_time_phase2 = 0.4
+jump_windup = 0.5
+jump_windup_phase2 = 0.3
+second_jump_windup = 0.2
+dash_speed = 2000.0
+dash_windup = 0.5
 boss_music = ExtResource("35_e3xdn")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1378087107]
+environment = SubResource("Environment_e3xdn")
