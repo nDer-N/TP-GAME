@@ -6,4 +6,5 @@
 script = ExtResource("1_l3gk0")
 amplitude = 150.0
 frequency = 30.0
+noise_seed = 8
 metadata/_custom_type_script = "uid://dimvdouy8g0sv"

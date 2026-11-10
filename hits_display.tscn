@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://tbwvgat4fi4w"]
 
 [ext_resource type="Script" uid="uid://cn7wvpv0tcv1t" path="res://hits_display.gd" id="1_ccdre"]
+[ext_resource type="PackedScene" uid="uid://drwuerfco3akf" path="res://HeadFire.tscn" id="2_3iwvp"]
 [ext_resource type="PackedScene" uid="uid://b5xlwbkbi1dlw" path="res://UIIcon.tscn" id="2_tqd8d"]
+[ext_resource type="Texture2D" uid="uid://tl8sjnxm5xpe" path="res://animations/HP/UI.png" id="3_ounme"]
 
 [node name="HitsDisplay" type="Control" unique_id=682123321 groups=["hud"]]
 layout_mode = 3
@@ -11,6 +13,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_ccdre")
-icon_scene = ExtResource("2_tqd8d")
-icon_size = Vector2(4, 4)
-icon_spacing = 50.0
+head_scene = ExtResource("2_3iwvp")
+fire_scene = ExtResource("2_tqd8d")
+head_scale = 0.3
+first_fire_scale = 0.18
+fire_scale_falloff = 0.95
+icon_positions = Array[Vector2]([Vector2(35, -30), Vector2(155, -30), Vector2(225, -25), Vector2(290, -25)])
+default_step = Vector2(60, 0)
+icons_offset = Vector2(-20, 60)
+fire_speed_variation = 0.0
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2059838757]
+position = Vector2(145.27672, 46.50035)
+rotation = -0.14493069
+scale = Vector2(0.21163395, 0.16426344)
+texture = ExtResource("3_ounme")
+
+[node name="Icons" type="Node2D" parent="." unique_id=1287541751]
+process_mode = 3

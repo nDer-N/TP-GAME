@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://mu5kcc0ik5tm"]
+
+[ext_resource type="Texture2D" uid="uid://cb4ihiepjal7l" path="res://spark.png" id="1_me7x7"]
+[ext_resource type="Script" uid="uid://57dva4e1fy62" path="res://sparks.gd" id="2_p74jf"]
+
+[node name="Sparks" type="GPUParticles2D" unique_id=1338242019]
+process_mode = 3
+self_modulate = Color(2.791, 2.791, 2.791, 1)
+show_behind_parent = true
+z_index = 9
+z_as_relative = false
+texture = ExtResource("1_me7x7")
+script = ExtResource("2_p74jf")
+spark_length = 250.0
+spark_amount = 10

@@ -39,6 +39,8 @@ extends Node2D
 @export var activation_delay: float = 0.2
 
 @onready var detection_area: Area2D = $DetectionArea
+## Escena de chispas que salen al recibir un golpe.
+@export var sparks_scene: PackedScene
 
 var _player: Node2D = null
 var _hp: int
@@ -203,18 +205,20 @@ func _on_detection_body_exited(body: Node2D) -> void:
 
 # ---------- Recibir daño ----------
 
-func take_damage(amount: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, hit_direction: Vector2 = Vector2.ZERO) -> void:
 	if _is_dead:
 		return
 
 	_hp -= amount
+
+	# Chispas: de vuelta hacia donde vino el golpe
+	_spawn_sparks(hit_direction)
 
 	# Flash rojo de daño
 	_flash_damage()
 
 	if _hp <= 0:
 		die()
-
 
 func _flash_damage() -> void:
 	if cannon_sprite == null:
@@ -226,6 +230,25 @@ func _flash_damage() -> void:
 	# Restaurar solo si el nodo sigue vivo y no murió en el intertanto
 	if is_instance_valid(cannon_sprite) and not _is_dead:
 		cannon_sprite.modulate = previous_color
+		
+
+func _spawn_sparks(hit_direction: Vector2) -> void:
+	if sparks_scene == null:
+		return
+
+	# Dirección de salida: opuesta al golpe. Si no hay dirección, hacia el jugador; si tampoco, hacia arriba.
+	var dir := Vector2.UP
+	if hit_direction != Vector2.ZERO:
+		dir = -hit_direction.normalized()
+	elif _player != null and is_instance_valid(_player):
+		dir = (_player.global_position - global_position).normalized()
+
+	# Salen desde el cañón si existe, si no desde el centro de la torreta
+	var origin := cannon_sprite.global_position if cannon_sprite else global_position
+
+	var sparks := sparks_scene.instantiate()
+	get_tree().current_scene.add_child(sparks)
+	sparks.fire(origin, dir)
 
 
 func die() -> void:

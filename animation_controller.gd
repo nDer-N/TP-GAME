@@ -10,7 +10,9 @@ extends Node
 	4: "fall",
 	5: "landing",
 	6: "recharging",
-	7: "hurt"
+	7: "hurt",
+	8: "death",
+	9: "airdeath"
 }
 
 @export var min_hold_time: float = 0.0
@@ -43,7 +45,7 @@ extends Node
 	"shoot": "TPShoot",
 }
 
-enum VisualState { IDLE, WALK, RUN, JUMP, FALL, LANDING, RECHARGING, HURT}
+enum VisualState { IDLE, WALK, RUN, JUMP, FALL, LANDING, RECHARGING, HURT, DEATH, AIRDEATH}
 enum SequencePhase { NONE, START, LOOP, STOP }
 enum AimPhase { NONE, START, LOOP, SHOOT }
 

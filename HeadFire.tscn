@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://drwuerfco3akf"]
+
+[ext_resource type="Texture2D" uid="uid://c6ywgmd8o6s54" path="res://animations/HP/HP_EMPTY/MAIN/MAINE_0000.png" id="1_bb6la"]
+[ext_resource type="Texture2D" uid="uid://d01f0jwl7rt1q" path="res://animations/HP/HP_EMPTY/MAIN/MAINE_0001.png" id="2_0uh1m"]
+[ext_resource type="Texture2D" uid="uid://bj4ma7agmnye0" path="res://animations/HP/HP_EMPTY/MAIN/MAINE_0002.png" id="3_totkn"]
+[ext_resource type="Texture2D" uid="uid://cksn5sab1pi6q" path="res://animations/HP/HP_EMPTY/MAIN/MAINE_0003.png" id="4_mbj6w"]
+[ext_resource type="Texture2D" uid="uid://compbrngnbam3" path="res://animations/HP/HP_EMPTY/MAIN/MAINE_0004.png" id="5_qd18o"]
+[ext_resource type="Texture2D" uid="uid://bcvvuurcmo40u" path="res://animations/HP/HP_FULL/MAIN/Main_0000.png" id="6_3b5bd"]
+[ext_resource type="Texture2D" uid="uid://bvh7c457awgli" path="res://animations/HP/HP_FULL/MAIN/Main_0001.png" id="7_ktsed"]
+[ext_resource type="Texture2D" uid="uid://dixnojir2ah2n" path="res://animations/HP/HP_FULL/MAIN/Main_0002.png" id="8_btf5y"]
+[ext_resource type="Texture2D" uid="uid://7dy8088tn14u" path="res://animations/HP/HP_FULL/MAIN/Main_0003.png" id="9_cx8jg"]
+[ext_resource type="Texture2D" uid="uid://c8i3mi37ntnh" path="res://animations/HP/HP_FULL/MAIN/Main_0004.png" id="10_561ip"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jk274"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_bb6la")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_0uh1m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_totkn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_mbj6w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_qd18o")
+}],
+"loop": 1,
+"name": &"empty",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_3b5bd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_ktsed")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_btf5y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_cx8jg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_561ip")
+}],
+"loop": 1,
+"name": &"full",
+"speed": 12.0
+}]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=1027790171]
+process_mode = 3
+sprite_frames = SubResource("SpriteFrames_jk274")
+animation = &"empty"

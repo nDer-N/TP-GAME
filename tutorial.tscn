@@ -1074,7 +1074,7 @@ position = Vector2(30358, -321)
 position = Vector2(36651, -338)
 
 [node name="Node2D" parent="." unique_id=1720170991 instance=ExtResource("1_rwowx")]
-position = Vector2(36876, -1265)
+position = Vector2(6931, -600)
 
 [node name="MiscL1" type="TileMapLayer" parent="." unique_id=505294020]
 light_mask = 2
@@ -1113,8 +1113,6 @@ grow_vertical = 1
 offset_transform_enabled = true
 offset_transform_position = Vector2(100, 30)
 mouse_filter = 2
-icon_size = Vector2(0.78, 0.78)
-icon_spacing = 67.0
 metadata/_edit_use_anchors_ = true
 
 [node name="CURSOR" parent="CanvasLayer" unique_id=857868883 instance=ExtResource("4_4t6hg")]
@@ -1178,7 +1176,7 @@ position = Vector2(34183, -606)
 position = Vector2(32757, -1243)
 
 [node name="Dasher" parent="." unique_id=1512360025 instance=ExtResource("6_4t6hg")]
-position = Vector2(9229, -1351)
+position = Vector2(7840, -504)
 
 [node name="Dasher2" parent="." unique_id=1065229859 instance=ExtResource("6_4t6hg")]
 position = Vector2(10655, -1111)
