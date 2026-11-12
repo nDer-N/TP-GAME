@@ -94,6 +94,8 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var crack_z_index := 10                # que tan "arriba" se dibujan (subelo si el arte del piso las tapa)
 @export var jump_camera_shake := 12.0          # fuerza del temblor de camara al aterrizar (0 = nada)
 
+@export_group("Animaciones")
+@export var animation_controller: Node
 @export_group("Musica")
 ## Arrastra aqui tu cancion (.mp3, .ogg o .wav). Vacio = sin musica. Para quitarla/cambiarla solo cambia este campo.
 @export var boss_music: AudioStream
@@ -150,6 +152,8 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export_group("Debug")
 ## F1 = quita 40 de vida al jefe (como un golpe de espada) (para probar la fase 2). Desactivalo al terminar.
 @export var debug_keys := true
+
+
 
 var health := 0
 var phase := 1
@@ -243,6 +247,10 @@ func take_damage(amount = 1, a = null, _b = null) -> void:
 	health_changed.emit(health, max_health)
 	_update_health_bar()
 	_flash_hit()
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.HURT, 0.3)
+		
 	if health == 0:
 		_die()
 
@@ -275,6 +283,10 @@ func _flash_hit() -> void:
 
 func _die() -> void:
 	dead = true
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.DEATH)
+		
 	velocity = Vector2.ZERO
 	_hide_marker()
 	_boss_cam_off()
@@ -516,7 +528,15 @@ func _enter_phase2() -> void:
 	_last_attack = -1
 	_repeat_count = 0
 	phase_changed.emit(phase)
-	visual.color = visual.color.darkened(0.35)
+	
+	# Comentamos el darkened por si visual es un AnimatedSprite2D
+	# visual.color = visual.color.darkened(0.35)
+	
+	if animation_controller:
+		animation_controller.is_phase_2 = true
+		# El jefe se congela lógicamente aquí durante lo que dure el grito
+		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
+		
 	await _telegraph(1.0, Color(1, 0.2, 0.2))
 
 
@@ -541,25 +561,47 @@ func _attack_shoot() -> void:
 	if _get_player() == null:
 		await _wait(0.5)
 		return
+		
+	# Fase de carga (telegraph)
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.SHOOT_CHARGE)
+		
 	await _telegraph(shoot_charge_phase2 if phase == 2 else shoot_charge, Color(1, 0.9, 0.3))
 	if dead:
 		return
 
 	if phase == 1:
-		# Fase 1: UN solo proyectil hacia donde esta el jugador (de frente o en diagonal).
-		# Despues el arma se esta cargando, asi que el siguiente ataque sera el salto.
+		# Fase 1: UN solo proyectil
+		if animation_controller:
+			var p := _get_player()
+			if p:
+				$AnimatedSprite2D.flip_h = p.global_position.x < global_position.x
+				
+			# Espera a que termine la animación de disparo antes de continuar
+			await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
+			
 		_fire_projectile()
-		await _wait(0.3)
+		# Ya no hace falta el await _wait(0.3) porque play_and_wait ya esperó
+		
 	else:
-		# Fase 2: DISPARO DOBLE, dos proyectiles con 1 segundo de retraso.
-		_fire_projectile()
-		await _wait(double_shot_delay)
-		if dead:
-			return
-		_fire_projectile()
-		await _wait(0.3)
-
-
+		# Fase 2: DISPARO DOBLE
+		for i in range(2):
+			if animation_controller:
+				var p := _get_player()
+				if p:
+					$AnimatedSprite2D.flip_h = p.global_position.x < global_position.x
+				
+				# Espera a que termine cada animación de disparo
+				await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
+				
+			_fire_projectile()
+			
+			# Retraso entre el primer y segundo disparo
+			if i == 0:
+				await _wait(double_shot_delay)
+				
+			if dead:
+				return
 ## Punto de donde sale el proyectil (y a donde regresa al hacer parry).
 func get_shoot_origin() -> Vector2:
 	if shoot_from_center:
@@ -600,6 +642,10 @@ func _attack_jump() -> void:
 			return
 		var windup := second_jump_windup if i > 0 else (jump_windup_phase2 if phase == 2 else jump_windup)
 		velocity.x = 0.0
+		
+		if animation_controller:
+			animation_controller.force_state(animation_controller.VisualState.JUMP_WINDUP)
+			
 		_telegraph_tween(windup, Color(1, 0.6, 0.2))
 
 		# La marca roja SIGUE al jugador durante el aviso y se fija en el momento de saltar.
@@ -654,6 +700,10 @@ func _do_jump(target: Vector2, t: float) -> void:
 	var vy := ((target.y - start.y) - 0.5 * gravity * t * t) / t
 
 	_scripted = true
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_AIR)
+		
 	velocity = Vector2.ZERO
 	var elapsed := 0.0
 	_jump_takeoff_vfx()
@@ -674,6 +724,10 @@ func _do_jump(target: Vector2, t: float) -> void:
 		_arena_right = maxf(_arena_right, global_position.x)
 	_scripted = false
 	velocity = Vector2.ZERO
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_LAND)
+		
 	_hide_marker()
 	_jump_impact_vfx()
 
@@ -696,6 +750,9 @@ func _attack_dash() -> void:
 
 		velocity.x = 0.0
 		if dash_show_warning:
+			if animation_controller:
+				animation_controller.force_state(animation_controller.VisualState.DASH_WINDUP)
+				
 			_show_dash_path(target_x)
 			await _dash_warning(dash_windup if i == 0 else 0.4)
 			_hide_dash_path()
@@ -706,6 +763,10 @@ func _attack_dash() -> void:
 
 		_hit_this_attack = false
 		_dash_vfx_start(dir)
+		
+		if animation_controller:
+			animation_controller.force_state(animation_controller.VisualState.DASH_MOVE)
+			
 		_scripted = true                      # se mueve por codigo: no choca con plataformas ni paredes
 		velocity = Vector2.ZERO
 		var elapsed := 0.0
@@ -839,6 +900,10 @@ func _attack_shockwave() -> void:
 	if _get_player() == null:
 		return
 	velocity.x = 0.0
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.SHOCKWAVE_WINDUP)
+		
 	_telegraph_tween(shockwave_windup, Color(0.5, 0.85, 1.0))
 	await _dash_warning(shockwave_windup)     # tiembla y parpadea
 	if dead:
@@ -848,6 +913,9 @@ func _attack_shockwave() -> void:
 
 ## Dos ondas bajas que corren por el piso hacia los lados; se esquivan saltando. Empujan al jugador.
 func _shockwave_blast() -> void:
+	if animation_controller:
+		animation_controller.play_and_wait(animation_controller.VisualState.SHOCKWAVE_BLAST)
+		
 	var origin := global_position
 	if jump_vfx:
 		for side in [-1.0, 1.0]:
@@ -1012,6 +1080,9 @@ func _sync_slash_layers() -> void:
 
 ## Camina hacia el jugador durante `duration` segundos (para que el jefe siempre este presionando).
 func _chase(duration: float) -> void:
+	if animation_controller: 
+		animation_controller.set_state(animation_controller.VisualState.CHASE)
+		
 	var spd := chase_speed_phase2 if phase == 2 else chase_speed
 	var elapsed := 0.0
 	while elapsed < duration and not dead:
@@ -1025,6 +1096,9 @@ func _chase(duration: float) -> void:
 		await get_tree().physics_frame
 		elapsed += get_physics_process_delta_time()
 	velocity.x = 0.0
+	
+	if animation_controller: 
+		animation_controller.set_state(animation_controller.VisualState.IDLE)
 
 
 func _wait(seconds: float) -> void:

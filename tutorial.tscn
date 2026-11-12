@@ -34,7 +34,6 @@
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="28_0yspx"]
 [ext_resource type="PackedScene" uid="uid://2drx1upee216" path="res://holo_tutorial.tscn" id="33_pm7ge"]
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
-[ext_resource type="AudioStream" uid="uid://gl2ighfhup0o" path="res://Audio/FREE DL Flamewall Symphonic Speed Metal.mp3" id="35_e3xdn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
 texture = ExtResource("6_g52lx")
@@ -1240,6 +1239,13 @@ position = Vector2(7512, -937)
 scale = Vector2(0.86419755, 0.8947858)
 texture = ExtResource("18_dudfa")
 
+[node name="VagonGrande2" type="Sprite2D" parent="BG" unique_id=1639527081]
+modulate = Color(0.5803922, 0.3019608, 0.18039216, 1)
+z_index = -5
+position = Vector2(39572, -1224.5)
+scale = Vector2(1.2854931, 1.0730911)
+texture = ExtResource("18_dudfa")
+
 [node name="Sprite2D" type="Sprite2D" parent="BG" unique_id=159860643]
 
 [node name="VagonCarga" type="Sprite2D" parent="BG" unique_id=1031966151]
@@ -1430,10 +1436,8 @@ texture_scale = 3.44
 [node name="Boss1" parent="." unique_id=718000262 instance=ExtResource("34_brok5")]
 process_priority = 1
 position = Vector2(40270, -530)
-max_health = 300
 phase2_threshold = 0.65
 projectile_damage = 3
-parry_damage = 10
 parry_speed_multiplier = 2.0
 double_shot_delay = 0.4
 shoot_charge = 0.5
@@ -1446,7 +1450,6 @@ second_jump_windup = 0.2
 dash_speed = 2000.0
 dash_windup = 0.5
 dash_passes = 3
-boss_music = ExtResource("35_e3xdn")
 music_volume_db = -19.0
 reposition_chance = 0.5
 spam_hits_needed = 3
