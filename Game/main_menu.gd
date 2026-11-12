@@ -10,6 +10,9 @@ extends Control
 @export_multiline var credits_text: String = "Desarrollo\nTu nombre aquí\n\nArte\nNombre del artista\n\nMúsica y sonido\nNombre del compositor\n\nHecho con Godot Engine\n\n¡Gracias por jugar!"
 
 @export_group("Fondo")
+## Escena de fondo con parallax (splash.tscn). Si existe, sustituye al color
+## y a la textura de abajo. Déjala vacía para usar el fondo clásico.
+@export_file("*.tscn") var splash_scene: String = "res://splash.tscn"
 @export var background_color: Color = Color(0.05, 0.04, 0.09)
 ## Tu imagen de fondo (opcional). Se dibuja encima del color.
 @export var background_texture: Texture2D
@@ -230,7 +233,17 @@ func _play_hover() -> void:
 
 # ============================================================ CONSTRUCCIÓN
 
-func _build_ui() -> void:
+func _build_background() -> void:
+	# 1) Escena aparte con parallax (splash.tscn)
+	if splash_scene != "" and ResourceLoader.exists(splash_scene):
+		var packed := load(splash_scene) as PackedScene
+		if packed != null:
+			# Su raíz es un ParallaxBackground (CanvasLayer en la capa -100),
+			# así que se dibuja detrás de todo el menú.
+			add_child(packed.instantiate())
+			return
+
+	# 2) Respaldo: color + textura estática
 	var bg_color := ColorRect.new()
 	bg_color.color = background_color
 	bg_color.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -245,6 +258,10 @@ func _build_ui() -> void:
 		bg_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		bg_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(bg_tex)
+
+
+func _build_ui() -> void:
+	_build_background()
 
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

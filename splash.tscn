@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://4ejqttf2cqoa"]
+
+[ext_resource type="Script" uid="uid://cr7o2vvad867x" path="res://splash.gd" id="1_b04ml"]
+[ext_resource type="Texture2D" uid="uid://duyta2bm1unhs" path="res://textures/menu/splash/bg.png" id="2_tbd5x"]
+[ext_resource type="Texture2D" uid="uid://dapuacuwbruwq" path="res://textures/menu/splash/mlay2.png" id="3_h153m"]
+[ext_resource type="Texture2D" uid="uid://kupdpm8yr4lf" path="res://textures/menu/splash/mlay1.png" id="4_bxq7p"]
+[ext_resource type="Texture2D" uid="uid://cmd6u4lefvk0y" path="res://textures/menu/splash/train.png" id="5_twvh4"]
+[ext_resource type="Texture2D" uid="uid://dfmhie4fyhv4e" path="res://textures/menu/splash/char.png" id="6_p2k27"]
+
+[node name="ParallaxBackground" type="ParallaxBackground" unique_id=1775562321]
+script = ExtResource("1_b04ml")
+layer_textures = Array[Texture2D]([ExtResource("2_tbd5x"), ExtResource("3_h153m"), ExtResource("4_bxq7p"), ExtResource("5_twvh4"), ExtResource("6_p2k27")])
