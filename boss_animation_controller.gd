@@ -1,5 +1,15 @@
 extends Node
 
+enum VisualState { 
+	IDLE, CHASE, 
+	SHOOT_CHARGE, SHOOT_FIRE, 
+	JUMP_WINDUP, JUMP_AIR, JUMP_LAND, 
+	DASH_WINDUP, DASH_MOVE, 
+	SHOCKWAVE_WINDUP, SHOCKWAVE_BLAST, 
+	HURT, DEATH, WEEP,
+	CATCH_TP, BREAK_TP
+}
+
 @export var animated_sprite: AnimatedSprite2D
 
 var is_phase_2: bool = false
@@ -21,21 +31,16 @@ var is_phase_2: bool = false
 	VisualState.WEEP: {"p1": "weep", "p2": "weep_p2"}
 }
 
-enum VisualState { 
-	IDLE, CHASE, 
-	SHOOT_CHARGE, SHOOT_FIRE, 
-	JUMP_WINDUP, JUMP_AIR, JUMP_LAND, 
-	DASH_WINDUP, DASH_MOVE, 
-	SHOCKWAVE_WINDUP, SHOCKWAVE_BLAST, 
-	HURT, DEATH, WEEP 
-}
-
 var _current_state: VisualState = VisualState.IDLE
 var _current_anim: String = ""
 var _locked: bool = false
 var _hold_timer: float = 0.0
 
 func _ready() -> void:
+	if not animation_map.has(VisualState.CATCH_TP):
+		animation_map[VisualState.CATCH_TP] = {"p1": "catch_tp", "p2": "catch_tp"}
+	if not animation_map.has(VisualState.BREAK_TP):
+		animation_map[VisualState.BREAK_TP] = {"p1": "break_tp", "p2": "break_tp"}
 	if animated_sprite == null:
 		push_warning("BossAnimationController: animated_sprite no asignado.")
 		return
@@ -86,29 +91,28 @@ func play_shoot_fire(direction: Vector2) -> void:
 	_current_anim = anim_name
 	animated_sprite.play(anim_name)
 
-## Espera a que la animación actual termine.
 ## Espera a que la animación actual termine (calculando su duración).
-func play_and_wait(new_state: VisualState) -> void:
+func play_and_wait(new_state: VisualState, fallback_time: float = 0.6) -> void:
 	var anim_dict: Dictionary = animation_map.get(new_state, {})
 	if anim_dict.is_empty(): return
 	
 	var anim_name: String = anim_dict.get("p2" if is_phase_2 else "p1", "")
 	if anim_name == "": return
 	
-	# Si ya estamos en esa animación, reiniciamos desde 0
+	# Si la animación aún no existe (no la has dibujado), espera un rato y sigue.
+	if animated_sprite.sprite_frames == null or not animated_sprite.sprite_frames.has_animation(anim_name):
+		push_warning("BossAnimationController: falta la animacion '%s' (espero %.1f s)" % [anim_name, fallback_time])
+		await get_tree().create_timer(fallback_time, false).timeout
+		return
+	
 	if anim_name == _current_anim and animated_sprite.animation == anim_name:
 		animated_sprite.frame = 0 
 		
-	# Forzamos el cambio de estado (esto llama a animated_sprite.play)
 	force_state(new_state)
 	
-	# Calculamos cuánto dura la animación
 	var frames := animated_sprite.sprite_frames.get_frame_count(anim_name)
 	var speed := animated_sprite.sprite_frames.get_animation_speed(anim_name)
-	var wait_time := frames / speed
-	
-	# Esperamos ese tiempo exacto (¡a prueba de interrupciones!)
-	await get_tree().create_timer(wait_time).timeout
+	await get_tree().create_timer(frames / speed, false).timeout
 
 func _set_state(new_state: VisualState) -> void:
 	_current_state = new_state
@@ -120,5 +124,4 @@ func _set_state(new_state: VisualState) -> void:
 	if anim_name == _current_anim and animated_sprite.is_playing(): return
 	
 	_current_anim = anim_name
-	animated_sprite.play(anim_name)  
- 
+	animated_sprite.play(anim_name)

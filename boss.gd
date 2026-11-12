@@ -9,6 +9,7 @@ signal health_changed(current: int, maximum: int)
 signal died
 
 enum Attack { SHOOT, JUMP, DASH }
+enum BarPosition { TOP_CENTER, BOTTOM_CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 ## Metodos que se intentaran llamar en el jugador para dañarlo (en orden).
 const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
@@ -40,7 +41,36 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export_group("Barra de vida")
 @export var show_health_bar := true
 @export var boss_name := "JEFE"
+@export var bar_name_font_size := 20
+@export var show_bar_text := true                       # el "275 / 275"
+@export var show_phase_tick := true                     # marca de la fase 2
+@export_subgroup("Posicion y tamaño")
+@export var bar_position := BarPosition.BOTTOM_CENTER
+@export_range(0.1, 1.0) var bar_width_ratio := 0.5      # ancho respecto a la pantalla
 @export var bar_height := 22.0
+@export var bar_margin := Vector2(40, 40)               # separacion del borde de la pantalla
+@export var bar_extra_offset := Vector2.ZERO            # ajuste fino extra en pixeles
+@export_subgroup("Diseño")
+@export var bar_background_texture: Texture2D           # fondo (vacio = color)
+@export var bar_background_color := Color(0.05, 0.05, 0.05, 0.9)
+@export var bar_fill_texture: Texture2D                 # relleno (vacio = color)
+@export var bar_fill_color := Color(0.85, 0.1, 0.1)
+@export var bar_trail_texture: Texture2D                # estela de daño (vacio = color)
+@export var bar_trail_color := Color(1.0, 0.85, 0.3)
+@export var bar_frame_texture: Texture2D                # marco opcional encima de la barra
+@export var bar_frame_padding := Vector2(8, 8)          # cuanto sobresale el marco
+
+@export_group("Alerta de disparo fuera de pantalla")
+@export var offscreen_alert_enabled := true
+## Arrastra aqui tu propio dibujo para cambiar el diseño. Vacio = usa el texto "?".
+@export var alert_texture: Texture2D
+@export var alert_tint := Color.WHITE                 # color aplicado a tu dibujo
+@export var alert_text := "?"
+@export var alert_font_size := 72
+@export var alert_color := Color(1.0, 0.85, 0.2)
+@export var alert_size := Vector2(64, 64)
+@export var alert_edge_margin := 30.0                 # distancia al borde de la pantalla
+@export var alert_pulse := true                       # late para que se note
 
 @export_group("Disparo")
 ## Si es true, el proyectil sale del CENTRO del cuerpo del jefe (y el parry regresa ahi). Si es false usa muzzle_offset.
@@ -96,6 +126,33 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 
 @export_group("Animaciones")
 @export var animation_controller: Node
+
+@export_group("Cinematica fase 2")
+@export var cinematic_enabled := true
+## Marker2D sobre la SUPERFICIE de la plataforma de la IZQUIERDA (donde queda el jugador).
+@export var cinematic_player_spot: Node2D
+## Marker2D sobre la SUPERFICIE de la plataforma de la DERECHA (donde cae el jefe).
+@export var cinematic_boss_spot: Node2D
+## Si es true, la cinematica solo se ve la primera vez (no cada vez que mueres y reinicias).
+@export var cinematic_only_first_time := false
+@export var cinematic_windup := 0.4               # aviso antes de que salten los dos
+@export var cinematic_jump_time := 0.8            # duracion del salto de ambos
+@export var cinematic_pause_after_land := 0.5
+@export var cinematic_aim_time := 0.7             # cuanto tiempo apunta el jugador
+@export var cinematic_release_delay := 0.1        # de que empieza el disparo a que sale el tp
+@export var cinematic_tp_flight_time := 0.45
+@export var cinematic_tp_offset := Vector2(0, -40)   # desde donde sale el tp (respecto al jugador)
+## Tu dibujo del tp. Vacio = un circulo de color.
+@export var cinematic_tp_texture: Texture2D
+@export var cinematic_tp_color := Color(0.0, 1.0, 0.9)
+@export var cinematic_tp_size := 36.0
+@export var cinematic_break_pop_delay := 0.3      # en que momento de "break_tp" se rompe el tp
+@export var cinematic_pause_before_scream := 0.3
+## AJUSTE DE CÁMARA: Mueve este valor en Y para subir/bajar el encuadre del jefe. (0 = centro, -80 = más arriba)
+@export var cinematic_camera_offset := Vector2(0, -80)
+## ARRASTRA AQUÍ TU RECURSO PhantomCameraTween (.res o .tres) para las transiciones.
+@export var cinematic_tween: Resource
+
 @export_group("Musica")
 ## Arrastra aqui tu cancion (.mp3, .ogg o .wav). Vacio = sin musica. Para quitarla/cambiarla solo cambia este campo.
 @export var boss_music: AudioStream
@@ -153,12 +210,30 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## F1 = quita 40 de vida al jefe (como un golpe de espada) (para probar la fase 2). Desactivalo al terminar.
 @export var debug_keys := true
 
+@export var cinematic_pivot: Node2D
+
 
 
 var health := 0
 var phase := 1
 var active := false
-var dead := false
+
+# --- Reinicio del jefe cuando mata al jugador ---
+var _dead := false
+var _fight_over := false        # true mientras se aborta el combate por reinicio
+var _resetting := false
+var _loop_running := false
+var _start_position := Vector2.ZERO
+var _start_arena_left := 0.0
+var _start_arena_right := 0.0
+
+## "dead" es true si el jefe murio O mientras se aborta el combate por reinicio.
+## Asi TODAS las comprobaciones "if dead: return" cortan los ataques en curso sin tocarlas.
+var dead: bool:
+	get:
+		return _dead or _fight_over
+	set(v):
+		_dead = v
 
 var _last_attack := -1
 var _repeat_count := 0          # cuantas veces seguidas se ha usado el mismo ataque
@@ -184,14 +259,23 @@ var _dash_debris: CPUParticles2D
 var _ghost_timer := 0.0
 var _visual_base_pos := Vector2.ZERO
 var _bar_root: Control
-var _bar_fill: ColorRect
-var _bar_trail: ColorRect
+var _bar_fill: Control
+var _bar_trail: Control
 var _bar_label: Label
 var _bar_tween: Tween
+var _bar_inner: Array[Control] = []
+var _alert_root: Control
+var _alert_active := false
+var _cinematic_active := false
+var _cinematic_seen := false
+var _cine_tp: Node2D
+var _cine_falling := false
+var _cine_temp_cam: Camera2D # Cámara exclusiva para la cinemática
 
 @onready var visual: ColorRect = $Visual
 @onready var damage_area: Area2D = $DamageArea
 @onready var damage_shape: CollisionShape2D = $DamageArea/CollisionShape2D
+
 
 
 func _ready() -> void:
@@ -199,6 +283,11 @@ func _ready() -> void:
 	_visual_base_pos = visual.position
 	_arena_left = global_position.x - arena_half_width
 	_arena_right = global_position.x + arena_half_width
+	# Guardamos el estado original para el reinicio
+	_start_position = global_position
+	_start_arena_left = _arena_left
+	_start_arena_right = _arena_right
+	_hook_death_signals(get_node_or_null("/root/Events"), ["player_died", "player_dead", "player_death"])
 	add_to_group("boss")
 	add_to_group("enemies")
 	# El daño al jugador se calcula por codigo; el Area2D solo se usa para definir el tamaño.
@@ -206,6 +295,27 @@ func _ready() -> void:
 	damage_area.monitorable = false
 	if show_health_bar:
 		_build_health_bar()
+
+
+func _process(_delta: float) -> void:
+	if _alert_active:
+		_alert_update()
+	_check_player_dead()
+
+var _player_was_dead := false
+
+## Vigila la variable is_dead del jugador y reinicia el combate cuando muere.
+func _check_player_dead() -> void:
+	var dead_now: bool = is_instance_valid(_player) and "is_dead" in _player and _player.is_dead
+	var was_dead := _player_was_dead
+	_player_was_dead = dead_now
+	if not active or _resetting:
+		return
+	if not is_instance_valid(_player) or not _player.is_inside_tree():
+		reset_fight()
+		return
+	if dead_now and not was_dead:
+		reset_fight()
 
 
 func _physics_process(delta: float) -> void:
@@ -218,7 +328,8 @@ func _physics_process(delta: float) -> void:
 
 	if not active:
 		var p := _get_player()
-		if p and p.global_position.x >= _arena_left and p.global_position.x <= _arena_right \
+		if p and not ("is_dead" in p and p.is_dead) \
+				and p.global_position.x >= _arena_left and p.global_position.x <= _arena_right \
 				and absf(p.global_position.y - global_position.y) <= activation_height:
 			active = true
 			_show_health_bar()
@@ -233,10 +344,85 @@ func _unhandled_input(event: InputEvent) -> void:
 			take_damage(40)
 
 
+# ---------------------------------------------------------------- REINICIO (el jefe gano)
+
+## Conecta (sin importar cuantos argumentos tenga la señal) las señales de muerte que existan en `obj`.
+func _hook_death_signals(obj: Object, names: Array) -> void:
+	if obj == null:
+		return
+	for s in obj.get_signal_list():
+		if s.name in names:
+			var c := _on_player_died.unbind(s.args.size())
+			if not obj.is_connected(s.name, c):
+				obj.connect(s.name, c)
+
+
+func _on_player_died() -> void:
+	reset_fight()
+
+
+## Llamala cuando el jugador muera (si no usas ninguna de las señales de arriba):
+## el jefe se cura por completo, vuelve a su lugar original y espera a que el jugador regrese.
+func reset_fight() -> void:
+	if _dead or _resetting or not active:
+		return
+	_resetting = true
+	_fight_over = true      # corta todos los ataques en curso (ver "dead")
+
+	# Espera a que el bucle de ataques termine solo (maximo 3 s por seguridad).
+	var waited := 0.0
+	while _loop_running and waited < 3.0:
+		await _next_frame()
+		waited += get_physics_process_delta_time()
+
+	# Limpieza de efectos y estados
+	_cinematic_end()
+	_alert_active = false
+	_alert_hide()
+	_hide_marker()
+	_hide_dash_path()
+	_dash_vfx_stop(0.0, false)
+	_scripted = false
+	_hit_this_attack = false
+	velocity = Vector2.ZERO
+	visual.position = _visual_base_pos
+	visual.modulate = Color.WHITE
+	visual.self_modulate = Color.WHITE
+
+	# Musica, camara y barra
+	_music_stop()
+	_boss_cam_off()
+	if _bar_root:
+		_bar_root.visible = false
+
+	# Vida, fase y memoria de ataques
+	health = max_health
+	phase = 1
+	_last_attack = -1
+	_repeat_count = 0
+	_attacks_since_move = 0
+	_recent_hits.clear()
+	health_changed.emit(health, max_health)
+	_update_health_bar(false)
+
+	# Posicion y arena originales
+	global_position = _start_position
+	_arena_left = _start_arena_left
+	_arena_right = _start_arena_right
+
+	if animation_controller:
+		animation_controller.is_phase_2 = false
+		animation_controller.set_state(animation_controller.VisualState.IDLE)
+
+	active = false          # volvera a pelear cuando el jugador entre otra vez a la arena
+	_fight_over = false
+	_resetting = false
+
+
 # ---------------------------------------------------------------- VIDA
 
 func take_damage(amount = 1, a = null, _b = null) -> void:
-	if dead:
+	if dead or _cinematic_active:
 		return
 	if not (a is String and a == "parry"):
 		_register_hit()
@@ -283,6 +469,8 @@ func _flash_hit() -> void:
 
 func _die() -> void:
 	dead = true
+	_alert_active = false
+	_alert_hide()
 	
 	if animation_controller:
 		animation_controller.force_state(animation_controller.VisualState.DEATH)
@@ -319,6 +507,9 @@ func _music_start() -> void:
 		elif stream is AudioStreamWAV:
 			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	_music_player = AudioStreamPlayer.new()
+	_music_player.process_mode = Node.PROCESS_MODE_ALWAYS   # no se pausa con el hit stop
+	if not get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.connect(_music_sync_pitch)
 	_music_player.stream = stream
 	_music_player.bus = music_bus
 	_music_player.volume_db = -60.0
@@ -329,15 +520,24 @@ func _music_start() -> void:
 	_duck_set(true)
 
 
+## Compensa Engine.time_scale para que la musica siempre suene a velocidad normal durante el hit stop.
+func _music_sync_pitch() -> void:
+	if _music_player and is_instance_valid(_music_player):
+		_music_player.pitch_scale = clampf(1.0 / maxf(Engine.time_scale, 0.05), 0.01, 4.0)
+
+
 ## Termina la musica (con fade out) cuando el jefe muere.
 func _music_stop() -> void:
 	_duck_set(false)
+	if get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.disconnect(_music_sync_pitch)
 	if _music_player == null or not is_instance_valid(_music_player):
 		return
 	if _music_tween and _music_tween.is_valid():
 		_music_tween.kill()
 	var player := _music_player
 	_music_player = null
+	player.pitch_scale = 1.0
 	var tw := player.create_tween()
 	tw.tween_property(player, "volume_db", -60.0, music_fade_out)
 	tw.finished.connect(player.queue_free)
@@ -362,6 +562,8 @@ func _duck_set(on: bool) -> void:
 ## Si el jefe desaparece sin morir (reinicio de nivel, etc.) no dejamos la musica ni el bus alterados.
 func _exit_tree() -> void:
 	_duck_set(false)
+	if is_inside_tree() and get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.disconnect(_music_sync_pitch)
 	if _music_player and is_instance_valid(_music_player):
 		_music_player.queue_free()
 
@@ -373,72 +575,135 @@ func _build_health_bar() -> void:
 	layer.layer = 20
 	add_child(layer)
 
-	# Contenedor arriba al centro (la mitad del ancho de la pantalla).
 	_bar_root = Control.new()
 	_bar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_bar_root.anchor_left = 0.25
-	_bar_root.anchor_right = 0.75
-	_bar_root.anchor_top = 0.0
-	_bar_root.anchor_bottom = 0.0
-	_bar_root.offset_left = 0.0
-	_bar_root.offset_right = 0.0
-	_bar_root.offset_top = 56.0
-	_bar_root.offset_bottom = 56.0 + bar_height
+	_apply_bar_layout()
 	_bar_root.visible = false
 	layer.add_child(_bar_root)
+	_bar_root.resized.connect(_sync_bar_inner)
 
-	var back := ColorRect.new()
-	back.color = Color(0.05, 0.05, 0.05, 0.9)
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_bar_root.add_child(back)
-	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
+	_make_bar_layer(bar_background_texture, bar_background_color, false)
 	# Barra "fantasma": se queda un momento para que veas cuanta vida acabas de quitar.
-	_bar_trail = _make_bar_rect(Color(1.0, 0.85, 0.3))
-	_bar_fill = _make_bar_rect(Color(0.85, 0.1, 0.1))
+	_bar_trail = _make_bar_layer(bar_trail_texture, bar_trail_color, true)
+	_bar_fill = _make_bar_layer(bar_fill_texture, bar_fill_color, true)
 
 	# Marca del 40% (donde empieza la fase 2).
-	var tick := ColorRect.new()
-	tick.color = Color(1, 1, 1, 0.85)
-	tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tick.anchor_left = phase2_threshold
-	tick.anchor_right = phase2_threshold
-	tick.anchor_top = 0.0
-	tick.anchor_bottom = 1.0
-	tick.offset_left = -1.0
-	tick.offset_right = 1.0
-	_bar_root.add_child(tick)
+	if show_phase_tick:
+		var tick := ColorRect.new()
+		tick.color = Color(1, 1, 1, 0.85)
+		tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tick.anchor_left = phase2_threshold
+		tick.anchor_right = phase2_threshold
+		tick.anchor_top = 0.0
+		tick.anchor_bottom = 1.0
+		tick.offset_left = -1.0
+		tick.offset_right = 1.0
+		_bar_root.add_child(tick)
+
+	if bar_frame_texture:
+		var fr := TextureRect.new()
+		fr.texture = bar_frame_texture
+		fr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fr.stretch_mode = TextureRect.STRETCH_SCALE
+		fr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bar_root.add_child(fr)
+		fr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fr.offset_left = -bar_frame_padding.x
+		fr.offset_right = bar_frame_padding.x
+		fr.offset_top = -bar_frame_padding.y
+		fr.offset_bottom = bar_frame_padding.y
 
 	var title := Label.new()
 	title.text = boss_name
-	title.position = Vector2(0, -30)
-	title.add_theme_font_size_override("font_size", 20)
+	title.position = Vector2(0, -bar_name_font_size - 10)
+	title.add_theme_font_size_override("font_size", bar_name_font_size)
 	_bar_root.add_child(title)
 
 	_bar_label = Label.new()
 	_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_bar_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar_label.visible = show_bar_text
 	_bar_root.add_child(_bar_label)
 	_bar_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	_update_health_bar(false)
+	_sync_bar_inner.call_deferred()
 
 
-func _make_bar_rect(color: Color) -> ColorRect:
-	var r := ColorRect.new()
-	r.color = color
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.anchor_left = 0.0
-	r.anchor_right = 1.0
-	r.anchor_top = 0.0
-	r.anchor_bottom = 1.0
-	r.offset_left = 0.0
-	r.offset_right = 0.0
-	r.offset_top = 0.0
-	r.offset_bottom = 0.0
-	_bar_root.add_child(r)
-	return r
+## Coloca la barra segun bar_position, bar_width_ratio, bar_margin y bar_extra_offset.
+func _apply_bar_layout() -> void:
+	var w := bar_width_ratio
+	var is_top := bar_position in [BarPosition.TOP_CENTER, BarPosition.TOP_LEFT, BarPosition.TOP_RIGHT]
+	match bar_position:
+		BarPosition.TOP_LEFT, BarPosition.BOTTOM_LEFT:
+			_bar_root.anchor_left = 0.0
+			_bar_root.anchor_right = w
+			_bar_root.offset_left = bar_margin.x
+			_bar_root.offset_right = bar_margin.x
+		BarPosition.TOP_RIGHT, BarPosition.BOTTOM_RIGHT:
+			_bar_root.anchor_left = 1.0 - w
+			_bar_root.anchor_right = 1.0
+			_bar_root.offset_left = -bar_margin.x
+			_bar_root.offset_right = -bar_margin.x
+		_:
+			_bar_root.anchor_left = 0.5 - w / 2.0
+			_bar_root.anchor_right = 0.5 + w / 2.0
+			_bar_root.offset_left = 0.0
+			_bar_root.offset_right = 0.0
+	if is_top:
+		var top := bar_margin.y + bar_name_font_size + 10.0   # deja espacio para el nombre
+		_bar_root.anchor_top = 0.0
+		_bar_root.anchor_bottom = 0.0
+		_bar_root.offset_top = top
+		_bar_root.offset_bottom = top + bar_height
+	else:
+		_bar_root.anchor_top = 1.0
+		_bar_root.anchor_bottom = 1.0
+		_bar_root.offset_bottom = -bar_margin.y
+		_bar_root.offset_top = -bar_margin.y - bar_height
+	_bar_root.offset_left += bar_extra_offset.x
+	_bar_root.offset_right += bar_extra_offset.x
+	_bar_root.offset_top += bar_extra_offset.y
+	_bar_root.offset_bottom += bar_extra_offset.y
+
+
+## Crea una capa de la barra (color o textura). Las "clipped" se recortan segun la vida.
+func _make_bar_layer(tex: Texture2D, color: Color, clipped: bool) -> Control:
+	var content: Control
+	if tex:
+		var tr := TextureRect.new()
+		tr.texture = tex
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		content = tr
+	else:
+		var cr := ColorRect.new()
+		cr.color = color
+		content = cr
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not clipped:
+		_bar_root.add_child(content)
+		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		return content
+	var box := Control.new()
+	box.clip_contents = true
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.anchor_left = 0.0
+	box.anchor_top = 0.0
+	box.anchor_right = 1.0
+	box.anchor_bottom = 1.0
+	_bar_root.add_child(box)
+	box.add_child(content)
+	_bar_inner.append(content)
+	return box
+
+
+## El contenido de relleno/estela siempre mide lo de la barra completa; el contenedor solo lo recorta.
+func _sync_bar_inner() -> void:
+	for c in _bar_inner:
+		c.position = Vector2.ZERO
+		c.size = _bar_root.size
 
 
 func _update_health_bar(animate := true) -> void:
@@ -471,9 +736,79 @@ func _hide_health_bar() -> void:
 	create_tween().tween_property(_bar_root, "modulate:a", 0.0, 1.0)
 
 
+# ---------------------------------------------------------------- ALERTA "?" FUERA DE PANTALLA
+
+func _alert_build() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 21
+	add_child(layer)
+	_alert_root = Control.new()
+	_alert_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_alert_root.size = alert_size
+	_alert_root.pivot_offset = alert_size / 2.0
+	_alert_root.visible = false
+	layer.add_child(_alert_root)
+	if alert_texture:
+		var tr := TextureRect.new()
+		tr.texture = alert_texture
+		tr.modulate = alert_tint
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_alert_root.add_child(tr)
+		tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	else:
+		var l := Label.new()
+		l.text = alert_text
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.add_theme_font_size_override("font_size", alert_font_size)
+		l.add_theme_color_override("font_color", alert_color)
+		l.add_theme_color_override("font_outline_color", Color.BLACK)
+		l.add_theme_constant_override("outline_size", 12)
+		_alert_root.add_child(l)
+		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+## Si el origen del disparo esta fuera de la camara, pone la alerta pegada al borde, en la direccion de donde viene.
+func _alert_update() -> void:
+	if not offscreen_alert_enabled or dead:
+		_alert_hide()
+		return
+	if _alert_root == null:
+		_alert_build()
+	var vp := get_viewport()
+	var rect := vp.get_visible_rect()
+	var screen_pos: Vector2 = vp.get_canvas_transform() * get_shoot_origin()
+	if rect.has_point(screen_pos):
+		_alert_root.visible = false
+		return
+	var c := rect.size / 2.0
+	var d := screen_pos - c
+	var half := c - Vector2(alert_edge_margin, alert_edge_margin) - alert_size / 2.0
+	var s := minf(half.x / maxf(absf(d.x), 0.001), half.y / maxf(absf(d.y), 0.001))
+	_alert_root.position = c + d * s - alert_size / 2.0
+	if alert_pulse:
+		_alert_root.scale = Vector2.ONE * (1.0 + 0.15 * sin(Time.get_ticks_msec() / 1000.0 * 12.0))
+	_alert_root.visible = true
+
+
+func _alert_hide() -> void:
+	if _alert_root:
+		_alert_root.visible = false
+
+
 # ---------------------------------------------------------------- CEREBRO
 
+## Envoltura del bucle: marca cuando esta corriendo para que el reinicio sepa cuando termino.
 func _attack_loop() -> void:
+	_loop_running = true
+	await _attack_loop_body()
+	_loop_running = false
+
+
+func _attack_loop_body() -> void:
 	await _wait(0.5)
 	while not dead:
 		if phase == 1 and health <= max_health * phase2_threshold:
@@ -511,7 +846,10 @@ func _attack_loop() -> void:
 		_last_attack = attack
 		match attack:
 			Attack.SHOOT:
+				_alert_active = true
 				await _attack_shoot()
+				_alert_active = false
+				_alert_hide()
 			Attack.JUMP:
 				await _attack_jump()
 			Attack.DASH:
@@ -524,19 +862,26 @@ func _attack_loop() -> void:
 
 
 func _enter_phase2() -> void:
+	# Cinematica previa (si esta configurada).
+	var cine := _cinematic_available()
+	if cine:
+		await _phase2_cinematic()
+		if dead:
+			_cinematic_end()
+			return
+
 	phase = 2
 	_last_attack = -1
 	_repeat_count = 0
 	phase_changed.emit(phase)
 	
-	# Comentamos el darkened por si visual es un AnimatedSprite2D
-	# visual.color = visual.color.darkened(0.35)
-	
 	if animation_controller:
 		animation_controller.is_phase_2 = true
-		# El jefe se congela lógicamente aquí durante lo que dure el grito
+		# El grito (weep) sigue con el jugador congelado.
 		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
-		
+	
+	# El jugador recupera el control justo antes de que el jefe empiece a atacar.
+	_cinematic_end()
 	await _telegraph(1.0, Color(1, 0.2, 0.2))
 
 
@@ -579,7 +924,9 @@ func _attack_shoot() -> void:
 				
 			# Espera a que termine la animación de disparo antes de continuar
 			await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
-			
+			if dead:
+				return
+				
 		_fire_projectile()
 		# Ya no hace falta el await _wait(0.3) porque play_and_wait ya esperó
 		
@@ -593,6 +940,8 @@ func _attack_shoot() -> void:
 				
 				# Espera a que termine cada animación de disparo
 				await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
+				if dead:
+					return
 				
 			_fire_projectile()
 			
@@ -602,6 +951,8 @@ func _attack_shoot() -> void:
 				
 			if dead:
 				return
+
+
 ## Punto de donde sale el proyectil (y a donde regresa al hacer parry).
 func get_shoot_origin() -> Vector2:
 	if shoot_from_center:
@@ -654,7 +1005,7 @@ func _attack_jump() -> void:
 		while elapsed < windup and not dead:
 			target = _landing_point()
 			_show_marker(target)
-			await get_tree().physics_frame
+			await _next_frame()
 			elapsed += get_physics_process_delta_time()
 		if dead:
 			return
@@ -709,7 +1060,7 @@ func _do_jump(target: Vector2, t: float) -> void:
 	_jump_takeoff_vfx()
 	_ghost_timer = 0.0
 	while elapsed < t and not dead:
-		await get_tree().physics_frame
+		await _next_frame()
 		elapsed += get_physics_process_delta_time()
 		_jump_vfx_tick(get_physics_process_delta_time())
 		var tau := minf(elapsed, t)
@@ -782,7 +1133,7 @@ func _attack_dash() -> void:
 			global_position.x += dir * step
 			_try_damage_player()
 			_dash_vfx_tick(delta)
-			await get_tree().physics_frame
+			await _next_frame()
 			elapsed += delta
 		_scripted = false
 		velocity = Vector2.ZERO
@@ -965,7 +1316,7 @@ func _shockwave_blast() -> void:
 						push_dir = 1.0
 					_push_player(push_dir, shockwave_push_distance)
 					break
-		await get_tree().physics_frame
+		await _next_frame()
 	for r in waves:
 		r.queue_free()
 
@@ -1001,7 +1352,7 @@ func _damage_window(duration: float) -> void:
 	var elapsed := 0.0
 	while elapsed < duration and not dead:
 		_try_damage_player()
-		await get_tree().physics_frame
+		await _next_frame()
 		elapsed += get_physics_process_delta_time()
 
 
@@ -1063,6 +1414,8 @@ func _get_player() -> Node2D:
 		if _player is PhysicsBody2D:
 			_player.add_collision_exception_with(self)
 		_sync_slash_layers()
+		# Escucha la muerte del jugador para reiniciar el combate
+		_hook_death_signals(_player, ["died", "player_died", "death", "dead", "player_dead", "player_death"])
 		_exceptions_done = true
 	return _player
 
@@ -1097,16 +1450,22 @@ func _chase(duration: float) -> void:
 				velocity.x = signf(dx) * spd
 			else:
 				velocity.x = 0.0
-		await get_tree().physics_frame
+		await _next_frame()
 		elapsed += get_physics_process_delta_time()
 	velocity.x = 0.0
 	
-	if animation_controller: 
+	if animation_controller and not dead: 
 		animation_controller.set_state(animation_controller.VisualState.IDLE)
 
 
 func _wait(seconds: float) -> void:
-	await get_tree().create_timer(seconds).timeout
+	await get_tree().create_timer(seconds, false).timeout
+
+## Espera al siguiente frame de fisica, pero se queda congelado mientras el juego esta pausado.
+func _next_frame() -> void:
+	await get_tree().physics_frame
+	while get_tree().paused:
+		await get_tree().physics_frame
 
 
 ## Parpadeo de aviso sin esperar (devuelve el tween).
@@ -1444,3 +1803,287 @@ func _boss_cam_off() -> void:
 	var p := _get_player()
 	if p and p.has_method("deactivate_boss_cam"):
 		p.deactivate_boss_cam()
+
+
+# ---------------------------------------------------------------- CINEMATICA DE LA FASE 2
+
+func _cinematic_available() -> bool:
+	if not cinematic_enabled:
+		return false
+	if cinematic_only_first_time and _cinematic_seen:
+		return false
+	if cinematic_player_spot == null or cinematic_boss_spot == null:
+		push_warning("Boss: asigna cinematic_player_spot y cinematic_boss_spot para ver la cinematica de la fase 2.")
+		return false
+	return _get_player() != null
+
+
+func _phase2_cinematic() -> void:
+	var p = _get_player()
+	var pac = p.get("animation_controller")
+	var psprite = p.get("sprite")
+	
+	# --- NUEVO: Crear una cámara temporal con Tween (transición suave) ---
+	_cine_temp_cam = Camera2D.new()
+	get_parent().add_child(_cine_temp_cam)
+	
+	# Posicionamos la cámara temporal donde estaba la del jugador originalmente
+	var current_cam := get_viewport().get_camera_2d()
+	var start_pos: Vector2 = current_cam.global_position if current_cam else p.global_position
+	_cine_temp_cam.global_position = start_pos
+	
+	# APLICAMOS EL OFFSET AQUÍ PARA QUE SE MANTENGA EN TODA LA CINEMÁTICA
+	_cine_temp_cam.offset = cinematic_camera_offset
+	_cine_temp_cam.position_smoothing_enabled = false # Desactivado para que el Tween controle todo
+	_cine_temp_cam.make_current() 
+	
+	# CALCULAMOS LA POSICIÓN DEL PIVOTE:
+	# Tomamos la posición del jefe y le sumamos el desplazamiento del pivote (que ajustas en el inspector)
+	var pivot_offset := Vector2.ZERO
+	if is_instance_valid(cinematic_pivot):
+		pivot_offset = cinematic_pivot.global_position - global_position
+	
+	var target_pivot_pos := global_position + pivot_offset
+	
+	# Hacemos que la cámara viaje desde su posición original hasta el PIVOTE del jefe
+	var cam_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if cinematic_tween:
+		cam_tween.set_trans(cinematic_tween.transition).set_ease(cinematic_tween.ease).set_parallel(false)
+		cam_tween.tween_property(_cine_temp_cam, "global_position", target_pivot_pos, cinematic_tween.duration)
+	else:
+		cam_tween.tween_property(_cine_temp_cam, "global_position", target_pivot_pos, 1.0)
+	# -------------------------------------------------------------
+
+	_cinematic_active = true
+	_cinematic_seen = true
+	velocity = Vector2.ZERO
+	_hide_marker()
+	_cine_freeze_player(p)
+
+	# 1) Aviso: el jefe se prepara para saltar.
+	_face_player_visual()
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_WINDUP)
+	_telegraph_tween(cinematic_windup, Color(1, 0.6, 0.2))
+	await _wait(cinematic_windup)
+	if dead:
+		return
+
+	# 2) Saltan a la vez: jugador a la izquierda, jefe a la derecha.
+	var boss_target: Vector2 = cinematic_boss_spot.global_position
+	var feet_offset: float = _player_rect(p).end.y - p.global_position.y
+	var player_target: Vector2 = cinematic_player_spot.global_position + Vector2(0, -feet_offset - 1.0)
+	var t := cinematic_jump_time
+	var start: Vector2 = p.global_position
+	var vx := (player_target.x - start.x) / t
+	var vy := ((player_target.y - start.y) - 0.5 * gravity * t * t) / t
+	if psprite:
+		psprite.flip_h = player_target.x < start.x
+	if pac:
+		pac.force_state(pac.VisualState.JUMP)
+	_cine_falling = false
+	var tw := create_tween()
+	tw.tween_method(_cine_player_arc.bind(p, start, vx, vy), 0.0, t, t)
+	
+	# Movemos la cámara temporal al pivote del jefe mientras salta
+	var cam_jump_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if cinematic_tween:
+		cam_jump_tween.set_trans(cinematic_tween.transition).set_ease(cinematic_tween.ease).set_parallel(false)
+		cam_jump_tween.tween_property(_cine_temp_cam, "global_position", boss_target + pivot_offset, cinematic_tween.duration)
+	else:
+		cam_jump_tween.tween_property(_cine_temp_cam, "global_position", boss_target + pivot_offset, t)
+	
+	await _do_jump(boss_target, t)
+	if tw.is_valid() and tw.is_running():
+		await tw.finished
+	if cam_jump_tween.is_valid() and cam_jump_tween.is_running():
+		await cam_jump_tween.finished
+	if dead:
+		return
+	p.global_position = player_target
+
+	# 3) Se miran de frente.
+	if psprite:
+		psprite.flip_h = boss_target.x < player_target.x
+	_face_player_visual()
+	if pac:
+		pac.force_state(pac.VisualState.IDLE)
+	await _wait(cinematic_pause_after_land)
+	if dead:
+		return
+
+	# 4) El jugador apunta y lanza el tp.
+	if pac:
+		pac.start_aim_sequence()
+	await _wait(cinematic_aim_time)
+	if dead:
+		return
+	if pac:
+		pac.end_aim_sequence()
+	await _wait(cinematic_release_delay)
+	if dead:
+		return
+	var dir := signf(boss_target.x - player_target.x)
+	if dir == 0.0:
+		dir = 1.0
+	_cine_spawn_tp(p.global_position + Vector2(cinematic_tp_offset.x * dir, cinematic_tp_offset.y))
+	var flight := create_tween()
+	flight.tween_property(_cine_tp, "global_position", get_shoot_origin(), cinematic_tp_flight_time) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await flight.finished
+	if dead:
+		return
+
+	# 5) El jefe lo atrapa y lo rompe.
+	await _cine_boss_anim("CATCH_TP")
+	if dead:
+		return
+	get_tree().create_timer(cinematic_break_pop_delay, false).timeout.connect(_cine_break_tp)
+	await _cine_boss_anim("BREAK_TP")
+	if dead:
+		return
+	await _wait(cinematic_pause_before_scream)
+	# Despues de esto, _enter_phase2 reproduce el grito (weep) y activa la fase 2.
+
+
+func _cine_boss_anim(state_name: String, fallback := 0.6) -> void:
+	if animation_controller:
+		await animation_controller.play_and_wait(animation_controller.VisualState[state_name], fallback)
+	else:
+		await _wait(fallback)
+
+
+## Movimiento parabolico del jugador (lo llama el tween).
+func _cine_player_arc(tau: float, p, start: Vector2, vx: float, vy: float) -> void:
+	if not is_instance_valid(p):
+		return
+	p.global_position = start + Vector2(vx * tau, vy * tau + 0.5 * gravity * tau * tau)
+	# Al pasar el punto mas alto cambia a la animacion de caida.
+	if not _cine_falling and vy + gravity * tau > 0.0:
+		_cine_falling = true
+		var ac = p.get("animation_controller")
+		if ac:
+			ac.force_state(ac.VisualState.FALL)
+
+
+func _cine_spawn_tp(pos: Vector2) -> void:
+	if cinematic_tp_texture:
+		var s := Sprite2D.new()
+		s.texture = cinematic_tp_texture
+		_cine_tp = s
+	else:
+		var poly := Polygon2D.new()
+		var pts := PackedVector2Array()
+		for i in 20:
+			var a := TAU * i / 20.0
+			pts.append(Vector2(cos(a), sin(a)) * cinematic_tp_size * 0.5)
+		poly.polygon = pts
+		poly.color = cinematic_tp_color
+		_cine_tp = poly
+	_cine_tp.z_index = 20
+	get_parent().add_child(_cine_tp)
+	_cine_tp.global_position = pos
+
+
+## El jefe rompe el tp: explosion de particulas + temblor de camara.
+func _cine_break_tp() -> void:
+	if not is_instance_valid(_cine_tp):
+		return
+	var pos := _cine_tp.global_position
+	_cine_tp.queue_free()
+	_cine_tp = null
+	var ps := _make_particles(45, 0.8, cinematic_tp_color, 250.0, 700.0, 5.0, 12.0, Vector2(0, 1200), 180.0)
+	ps.one_shot = true
+	ps.explosiveness = 1.0
+	get_parent().add_child(ps)
+	ps.global_position = pos
+	ps.emitting = true
+	ps.finished.connect(ps.queue_free)
+	if jump_camera_shake > 0.0:
+		_shake_camera(jump_camera_shake * 1.5)
+
+
+func _face_player_visual() -> void:
+	var p := _get_player()
+	var spr := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if p and spr:
+		spr.flip_h = p.global_position.x < global_position.x
+
+
+## Termina la cinematica (idempotente): devuelve el control al jugador.
+func _cinematic_end() -> void:
+	if not _cinematic_active:
+		return
+		
+	# --- NUEVO: Regresar suavemente al jugador antes de destruir la cámara ---
+	if is_instance_valid(_cine_temp_cam):
+		var p = _get_player()
+		var player_dead: bool = "is_dead" in p and p.is_dead
+		
+		if is_instance_valid(p) and not player_dead:
+			# Hacemos que la cámara temporal empiece a seguir al jugador suavemente
+			_cine_temp_cam.position_smoothing_enabled = true
+			_cine_temp_cam.position_smoothing_speed = 3.0
+			_cine_temp_cam.offset = Vector2.ZERO # Le quitamos el offset para que encuadre al jugador normal
+			
+			# Movemos el target de la cámara hacia el jugador
+			_cine_temp_cam.global_position = p.global_position
+			
+			# Esperamos un momento para que el suavizado haga su magia y se deslice hasta el jugador
+			await get_tree().create_timer(0.5, false).timeout
+		
+		# Ahora que ya está sobre el jugador, destruimos la cámara temporal.
+		# La cámara original del jugador tomará el control exactamente en la misma posición,
+		# por lo que no habrá ningún salto brusco.
+		_cine_temp_cam.queue_free()
+		_cine_temp_cam = null
+	# -------------------------------------------------------------------------
+
+	_cinematic_active = false
+	if is_instance_valid(_cine_tp):
+		_cine_tp.queue_free()
+	_cine_tp = null
+	_cine_unfreeze_player(_player)
+
+
+## Congela al jugador SIN tocar su script: apaga su fisica y su input, y lo hace invulnerable.
+func _cine_freeze_player(p) -> void:
+	if p.has_method("_cancel_tp_charge"):
+		p._cancel_tp_charge()
+	if "is_recharging" in p:
+		p.is_recharging = false
+	if "ChargeCam" in p and p.ChargeCam:
+		p.ChargeCam.priority = 0
+	if "invulnerable_timer" in p:
+		p.invulnerable_timer = 9999.0
+	if "sprite" in p and p.sprite:
+		p.sprite.visible = true
+	if "dust_particles" in p and p.dust_particles:
+		p.dust_particles.emitting = false
+	var ac = p.get("animation_controller")
+	if ac:
+		ac.cancel_sequence()
+		ac.unlock()
+	p.velocity = Vector2.ZERO
+	p.set_physics_process(false)
+	p.set_process_unhandled_input(false)
+	p.set_process_input(false)
+
+
+func _cine_unfreeze_player(p) -> void:
+	if not is_instance_valid(p):
+		return
+	var player_dead: bool = "is_dead" in p and p.is_dead
+	if not player_dead:
+		if "invulnerable_timer" in p:
+			p.invulnerable_timer = 0.5
+		var ac = p.get("animation_controller")
+		if ac:
+			ac.cancel_sequence()
+			ac.unlock()
+	if "_last_fall_speed" in p:
+		p._last_fall_speed = 0.0
+	p.velocity = Vector2.ZERO
+	p.set_physics_process(true)
+	p.set_process_unhandled_input(true)
+	p.set_process_input(true)

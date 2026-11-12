@@ -34,6 +34,8 @@
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="28_0yspx"]
 [ext_resource type="PackedScene" uid="uid://2drx1upee216" path="res://holo_tutorial.tscn" id="33_pm7ge"]
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
+[ext_resource type="Texture2D" uid="uid://xuw3nymssfkb" path="res://animations/projectileTP/shot/tp.png" id="35_e3xdn"]
+[ext_resource type="Resource" uid="uid://c8jrdydjoyq6c" path="res://resources/cinematic_tween.tres" id="36_12dxd"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
 texture = ExtResource("6_g52lx")
@@ -1433,9 +1435,9 @@ shadow_enabled = true
 texture = ExtResource("23_dyhf1")
 texture_scale = 3.44
 
-[node name="Boss1" parent="." unique_id=718000262 instance=ExtResource("34_brok5")]
+[node name="Boss1" parent="." unique_id=718000262 node_paths=PackedStringArray("cinematic_player_spot", "cinematic_boss_spot") instance=ExtResource("34_brok5")]
 process_priority = 1
-position = Vector2(40270, -530)
+position = Vector2(40192, -512)
 max_health = 275
 phase2_threshold = 0.65
 projectile_damage = 3
@@ -1451,6 +1453,12 @@ second_jump_windup = 0.2
 dash_speed = 2000.0
 dash_windup = 0.5
 dash_passes = 3
+cinematic_player_spot = NodePath("../Cinematic Player Spot")
+cinematic_boss_spot = NodePath("../Cinematic Boss Spot")
+cinematic_tp_texture = ExtResource("35_e3xdn")
+cinematic_tp_size = 32.0
+cinematic_camera_offset = Vector2(0, -140)
+cinematic_tween = ExtResource("36_12dxd")
 music_volume_db = -19.0
 reposition_chance = 0.5
 spam_hits_needed = 3
@@ -1463,3 +1471,11 @@ rest_time_phase2 = 0.1
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1378087107]
 environment = SubResource("Environment_e3xdn")
+
+[node name="Cinematic Player Spot" type="Marker2D" parent="." unique_id=437113443]
+position = Vector2(38645, -900)
+gizmo_extents = 0.0
+
+[node name="Cinematic Boss Spot" type="Marker2D" parent="." unique_id=1845469908]
+position = Vector2(41088, -888)
+gizmo_extents = 201.5
