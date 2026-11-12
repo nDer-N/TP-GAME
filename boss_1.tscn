@@ -11,23 +11,30 @@ size = Vector2(160, 260)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yjy12"]
 size = Vector2(260, 219)
 
-[node name="Boss1" type="CharacterBody2D" unique_id=718000262 node_paths=PackedStringArray("animation_controller")]
+[node name="Boss1" type="CharacterBody2D" unique_id=718000262 node_paths=PackedStringArray("animation_controller", "cinematic_pivot")]
 collision_layer = 3
 script = ExtResource("1_a8swx")
 max_health = 30
 parry_damage = 10
 bar_height = 25.0
+alert_text = "!"
+alert_color = Color(0.98039216, 0, 0, 1)
 animation_controller = NodePath("BossAnimationController")
 boss_music = ExtResource("2_p7pij")
 music_volume_db = -22.223
 music_fade_in = 4.0
+cinematic_pivot = NodePath("CINEMATICPIVOT")
 
 [node name="Visual" type="ColorRect" parent="." unique_id=2075780140]
 visible = false
 offset_left = -80.0
 offset_top = -260.0
 offset_right = 80.0
+pivot_offset = Vector2(80, 129)
 color = Color(0.13661176, 0.10513685, 0.5272385, 1)
+
+[node name="CINEMATICPIVOT" type="Node2D" parent="." unique_id=63444101]
+position = Vector2(0, -130)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2139131377]
 position = Vector2(0, -130)
