@@ -49,4 +49,4 @@ position = Vector2(-16, -160.00002)
 scale = Vector2(0.4115478, 0.41154787)
 sprite_frames = ExtResource("3_y66il")
 animation = &"dash_windup_p2"
-frame_progress = 0.0067962254
+frame_progress = 0.787345

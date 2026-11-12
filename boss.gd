@@ -745,6 +745,11 @@ func _attack_dash() -> void:
 		var dir := signf(p.global_position.x - global_position.x)
 		if dir == 0.0:
 			dir = 1.0
+			
+		# --- NUEVO: Hacer que el jefe mire hacia donde va a hacer el dash ---
+		$AnimatedSprite2D.flip_h = dir < 0.0
+		# ------------------------------------------------------------------
+
 		var target_x := _arena_right if dir > 0.0 else _arena_left
 		target_x = _dash_limit_x(dir, target_x)   # se acorta si hay un vacio en el camino
 
@@ -785,7 +790,6 @@ func _attack_dash() -> void:
 		if dead:
 			return
 		await _wait(0.4)
-
 
 ## Hasta donde puede llegar el dash: se detiene `dash_edge_margin` antes de un vacio.
 func _dash_limit_x(dir: float, target_x: float) -> float:
