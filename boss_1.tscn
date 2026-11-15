@@ -4,12 +4,21 @@
 [ext_resource type="Script" uid="uid://ccby7w8j74qn8" path="res://boss_animation_controller.gd" id="2_2nlvs"]
 [ext_resource type="AudioStream" uid="uid://gl2ighfhup0o" path="res://Audio/FREE DL Flamewall Symphonic Speed Metal.mp3" id="2_p7pij"]
 [ext_resource type="SpriteFrames" uid="uid://deqrnkdm8c3kw" path="res://resources/BOSS_1_ANIMAATIONS.tres" id="3_y66il"]
+[ext_resource type="Shader" uid="uid://bsomxplwe04td" path="res://shaders/bossflash.gdshader" id="4_mgxgb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bgaq0"]
 size = Vector2(160, 260)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yjy12"]
 size = Vector2(260, 219)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p7pij"]
+shader = ExtResource("4_mgxgb")
+shader_parameter/flash_amount = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/outline_amount = 0.0
+shader_parameter/outline_color = Color(1, 0, 0, 1)
+shader_parameter/outline_width = 0.0
 
 [node name="Boss1" type="CharacterBody2D" unique_id=718000262 node_paths=PackedStringArray("animation_controller", "cinematic_pivot")]
 collision_layer = 3
@@ -52,8 +61,8 @@ script = ExtResource("2_2nlvs")
 animated_sprite = NodePath("../AnimatedSprite2D")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=273488834]
+material = SubResource("ShaderMaterial_p7pij")
 position = Vector2(-16, -160.00002)
 scale = Vector2(0.4115478, 0.41154787)
 sprite_frames = ExtResource("3_y66il")
-animation = &"dash_windup_p2"
-frame_progress = 0.8907762
+animation = &"jump_land_p2"

@@ -227,6 +227,8 @@ var _start_position := Vector2.ZERO
 var _start_arena_left := 0.0
 var _start_arena_right := 0.0
 
+var _flash_tween: Tween = null
+
 ## "dead" es true si el jefe murio O mientras se aborta el combate por reinicio.
 ## Asi TODAS las comprobaciones "if dead: return" cortan los ataques en curso sin tocarlas.
 var dead: bool:
@@ -432,13 +434,63 @@ func take_damage(amount = 1, a = null, _b = null) -> void:
 	health = maxi(health - dmg, 0)
 	health_changed.emit(health, max_health)
 	_update_health_bar()
-	_flash_hit()
+	flash_sprite(0.15, Color(1, 0, 0, 1))
 	
 	if animation_controller:
 		animation_controller.force_state(animation_controller.VisualState.HURT, 0.3)
 		
 	if health == 0:
 		_die()
+		
+
+func flash_sprite(duration: float, color: Color) -> void:
+	# Intentamos obtener el AnimatedSprite2D (o usamos el ColorRect visual si es el caso)
+	var target_node := get_node_or_null("AnimatedSprite2D") as CanvasItem
+	if target_node == null:
+		target_node = visual as CanvasItem
+		
+	if target_node == null or target_node.material == null:
+		return
+		
+	var mat := target_node.material as ShaderMaterial
+	if mat == null:
+		return
+		
+	# Si es un AnimatedSprite2D, actualizamos el tamaño del frame en el shader
+	if target_node is AnimatedSprite2D:
+		_update_shader_frame_size(mat, target_node)
+	
+	# Matar el tween anterior si existe (para que golpes seguidos no se pisen)
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+	
+	# Setear color y arrancar el flash en 1.0
+	mat.set_shader_parameter("flash_color", color)
+	mat.set_shader_parameter("flash_amount", 1.0)
+	
+	# Bajar de 1.0 a 0.0 durante `duration`
+	_flash_tween = create_tween()
+	_flash_tween.tween_method(
+		func(v: float): mat.set_shader_parameter("flash_amount", v),
+		1.0,   # desde
+		0.0,   # hasta
+		duration
+	)
+
+func _update_shader_frame_size(mat: ShaderMaterial, spr: AnimatedSprite2D) -> void:
+	if spr == null or spr.sprite_frames == null:
+		return
+	var anim := spr.animation
+	if not spr.sprite_frames.has_animation(anim):
+		return
+	var frame_count := spr.sprite_frames.get_frame_count(anim)
+	if frame_count <= 0:
+		return
+	# Tamaño del primer frame de la animación actual
+	var tex: Texture2D = spr.sprite_frames.get_frame_texture(anim, 0)
+	if tex == null:
+		return
+	mat.set_shader_parameter("frame_size", Vector2(tex.get_size()))
 
 
 # Alias: tu espada / proyectil puede llamar a cualquiera de estos nombres.
@@ -461,10 +513,10 @@ func receive_damage(amount = 1, a = null, b = null) -> void:
 	take_damage(amount, a, b)
 
 
-func _flash_hit() -> void:
-	var tw := create_tween()
-	visual.self_modulate = Color(3, 3, 3)
-	tw.tween_property(visual, "self_modulate", Color.WHITE, 0.12)
+#func _flash_hit() -> void:
+	#var tw := create_tween()
+	#visual.self_modulate = Color(3, 3, 3)
+	#tw.tween_property(visual, "self_modulate", Color.WHITE, 0.12)
 
 
 func _die() -> void:
@@ -1049,6 +1101,12 @@ func _do_jump(target: Vector2, t: float) -> void:
 	var start := global_position
 	var vx := (target.x - start.x) / t
 	var vy := ((target.y - start.y) - 0.5 * gravity * t * t) / t
+
+	# --- NUEVO: Hacer que el jefe mire hacia donde va a saltar ---
+	var animated_sprite := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if animated_sprite and absf(target.x - start.x) > 1.0:
+		animated_sprite.flip_h = target.x < start.x
+	# -------------------------------------------------------------
 
 	_scripted = true
 	
