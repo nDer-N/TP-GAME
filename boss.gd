@@ -148,6 +148,7 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 
 @export_group("Animaciones")
 @export var animation_controller: Node
+@export var WeepNoise: PhantomCameraNoiseEmitter2D
 
 @export_group("Cinematica fase 2")
 @export var cinematic_enabled := true
@@ -949,6 +950,9 @@ func _enter_phase2() -> void:
 	if animation_controller:
 		animation_controller.is_phase_2 = true
 		# El grito (weep) sigue con el jugador congelado.
+		#if WeepNoise:
+		#	WeepNoise.emit()
+		
 		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
 	
 	# El jugador recupera el control justo antes de que el jefe empiece a atacar.
@@ -1744,6 +1748,16 @@ func _shake_camera(strength: float) -> void:
 		tw.tween_property(cam, "offset", Vector2(randf_range(-1, 1), randf_range(-1, 1)) * strength * k, 0.03)
 	tw.tween_property(cam, "offset", Vector2.ZERO, 0.04)
 
+func _shake_camera_weep(strength: float, time: float) -> void:
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var tw := create_tween()
+	for i in 6:
+		var k := 1.0 - float(i) / 6.0
+		tw.tween_property(cam, "offset", Vector2(randf_range(-1, 1), randf_range(-1, 1)) * strength * k, 0.03)
+	tw.tween_property(cam, "offset", Vector2.ZERO, time)
+
 
 # ---------------------------------------------------------------- EFECTOS DEL DASH (polvo, escombros, estela)
 
@@ -2024,6 +2038,7 @@ func _phase2_cinematic() -> void:
 	if dead:
 		return
 	# Despues de esto, _enter_phase2 reproduce el grito (weep) y activa la fase 2.
+	_shake_camera_weep(100, 2)
 
 
 ## Movimiento parabolico del jugador (lo llama el tween).

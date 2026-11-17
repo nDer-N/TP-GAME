@@ -1,17 +1,47 @@
 [gd_scene format=3 uid="uid://drd6pe1coj784"]
 
-[ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_0ela6"]
+[ext_resource type="Texture2D" uid="uid://c484dx2hhcmy5" path="res://animations/boss1/Projectile/loop_0000.png" id="1_yxyqv"]
+[ext_resource type="Texture2D" uid="uid://b267aaba5mmx0" path="res://animations/boss1/Projectile/loop_0001.png" id="2_gf2q0"]
+[ext_resource type="Texture2D" uid="uid://droueb3tk4ki7" path="res://animations/boss1/Projectile/loop_0002.png" id="3_idqdx"]
+[ext_resource type="Texture2D" uid="uid://b2c7q5j2mkx40" path="res://animations/boss1/Projectile/loop_0003.png" id="4_l8osx"]
+[ext_resource type="Texture2D" uid="uid://b356gitgpk3ee" path="res://animations/boss1/Projectile/loop_0004.png" id="5_wxrek"]
+[ext_resource type="Texture2D" uid="uid://5fb13x1x7xtp" path="res://animations/boss1/Projectile/loop_0005.png" id="6_f7mij"]
+[ext_resource type="Texture2D" uid="uid://b3besqy7e6al7" path="res://animations/boss1/Projectile/loop_0006.png" id="7_fv8mm"]
+[ext_resource type="Texture2D" uid="uid://dxobi78uydcs5" path="res://animations/boss1/Projectile/loop_0007.png" id="8_58erh"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_hftqc"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_0ela6")
+"texture": ExtResource("1_yxyqv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_gf2q0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_idqdx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_l8osx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_wxrek")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_f7mij")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_fv8mm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_58erh")
 }],
 "loop": 1,
 "name": &"default",
-"speed": 5.0
+"speed": 24.0
 }]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=2032896875]
+scale = Vector2(0.30833334, 0.30833334)
 sprite_frames = SubResource("SpriteFrames_hftqc")
+frame_progress = 0.06932253

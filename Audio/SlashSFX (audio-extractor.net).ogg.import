@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bf1bdwuoifert"
+path="res://.godot/imported/SlashSFX (audio-extractor.net).ogg-6ad867c79f89168d58c4bbf7100d250a.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio/SlashSFX (audio-extractor.net).ogg"
+dest_files=["res://.godot/imported/SlashSFX (audio-extractor.net).ogg-6ad867c79f89168d58c4bbf7100d250a.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
