@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://btkndpiwofu8u"]
 
 [ext_resource type="Script" uid="uid://cygkaxg65v7se" path="res://Game/main_menu.gd" id="1_06t4h"]
+[ext_resource type="AudioStream" uid="uid://daoilea6pk043" path="res://Audio/Creo - Marine Snow.mp3" id="2_7vrkn"]
 
 [node name="MainMenu" type="Control" unique_id=545539263]
 layout_mode = 3
@@ -24,3 +25,7 @@ Hecho con Godot Engine
 
 ¡Gracias por jugar!"
 button_spacing = 0
+menu_music = ExtResource("2_7vrkn")
+music_volume_db = -15.0
+music_fade_in = 2.0
+music_fade_out = 2.0

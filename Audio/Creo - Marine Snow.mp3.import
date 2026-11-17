@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://daoilea6pk043"
+path="res://.godot/imported/Creo - Marine Snow.mp3-0c8a0c2d34dba85ccb61ca4537180b22.mp3str"
+
+[deps]
+
+source_file="res://Audio/Creo - Marine Snow.mp3"
+dest_files=["res://.godot/imported/Creo - Marine Snow.mp3-0c8a0c2d34dba85ccb61ca4537180b22.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

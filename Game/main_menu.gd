@@ -104,7 +104,15 @@ extends Control
 @export var text_delete_tooltip: String = "Eliminar partida"
 
 @export_group("Sonido")
+## Arrastra aquí tu canción (.mp3, .ogg o .wav). Vacío = sin música.
 @export var menu_music: AudioStream
+@export_range(-40.0, 6.0) var music_volume_db: float = -6.0
+@export var music_fade_in: float = 1.5
+## Fundido de salida al empezar o cargar una partida.
+@export var music_fade_out: float = 0.8
+## Repite la canción mientras estés en el menú.
+@export var music_loop: bool = true
+@export var music_bus: String = "Master"
 @export var click_sound: AudioStream
 @export var hover_sound: AudioStream
 
@@ -112,6 +120,8 @@ extends Control
 const TRASH_SVG := "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/></svg>"
 const PENCIL_SVG := "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20h9'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/></svg>"
 
+var _music_tween: Tween
+var _leaving: bool = false
 var pages: Dictionary = {}
 var slots_mode: String = "new"
 var slots_title: Label
@@ -207,10 +217,9 @@ func _build_theme() -> void:
 
 func _build_audio() -> void:
 	music_player = AudioStreamPlayer.new()
-	music_player.stream = menu_music
+	music_player.bus = music_bus
 	add_child(music_player)
-	if menu_music != null:
-		music_player.play()
+	_music_start()
 
 	click_player = AudioStreamPlayer.new()
 	click_player.stream = click_sound
@@ -219,6 +228,32 @@ func _build_audio() -> void:
 	hover_player = AudioStreamPlayer.new()
 	hover_player.stream = hover_sound
 	add_child(hover_player)
+
+func _music_start() -> void:
+	if menu_music == null:
+		return
+	# Duplicamos el stream para activar el loop sin modificar el recurso original.
+	var stream := menu_music.duplicate() as AudioStream
+	if music_loop:
+		if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
+			stream.loop = true
+		elif stream is AudioStreamWAV:
+			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	music_player.stream = stream
+	music_player.volume_db = -60.0
+	music_player.play()
+	_music_tween = create_tween()
+	_music_tween.tween_property(music_player, "volume_db", music_volume_db, music_fade_in)
+
+
+func _music_fade_out() -> void:
+	if music_player == null or not music_player.playing:
+		return
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = create_tween()
+	_music_tween.tween_property(music_player, "volume_db", -60.0, music_fade_out)
+	await _music_tween.finished
 
 
 func _play_click() -> void:
@@ -576,18 +611,26 @@ func _on_delete_confirmed() -> void:
 # ---- Empezar / cargar
 
 func _start_new_game(slot: int, save_name: String) -> void:
+	if _leaving:
+		return
 	SaveManager.new_game(slot, save_name)
 	_go_to_game()
 
 
 func _load_slot(slot: int) -> void:
+	if _leaving:
+		return
 	if SaveManager.load_game(slot):
 		_go_to_game()
 
 
 func _go_to_game() -> void:
+	if _leaving:
+		return
+	_leaving = true
 	var target: String = game_scene
 	var saved_scene: String = str(SaveManager.pending_load_data.get("scene", ""))
 	if saved_scene != "" and ResourceLoader.exists(saved_scene):
 		target = saved_scene
+	await _music_fade_out()
 	get_tree().change_scene_to_file(target)
