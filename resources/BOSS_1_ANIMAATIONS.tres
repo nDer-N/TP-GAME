@@ -444,6 +444,23 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": ExtResource("170_trip2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("171_7v5oh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("172_1oiew")
+}, {
+"duration": 1.0,
+"texture": ExtResource("173_x47c3")
+}],
+"loop": 1,
+"name": &"death_p2",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": ExtResource("1_wf6hl")
 }, {
 "duration": 1.0,

@@ -2,9 +2,50 @@
 
 [ext_resource type="Texture2D" uid="uid://dprmf1q6wiapw" path="res://icon.svg" id="1_jvrk8"]
 [ext_resource type="Script" uid="uid://onj7a4v0fk6v" path="res://turret_projectile.gd" id="1_p4yln"]
+[ext_resource type="Texture2D" uid="uid://cb4ihiepjal7l" path="res://spark.png" id="3_6g3sb"]
+[ext_resource type="Texture2D" uid="uid://dk5q3ylic3d3" path="res://animations/turret/projectile/loop_0000.png" id="4_gqvni"]
+[ext_resource type="Texture2D" uid="uid://3kvr8nutdlmn" path="res://animations/turret/projectile/loop_0001.png" id="5_w0ffl"]
+[ext_resource type="Texture2D" uid="uid://m70bjnscal7g" path="res://animations/turret/projectile/loop_0002.png" id="6_hqbpk"]
+[ext_resource type="Texture2D" uid="uid://cov6ltmnk05ai" path="res://animations/turret/projectile/loop_0003.png" id="7_otdqm"]
+[ext_resource type="Texture2D" uid="uid://do2ofy06q6ysm" path="res://animations/turret/projectile/loop_0004.png" id="8_0xskg"]
+[ext_resource type="Texture2D" uid="uid://b2cupttbc3xb" path="res://animations/turret/projectile/loop_0005.png" id="9_v8bab"]
+[ext_resource type="Texture2D" uid="uid://cg75grwv0xs77" path="res://animations/turret/projectile/loop_0006.png" id="10_ud20t"]
+[ext_resource type="Texture2D" uid="uid://4oggwwkiq4su" path="res://animations/turret/projectile/loop_0007.png" id="11_wisgb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ddicg"]
 size = Vector2(64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ddicg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_gqvni")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_w0ffl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_hqbpk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_otdqm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_0xskg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_v8bab")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_ud20t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_wisgb")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 24.0
+}]
 
 [node name="TurretProjectile" type="Area2D" unique_id=1569484547 groups=["enemies"]]
 collision_layer = 8
@@ -16,9 +57,23 @@ knockback_duration = 0.5
 speed = 3200.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1564958836 groups=["enemies"]]
+visible = false
 position = Vector2(-3.8146973e-06, -3.8146973e-06)
 scale = Vector2(0.49999994, 0.49999994)
 texture = ExtResource("1_jvrk8")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1300024826 groups=["enemies"]]
 shape = SubResource("RectangleShape2D_ddicg")
+
+[node name="Sprite2D2" type="Sprite2D" parent="." unique_id=123667671 groups=["enemies"]]
+visible = false
+position = Vector2(-24, 3)
+rotation = 1.5707964
+scale = Vector2(0.13101853, 0.13101853)
+texture = ExtResource("3_6g3sb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1306429170]
+position = Vector2(-5, -4.7683716e-07)
+scale = Vector2(0.10879628, 0.10879628)
+sprite_frames = SubResource("SpriteFrames_ddicg")
+frame_progress = 0.2572721

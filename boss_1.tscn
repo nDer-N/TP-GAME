@@ -68,9 +68,9 @@ material = SubResource("ShaderMaterial_p7pij")
 position = Vector2(-16, -160.00002)
 scale = Vector2(0.4115478, 0.41154787)
 sprite_frames = ExtResource("3_y66il")
-animation = &"weep_p2"
-frame = 35
-frame_progress = 1.0
+animation = &"death_p2"
+frame = 1
+frame_progress = 0.39648598
 
 [node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="." unique_id=1657039465]
 script = ExtResource("6_o831q")
