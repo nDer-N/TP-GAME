@@ -34,7 +34,7 @@
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="28_0yspx"]
 [ext_resource type="PackedScene" uid="uid://2drx1upee216" path="res://holo_tutorial.tscn" id="33_pm7ge"]
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
-[ext_resource type="Texture2D" uid="uid://xuw3nymssfkb" path="res://animations/projectileTP/shot/tp.png" id="35_e3xdn"]
+[ext_resource type="PackedScene" uid="uid://drd6pe1coj784" path="res://huzz.tscn" id="35_12dxd"]
 [ext_resource type="Resource" uid="uid://c8jrdydjoyq6c" path="res://resources/cinematic_tween.tres" id="36_12dxd"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
@@ -1026,6 +1026,18 @@ polygon = PackedVector2Array(28861, -893, 28863, -769, 28480, -769, 28479, -895)
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_e3xdn"]
 polygon = PackedVector2Array(28481, -511, 28481, -383, 28607, -383, 28608, -512)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jmh5o"]
+size = Vector2(23.944191, 19.490498)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_maj2u"]
+size = Vector2(24.304443, 1890.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hlo3p"]
+size = Vector2(24.679932, 154.33005)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2fmis"]
+size = Vector2(298.63876, 18.508392)
+
 [sub_resource type="Environment" id="Environment_e3xdn"]
 background_mode = 3
 ambient_light_source = 1
@@ -1445,6 +1457,7 @@ parry_speed_multiplier = 2.0
 double_shot_delay = 0.4
 shoot_charge = 0.5
 shoot_charge_phase2 = 0.3
+projectile_scene = ExtResource("35_12dxd")
 jump_time = 0.6
 jump_time_phase2 = 0.4
 jump_windup = 0.5
@@ -1455,8 +1468,6 @@ dash_windup = 0.5
 dash_passes = 3
 cinematic_player_spot = NodePath("../Cinematic Player Spot")
 cinematic_boss_spot = NodePath("../Cinematic Boss Spot")
-cinematic_tp_texture = ExtResource("35_e3xdn")
-cinematic_tp_size = 32.0
 cinematic_camera_offset = Vector2(0, -140)
 cinematic_tween = ExtResource("36_12dxd")
 music_volume_db = -19.0
@@ -1468,6 +1479,31 @@ shockwave_push_distance = 600.0
 max_repeats_phase2 = 3
 rest_time = 0.2
 rest_time_phase2 = 0.1
+
+[node name="TrainKillZone" type="Area2D" parent="." unique_id=1982293897 groups=["train_bounds"]]
+position = Vector2(40192, -512)
+collision_layer = 524288
+collision_mask = 0
+
+[node name="Piso" type="CollisionShape2D" parent="TrainKillZone" unique_id=568266025]
+position = Vector2(-635.91406, 437.47635)
+scale = Vector2(283.91733, 5.795271)
+shape = SubResource("RectangleShape2D_jmh5o")
+
+[node name="Pared izquierda" type="CollisionShape2D" parent="TrainKillZone" unique_id=437206901]
+position = Vector2(-3910.1875, -558.75)
+scale = Vector2(5.9402356, 1)
+shape = SubResource("RectangleShape2D_maj2u")
+
+[node name="Pared derecha" type="CollisionShape2D" parent="TrainKillZone" unique_id=1722371314]
+position = Vector2(2687, -549.5)
+scale = Vector2(6.24, 12.240002)
+shape = SubResource("RectangleShape2D_hlo3p")
+
+[node name="Techo" type="CollisionShape2D" parent="TrainKillZone" unique_id=687355967]
+position = Vector2(-624, -1557.1001)
+scale = Vector2(22.04, 9.52)
+shape = SubResource("RectangleShape2D_2fmis")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1378087107]
 environment = SubResource("Environment_e3xdn")
