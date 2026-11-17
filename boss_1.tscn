@@ -66,6 +66,4 @@ material = SubResource("ShaderMaterial_p7pij")
 position = Vector2(-16, -160.00002)
 scale = Vector2(0.4115478, 0.41154787)
 sprite_frames = ExtResource("3_y66il")
-animation = &"shoot_fire"
-frame = 12
-frame_progress = 1.0
+animation = &"shoot_charge_p2"
