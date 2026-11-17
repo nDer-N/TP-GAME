@@ -83,6 +83,28 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var shoot_charge := 0.7                # aviso antes de disparar
 @export var shoot_charge_phase2 := 0.45
 
+@export_group("Aparición del proyectil")
+## Arrastra aqui tu PNG. Vacio = usa el cuadrito de color.
+@export var projectile_texture: Texture2D
+## Tamaño del dibujo. 1.0 = tamaño normal, 2.0 = el doble, 0.5 = la mitad.
+@export_range(0.1, 5.0, 0.05) var projectile_scale := 1.0
+## Color aplicado al dibujo (blanco = sin cambio). Tambien tiñe el cuadrito si no hay textura.
+@export var projectile_tint := Color.WHITE
+## Color del proyectil cuando lo devuelves con la espada (parry).
+@export var projectile_reflected_tint := Color(0.2, 0.9, 1.0)
+## Si es true, el dibujo gira hacia donde viaja. Si es false, se queda sin rotar.
+@export var projectile_rotate_to_direction := true
+## Si es true, el tamaño tambien agranda/reduce la hitbox (zona que hace daño). Si es false, no.
+@export var projectile_scale_hitbox := false
+
+## Arrastra aqui tu escena con el AnimatedSprite2D del proyectil.
+@export var projectile_scene: PackedScene
+## Animacion que se reproduce al disparar (si no existe, usa la que tenga por defecto la escena).
+@export var projectile_animation := &"default"
+## Animacion al hacer parry (vacio = sigue con la misma).
+@export var projectile_reflected_animation := &""
+@export_range(0.1, 5.0, 0.05) var projectile_animation_speed := 1.0
+
 @export_group("Salto")
 @export var gravity := 2400.0
 @export var jump_time := 0.8                   # duracion del vuelo (segundos)
@@ -971,6 +993,22 @@ func _fire_projectile() -> void:
 	proj.source = self
 	proj.reflect_damage = parry_damage
 	proj.reflect_speed_mult = parry_speed_multiplier
+	
+	# --- CAMBIO 2: Pasar las propiedades visuales al proyectil ---
+	proj.texture = projectile_texture
+	proj.visual_scale = projectile_scale
+	proj.tint = projectile_tint
+	proj.reflected_tint = projectile_reflected_tint
+	proj.rotate_to_direction = projectile_rotate_to_direction
+	proj.scale_hitbox = projectile_scale_hitbox
+	
+	# --- NUEVO: Pasar las propiedades de animación ---
+	proj.visual_scene = projectile_scene
+	proj.animation_name = projectile_animation
+	proj.reflected_animation_name = projectile_reflected_animation
+	proj.animation_speed = projectile_animation_speed
+	# -------------------------------------------------------------
+
 	get_parent().add_child(proj)
 	proj.global_position = origin
 
