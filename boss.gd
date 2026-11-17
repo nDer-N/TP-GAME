@@ -138,20 +138,13 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var cinematic_windup := 0.4               # aviso antes de que salten los dos
 @export var cinematic_jump_time := 0.8            # duracion del salto de ambos
 @export var cinematic_pause_after_land := 0.5
-@export var cinematic_aim_time := 0.7             # cuanto tiempo apunta el jugador
-@export var cinematic_release_delay := 0.1        # de que empieza el disparo a que sale el tp
-@export var cinematic_tp_flight_time := 0.45
-@export var cinematic_tp_offset := Vector2(0, -40)   # desde donde sale el tp (respecto al jugador)
-## Tu dibujo del tp. Vacio = un circulo de color.
-@export var cinematic_tp_texture: Texture2D
-@export var cinematic_tp_color := Color(0.0, 1.0, 0.9)
-@export var cinematic_tp_size := 36.0
-@export var cinematic_break_pop_delay := 0.3      # en que momento de "break_tp" se rompe el tp
 @export var cinematic_pause_before_scream := 0.3
 ## AJUSTE DE CÁMARA: Mueve este valor en Y para subir/bajar el encuadre del jefe. (0 = centro, -80 = más arriba)
 @export var cinematic_camera_offset := Vector2(0, -80)
 ## ARRASTRA AQUÍ TU RECURSO PhantomCameraTween (.res o .tres) para las transiciones.
 @export var cinematic_tween: Resource
+## Zoom de la cámara durante la cinemática (Paso 2)
+@export var cinematic_zoom := Vector2(1.0, 1.0)
 
 @export_group("Musica")
 ## Arrastra aqui tu cancion (.mp3, .ogg o .wav). Vacio = sin musica. Para quitarla/cambiarla solo cambia este campo.
@@ -271,6 +264,9 @@ var _cinematic_seen := false
 var _cine_tp: Node2D
 var _cine_falling := false
 var _cine_temp_cam: Camera2D # Cámara exclusiva para la cinemática
+
+# --- Variables para el zoom de la cámara en la cinemática (Pasos 1 y 2) ---
+var _cine_player_zoom := Vector2.ONE
 
 @onready var visual: ColorRect = $Visual
 @onready var damage_area: Area2D = $DamageArea
@@ -561,6 +557,7 @@ func _duck_set(on: bool) -> void:
 
 ## Si el jefe desaparece sin morir (reinicio de nivel, etc.) no dejamos la musica ni el bus alterados.
 func _exit_tree() -> void:
+	_fight_over = true      # corta cualquier ataque en curso (dead pasa a ser true)
 	_duck_set(false)
 	if is_inside_tree() and get_tree().process_frame.is_connected(_music_sync_pitch):
 		get_tree().process_frame.disconnect(_music_sync_pitch)
@@ -1459,12 +1456,16 @@ func _chase(duration: float) -> void:
 
 
 func _wait(seconds: float) -> void:
+	if not is_inside_tree():
+		return
 	await get_tree().create_timer(seconds, false).timeout
 
 ## Espera al siguiente frame de fisica, pero se queda congelado mientras el juego esta pausado.
 func _next_frame() -> void:
+	if not is_inside_tree():
+		return
 	await get_tree().physics_frame
-	while get_tree().paused:
+	while is_inside_tree() and get_tree().paused:
 		await get_tree().physics_frame
 
 
@@ -1832,10 +1833,20 @@ func _phase2_cinematic() -> void:
 	var start_pos: Vector2 = current_cam.global_position if current_cam else p.global_position
 	_cine_temp_cam.global_position = start_pos
 	
+	# --- PASO 1 y 2: Guardar el zoom original y aplicar el zoom de la cinemática ---
+	if current_cam:
+		_cine_temp_cam.zoom = current_cam.zoom
+		_cine_player_zoom = current_cam.zoom  # <- zoom "normal" del jugador
+	
 	# APLICAMOS EL OFFSET AQUÍ PARA QUE SE MANTENGA EN TODA LA CINEMÁTICA
 	_cine_temp_cam.offset = cinematic_camera_offset
 	_cine_temp_cam.position_smoothing_enabled = false # Desactivado para que el Tween controle todo
 	_cine_temp_cam.make_current() 
+	
+	# --- PASO 2: Tween suave hacia el zoom de la cinemática ---
+	var zoom_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	zoom_tween.tween_property(_cine_temp_cam, "zoom", cinematic_zoom, 1.0)
+	# -------------------------------------------------------------------------
 	
 	# CALCULAMOS LA POSICIÓN DEL PIVOTE:
 	# Tomamos la posición del jefe y le sumamos el desplazamiento del pivote (que ajustas en el inspector)
@@ -1912,45 +1923,11 @@ func _phase2_cinematic() -> void:
 	if dead:
 		return
 
-	# 4) El jugador apunta y lanza el tp.
-	if pac:
-		pac.start_aim_sequence()
-	await _wait(cinematic_aim_time)
-	if dead:
-		return
-	if pac:
-		pac.end_aim_sequence()
-	await _wait(cinematic_release_delay)
-	if dead:
-		return
-	var dir := signf(boss_target.x - player_target.x)
-	if dir == 0.0:
-		dir = 1.0
-	_cine_spawn_tp(p.global_position + Vector2(cinematic_tp_offset.x * dir, cinematic_tp_offset.y))
-	var flight := create_tween()
-	flight.tween_property(_cine_tp, "global_position", get_shoot_origin(), cinematic_tp_flight_time) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await flight.finished
-	if dead:
-		return
-
-	# 5) El jefe lo atrapa y lo rompe.
-	await _cine_boss_anim("CATCH_TP")
-	if dead:
-		return
-	get_tree().create_timer(cinematic_break_pop_delay, false).timeout.connect(_cine_break_tp)
-	await _cine_boss_anim("BREAK_TP")
-	if dead:
-		return
+	# 4) Pausa de tension antes del grito de enojo (sin tp).
 	await _wait(cinematic_pause_before_scream)
+	if dead:
+		return
 	# Despues de esto, _enter_phase2 reproduce el grito (weep) y activa la fase 2.
-
-
-func _cine_boss_anim(state_name: String, fallback := 0.6) -> void:
-	if animation_controller:
-		await animation_controller.play_and_wait(animation_controller.VisualState[state_name], fallback)
-	else:
-		await _wait(fallback)
 
 
 ## Movimiento parabolico del jugador (lo llama el tween).
@@ -1966,43 +1943,6 @@ func _cine_player_arc(tau: float, p, start: Vector2, vx: float, vy: float) -> vo
 			ac.force_state(ac.VisualState.FALL)
 
 
-func _cine_spawn_tp(pos: Vector2) -> void:
-	if cinematic_tp_texture:
-		var s := Sprite2D.new()
-		s.texture = cinematic_tp_texture
-		_cine_tp = s
-	else:
-		var poly := Polygon2D.new()
-		var pts := PackedVector2Array()
-		for i in 20:
-			var a := TAU * i / 20.0
-			pts.append(Vector2(cos(a), sin(a)) * cinematic_tp_size * 0.5)
-		poly.polygon = pts
-		poly.color = cinematic_tp_color
-		_cine_tp = poly
-	_cine_tp.z_index = 20
-	get_parent().add_child(_cine_tp)
-	_cine_tp.global_position = pos
-
-
-## El jefe rompe el tp: explosion de particulas + temblor de camara.
-func _cine_break_tp() -> void:
-	if not is_instance_valid(_cine_tp):
-		return
-	var pos := _cine_tp.global_position
-	_cine_tp.queue_free()
-	_cine_tp = null
-	var ps := _make_particles(45, 0.8, cinematic_tp_color, 250.0, 700.0, 5.0, 12.0, Vector2(0, 1200), 180.0)
-	ps.one_shot = true
-	ps.explosiveness = 1.0
-	get_parent().add_child(ps)
-	ps.global_position = pos
-	ps.emitting = true
-	ps.finished.connect(ps.queue_free)
-	if jump_camera_shake > 0.0:
-		_shake_camera(jump_camera_shake * 1.5)
-
-
 func _face_player_visual() -> void:
 	var p := _get_player()
 	var spr := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
@@ -2011,32 +1951,41 @@ func _face_player_visual() -> void:
 
 
 ## Termina la cinematica (idempotente): devuelve el control al jugador.
+## --- PASO 3: Reemplazo completo de _cinematic_end() con tween de posicion + zoom + offset ---
 func _cinematic_end() -> void:
 	if not _cinematic_active:
 		return
 		
-	# --- NUEVO: Regresar suavemente al jugador antes de destruir la cámara ---
+	# --- NUEVO: Regresar suavemente al jugador con tween de posicion + zoom + offset ---
 	if is_instance_valid(_cine_temp_cam):
 		var p = _get_player()
-		var player_dead: bool = "is_dead" in p and p.is_dead
+		var player_dead: bool = is_instance_valid(p) and "is_dead" in p and p.is_dead
 		
 		if is_instance_valid(p) and not player_dead:
-			# Hacemos que la cámara temporal empiece a seguir al jugador suavemente
-			_cine_temp_cam.position_smoothing_enabled = true
-			_cine_temp_cam.position_smoothing_speed = 3.0
-			_cine_temp_cam.offset = Vector2.ZERO # Le quitamos el offset para que encuadre al jugador normal
+			# Sin smoothing: el tween controla todo.
+			_cine_temp_cam.position_smoothing_enabled = false
 			
-			# Movemos el target de la cámara hacia el jugador
-			_cine_temp_cam.global_position = p.global_position
+			var back := create_tween().set_parallel(true)
+			back.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			var dur := 0.9
+			# 1) Se desliza hacia el jugador
+			back.tween_property(_cine_temp_cam, "global_position", p.global_position, dur)
+			# 2) Se aleja/acerca hasta el zoom de la camara del jugador
+			back.tween_property(_cine_temp_cam, "zoom", _cine_player_zoom, dur)
+			# 3) Quita el offset del encuadre del jefe
+			back.tween_property(_cine_temp_cam, "offset", Vector2.ZERO, dur)
+			await back.finished
 			
-			# Esperamos un momento para que el suavizado haga su magia y se deslice hasta el jugador
-			await get_tree().create_timer(0.5, false).timeout
+			# Ajuste final exacto por si el jugador se movio durante el tween
+			if is_instance_valid(_cine_temp_cam) and is_instance_valid(p):
+				_cine_temp_cam.global_position = p.global_position
 		
 		# Ahora que ya está sobre el jugador, destruimos la cámara temporal.
 		# La cámara original del jugador tomará el control exactamente en la misma posición,
 		# por lo que no habrá ningún salto brusco.
-		_cine_temp_cam.queue_free()
-		_cine_temp_cam = null
+		if is_instance_valid(_cine_temp_cam):
+			_cine_temp_cam.queue_free()
+			_cine_temp_cam = null
 	# -------------------------------------------------------------------------
 
 	_cinematic_active = false
