@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://lagu8akam247"]
+
+[ext_resource type="Script" uid="uid://daueoun61fr1i" path="res://intro_cinematic.gd" id="1_6ydyj"]
+[ext_resource type="Script" uid="uid://bn3e3sv6kteds" path="res://cinematic_scene.gd" id="2_jamx0"]
+[ext_resource type="Texture2D" uid="uid://d3oe6yv8nv4fb" path="res://CinematicaIncial/Escena 1.png" id="3_pnu8h"]
+[ext_resource type="Texture2D" uid="uid://cv60pb6maa3f7" path="res://CinematicaIncial/escena 2.png" id="4_uabi4"]
+[ext_resource type="Texture2D" uid="uid://kq1csejqrq88" path="res://CinematicaIncial/escena 3.png" id="5_bdypj"]
+[ext_resource type="Texture2D" uid="uid://dbc85fqbuejqk" path="res://CinematicaIncial/escena 4.png" id="6_2ff7f"]
+[ext_resource type="Texture2D" uid="uid://c1vvyojn1kvco" path="res://CinematicaIncial/escena 5.png" id="7_kc251"]
+[ext_resource type="Texture2D" uid="uid://00h7hum0kson" path="res://CinematicaIncial/secuencia6.png" id="8_m46jl"]
+[ext_resource type="Texture2D" uid="uid://dhfaoo5obkj53" path="res://CinematicaIncial/Escena 7.png" id="9_cxjvu"]
+[ext_resource type="Texture2D" uid="uid://b6vm44bgtgqio" path="res://CinematicaIncial/Escena 8.png" id="10_55rep"]
+
+[sub_resource type="Resource" id="Resource_5pgor"]
+script = ExtResource("2_jamx0")
+image = ExtResource("3_pnu8h")
+text = "Hola"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_sid8i"]
+script = ExtResource("2_jamx0")
+image = ExtResource("4_uabi4")
+text = "Soy"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_5f1xr"]
+script = ExtResource("2_jamx0")
+image = ExtResource("5_bdypj")
+text = "Yo"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_ce03n"]
+script = ExtResource("2_jamx0")
+image = ExtResource("6_2ff7f")
+text = "El"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_lc542"]
+script = ExtResource("2_jamx0")
+image = ExtResource("7_kc251")
+text = "Animal"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_1xjgl"]
+script = ExtResource("2_jamx0")
+image = ExtResource("8_m46jl")
+text = "Lon"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_7cwxj"]
+script = ExtResource("2_jamx0")
+image = ExtResource("9_cxjvu")
+text = "Que te"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_nce57"]
+script = ExtResource("2_jamx0")
+image = ExtResource("10_55rep")
+text = "La enterro
+"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[node name="IntroCinematic" type="Control" unique_id=1549025067]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_6ydyj")
+scenes = Array[ExtResource("2_jamx0")]([SubResource("Resource_5pgor"), SubResource("Resource_sid8i"), SubResource("Resource_5f1xr"), SubResource("Resource_ce03n"), SubResource("Resource_lc542"), SubResource("Resource_1xjgl"), SubResource("Resource_7cwxj"), SubResource("Resource_nce57")])
