@@ -6,6 +6,7 @@ extends Control
 # ============================================================ INSPECTOR
 @export_group("Juego")
 @export_file("*.tscn") var game_scene: String = "res://tutorial.tscn"
+@export_file("*.tscn") var intro_scene: String = "res://intro_cinematic.tscn"
 @export var game_title: String = "NOMBRE DE MI JUEGO"
 @export_multiline var credits_text: String = "Desarrollo\nTu nombre aquí\n\nArte\nNombre del artista\n\nMúsica y sonido\nNombre del compositor\n\nHecho con Godot Engine\n\n¡Gracias por jugar!"
 
@@ -614,7 +615,7 @@ func _start_new_game(slot: int, save_name: String) -> void:
 	if _leaving:
 		return
 	SaveManager.new_game(slot, save_name)
-	_go_to_game()
+	_go_to_game(true)   # true = pasar por la cinemática
 
 
 func _load_slot(slot: int) -> void:
@@ -624,13 +625,17 @@ func _load_slot(slot: int) -> void:
 		_go_to_game()
 
 
-func _go_to_game() -> void:
+func _go_to_game(play_intro: bool = false) -> void:
 	if _leaving:
 		return
 	_leaving = true
 	var target: String = game_scene
 	var saved_scene: String = str(SaveManager.pending_load_data.get("scene", ""))
-	if saved_scene != "" and ResourceLoader.exists(saved_scene):
+	
+	if play_intro and intro_scene != "" and ResourceLoader.exists(intro_scene):
+		target = intro_scene
+	elif saved_scene != "" and ResourceLoader.exists(saved_scene):
 		target = saved_scene
+		
 	await _music_fade_out()
 	get_tree().change_scene_to_file(target)

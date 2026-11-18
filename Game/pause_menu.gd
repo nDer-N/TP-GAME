@@ -49,6 +49,15 @@ extends CanvasLayer
 @export var button_disabled_color: Color = Color(0.1, 0.1, 0.1, 0.5)
 @export var button_corner_radius: int = 8
 
+@export_group("Confirmación")
+## Gris parecido al del diálogo original. Cámbialo a tu gusto.
+@export var confirm_bg_color: Color = Color(0.2, 0.2, 0.2, 1.0)
+@export var confirm_border_color: Color = Color(0.35, 0.35, 0.35, 1.0)
+@export var confirm_border_width: int = 2
+@export var confirm_dim_color: Color = Color(0, 0, 0, 0.45)
+@export var confirm_padding: int = 24
+@export var confirm_button_size: Vector2 = Vector2(220, 48)
+
 @export_group("Textos")
 @export var text_resume: String = "Volver al juego"
 @export var text_settings: String = "Ajustes"
@@ -72,7 +81,9 @@ extends CanvasLayer
 var is_open: bool = false
 var pages: Dictionary = {}
 var root: Control
-var confirm: ConfirmationDialog
+var confirm_overlay: ColorRect
+var confirm_label: Label
+var confirm_yes: Button
 var pending_exit: String = ""
 var volume_slider: HSlider
 var fullscreen_check: CheckButton
@@ -96,6 +107,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if not is_open:
 		_open()
+	elif confirm_overlay.visible:
+		_close_confirm()
 	elif pages["main"].visible:
 		_resume()
 	else:
@@ -210,13 +223,56 @@ func _build_ui() -> void:
 
 	_build_main_page(holder)
 	_build_settings_page(holder)
+	_build_confirm_panel()
 
-	confirm = ConfirmationDialog.new()
-	confirm.title = text_save_title
-	confirm.ok_button_text = text_save_yes
-	confirm.cancel_button_text = text_save_no
-	confirm.confirmed.connect(_on_exit_confirmed)
-	root.add_child(confirm)
+
+func _build_confirm_panel() -> void:
+	# Panel propio en lugar de ConfirmationDialog (evita el brillo del entorno).
+	# Se agrega al final de root para que quede por encima de todo.
+	confirm_overlay = ColorRect.new()
+	confirm_overlay.color = confirm_dim_color
+	confirm_overlay.visible = false
+	confirm_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(confirm_overlay)
+	confirm_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var confirm_center := CenterContainer.new()
+	confirm_overlay.add_child(confirm_center)
+	confirm_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var panel := PanelContainer.new()
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = confirm_bg_color
+	panel_style.border_color = confirm_border_color
+	panel_style.set_border_width_all(confirm_border_width)
+	panel_style.set_corner_radius_all(button_corner_radius)
+	panel_style.set_content_margin_all(confirm_padding)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	confirm_center.add_child(panel)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 20)
+	panel.add_child(box)
+
+	var confirm_title := Label.new()
+	confirm_title.text = text_save_title
+	confirm_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	confirm_title.add_theme_font_size_override("font_size", font_size + 6)
+	box.add_child(confirm_title)
+
+	confirm_label = Label.new()
+	confirm_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(confirm_label)
+
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+
+	confirm_yes = _make_button(text_save_yes, _on_exit_confirmed, row)
+	confirm_yes.custom_minimum_size = confirm_button_size
+	var no_button := _make_button(text_save_no, _close_confirm, row)
+	no_button.custom_minimum_size = confirm_button_size
 
 
 func _make_page(parent: Control, page_name: String) -> VBoxContainer:
@@ -305,6 +361,7 @@ func _show_page(page_name: String) -> void:
 func _open() -> void:
 	is_open = true
 	visible = true
+	confirm_overlay.visible = false
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_show_page("main")
@@ -313,6 +370,7 @@ func _open() -> void:
 func _resume() -> void:
 	is_open = false
 	visible = false
+	confirm_overlay.visible = false
 	get_tree().paused = false
 
 
@@ -321,13 +379,20 @@ func _resume() -> void:
 func _ask_exit(action: String) -> void:
 	pending_exit = action
 	if SaveManager.session_has_checkpoint:
-		confirm.dialog_text = text_save_message
+		confirm_label.text = text_save_message
 	else:
-		confirm.dialog_text = text_save_message_none
-	confirm.popup_centered()
+		confirm_label.text = text_save_message_none
+	confirm_overlay.visible = true
+	confirm_yes.grab_focus()
+
+
+func _close_confirm() -> void:
+	confirm_overlay.visible = false
+	_show_page("main")
 
 
 func _on_exit_confirmed() -> void:
+	confirm_overlay.visible = false
 	SaveManager.save_progress()
 	if pending_exit == "menu":
 		is_open = false
