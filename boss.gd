@@ -354,6 +354,7 @@ func _physics_process(delta: float) -> void:
 			active = true
 			_show_health_bar()
 			_boss_cam_on()
+			get_tree().call_group("gameplay_music", "start_battle")  # <- NUEVA
 			_music_start()
 			_attack_loop()
 
@@ -411,6 +412,7 @@ func reset_fight() -> void:
 
 	# Musica, camara y barra
 	_music_stop()
+	get_tree().call_group("gameplay_music", "end_battle")  # <- NUEVA
 	_boss_cam_off()
 	if _bar_root:
 		_bar_root.visible = false
@@ -551,6 +553,7 @@ func _die() -> void:
 	_hide_dash_path()
 	_dash_vfx_stop(0.0, false)
 	_music_stop()
+	get_tree().call_group("gameplay_music", "end_battle")  # <- NUEVA
 	visual.position = _visual_base_pos
 	died.emit()
 	_hide_health_bar()
@@ -1444,9 +1447,9 @@ func _damage_window(duration: float) -> void:
 	_hit_this_attack = false
 	var elapsed := 0.0
 	while elapsed < duration and not dead:
-		_try_damage_player()
-		await _next_frame()
-		elapsed += get_physics_process_delta_time()
+			_try_damage_player()
+			await _next_frame()
+			elapsed += get_physics_process_delta_time()
 
 
 func _try_damage_player() -> void:

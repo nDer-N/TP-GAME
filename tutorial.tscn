@@ -36,6 +36,9 @@
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
 [ext_resource type="PackedScene" uid="uid://drd6pe1coj784" path="res://huzz.tscn" id="35_12dxd"]
 [ext_resource type="Resource" uid="uid://c8jrdydjoyq6c" path="res://resources/cinematic_tween.tres" id="36_12dxd"]
+[ext_resource type="Script" uid="uid://bqpglrnrnwpa2" path="res://gameplay_music.gd" id="37_bsapx"]
+[ext_resource type="AudioStream" uid="uid://dr5fefwreyvht" path="res://Audio/MusicLevel1.mp3" id="38_gdd2h"]
+[ext_resource type="AudioStream" uid="uid://dk72bxm5v7x4y" path="res://Audio/MusicLevel2.mp3" id="39_7xxcv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
 texture = ExtResource("6_g52lx")
@@ -1514,3 +1517,7 @@ gizmo_extents = 0.0
 [node name="Cinematic Boss Spot" type="Marker2D" parent="." unique_id=1845469908]
 position = Vector2(41088, -960)
 gizmo_extents = 201.5
+
+[node name="GameplayMusic" type="Node" parent="." unique_id=925480500]
+script = ExtResource("37_bsapx")
+songs = Array[AudioStream]([ExtResource("38_gdd2h"), ExtResource("39_7xxcv")])
