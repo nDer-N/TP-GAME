@@ -51,6 +51,7 @@ position = Vector2(8, 68)
 shape = SubResource("RectangleShape2D_ddicg")
 
 [node name="Muzzle" type="Node2D" parent="CannonPivot" unique_id=1986641513]
+position = Vector2(288, 0)
 
 [node name="DetectionArea" type="Area2D" parent="." unique_id=558651919]
 position = Vector2(7.9999924, -56)

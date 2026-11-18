@@ -5,6 +5,8 @@
 [ext_resource type="AudioStream" uid="uid://gl2ighfhup0o" path="res://Audio/FREE DL Flamewall Symphonic Speed Metal.mp3" id="2_p7pij"]
 [ext_resource type="SpriteFrames" uid="uid://deqrnkdm8c3kw" path="res://resources/BOSS_1_ANIMAATIONS.tres" id="3_y66il"]
 [ext_resource type="Shader" uid="uid://bsomxplwe04td" path="res://shaders/bossflash.gdshader" id="4_mgxgb"]
+[ext_resource type="Script" uid="uid://bhd4nuiu23e7l" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_noise_emitter_2d.gd" id="6_o831q"]
+[ext_resource type="Resource" uid="uid://b6iw7wq0r3xgm" path="res://resources/BOSS_WEEP.tres" id="7_tyqv6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bgaq0"]
 size = Vector2(160, 260)
@@ -66,4 +68,11 @@ material = SubResource("ShaderMaterial_p7pij")
 position = Vector2(-16, -160.00002)
 scale = Vector2(0.4115478, 0.41154787)
 sprite_frames = ExtResource("3_y66il")
-animation = &"shoot_charge_p2"
+animation = &"death_p2"
+frame = 1
+frame_progress = 0.39648598
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="." unique_id=1657039465]
+script = ExtResource("6_o831q")
+noise = ExtResource("7_tyqv6")
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
