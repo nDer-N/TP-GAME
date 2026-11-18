@@ -24,8 +24,12 @@ enum TextStyle { OUTLINE_ONLY, OUTLINE_GRADIENT, SMALL_BOX }
 ## Tamaño mínimo al que puede bajar la letra si el texto es muy largo.
 @export var text_min_font_size: int = 16
 @export var text_color: Color = Color.WHITE
-## Letras por segundo.
-@export var typing_speed: float = 40.0
+## Letras por segundo (más bajo = más lento).
+@export var typing_speed: float = 22.0
+## Segundos de pausa cuando el texto llega a un salto de línea / párrafo.
+@export var paragraph_pause: float = 1.5
+## Altura (en px) del difuminado superior del texto.
+@export var text_fade_height: float = 56.0
 @export var box_height: float = 160.0
 @export var box_margin: float = 40.0
 
@@ -75,7 +79,7 @@ var _busy: bool = false
 var _type_tween: Tween
 var _last_char: int = 0
 var _scroll: ScrollContainer
-
+var _scroll_target: float = 0.0
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -173,6 +177,26 @@ func _build_ui() -> void:
 		_label.add_theme_constant_override("shadow_offset_y", int(shadow_offset.y))
 	_scroll.add_child(_label)
 
+	# Difuminado: el texto se desvanece al salir por arriba del rectángulo
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform float top_y = 0.0;
+uniform float fade_px = 0.0;
+varying vec2 wpos;
+void vertex() {
+	wpos = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
+}
+void fragment() {
+	if (fade_px > 0.0) {
+		COLOR.a *= smoothstep(top_y, top_y + fade_px, wpos.y);
+	}
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	_label.material = mat
+
 	_next_btn = Button.new()
 	_next_btn.custom_minimum_size = Vector2(200, 48)
 	_next_btn.visible = false
@@ -267,6 +291,7 @@ func _show_scene(i: int) -> void:
 	_label.text = s.text if s != null else ""
 	_label.visible_characters = 0
 	_scroll.scroll_vertical = 0
+	_scroll_target = 0.0
 	_next_btn.visible = false
 	await _fade_to(0.0)
 	_busy = false
@@ -274,7 +299,8 @@ func _show_scene(i: int) -> void:
 
 
 func _start_typing(s: CinematicScene) -> void:
-	var total: int = _label.text.length()
+	var text: String = _label.text
+	var total: int = text.length()
 	var speed: float = typing_speed
 	if s != null and s.text_speed > 0.0:
 		speed = s.text_speed
@@ -283,21 +309,53 @@ func _start_typing(s: CinematicScene) -> void:
 	if total == 0:
 		_on_typing_done()
 		return
+
 	_type_tween = create_tween()
-	_type_tween.tween_method(_set_chars, 0, total, float(total) / maxf(speed, 1.0))
+	var pos := 0
+	while pos < total:
+		# Busca el siguiente salto de línea y agrupa los que vengan seguidos
+		var end := text.find("\n", pos)
+		if end == -1:
+			end = total
+		else:
+			while end < total and text[end] == "\n":
+				end += 1
+		_type_tween.tween_method(_set_chars, pos, end, float(end - pos) / maxf(speed, 1.0))
+		if end < total:
+			_type_tween.tween_interval(paragraph_pause)  # pausa entre párrafos
+		pos = end
 	_type_tween.finished.connect(_on_typing_done)
 
 
 func _set_chars(v) -> void:
 	var n: int = int(v)
 	_label.visible_characters = n
-	# Baja automáticamente para seguir la última línea escrita
-	var bar := _scroll.get_v_scroll_bar()
-	_scroll.scroll_vertical = int(bar.max_value)
+	# La línea que se escribe se mantiene en la parte baja del rectángulo
+	var lines: int = _label.get_visible_line_count()
+	var line_h: float = _label.get_minimum_size().y / maxf(_label.get_line_count(), 1)
+	_scroll_target = maxf(0.0, lines * line_h - _scroll.size.y + 8.0)
 	if n != _last_char:
 		_last_char = n
 		if type_sound != null and n % maxi(type_sound_every, 1) == 0:
 			_type_player.play()
+
+
+func _process(delta: float) -> void:
+	if _scroll == null:
+		return
+	# Scroll suave hacia la línea que se está escribiendo
+	var cur := float(_scroll.scroll_vertical)
+	var diff := _scroll_target - cur
+	if absf(diff) < 1.0:
+		_scroll.scroll_vertical = int(_scroll_target)
+	else:
+		_scroll.scroll_vertical = int(cur + diff * minf(1.0, delta * 8.0))
+	# Difuminado superior: solo aparece cuando ya hay texto arriba que se sale
+	var mat := _label.material as ShaderMaterial
+	if mat:
+		var fade := clampf(float(_scroll.scroll_vertical) / maxf(text_fade_height, 1.0), 0.0, 1.0) * text_fade_height
+		mat.set_shader_parameter("top_y", _scroll.get_global_rect().position.y)
+		mat.set_shader_parameter("fade_px", fade)
 
 
 func _on_typing_done() -> void:

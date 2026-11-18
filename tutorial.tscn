@@ -32,12 +32,14 @@
 [ext_resource type="Texture2D" uid="uid://bnbpomv1x6iui" path="res://textures/backgrounds/train/VagonCarga.png" id="20_tfgte"]
 [ext_resource type="Texture2D" uid="uid://cv2wgc2aaeapj" path="res://textures/lights/light_stream.jpg" id="23_dyhf1"]
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="28_0yspx"]
+[ext_resource type="Texture2D" uid="uid://c5sm435ctaise" path="res://textures/backgrounds/train/BossBagon.png" id="30_7xxcv"]
 [ext_resource type="PackedScene" uid="uid://2drx1upee216" path="res://holo_tutorial.tscn" id="33_pm7ge"]
 [ext_resource type="PackedScene" uid="uid://bpc4tlyngy2p7" path="res://boss_1.tscn" id="34_brok5"]
 [ext_resource type="PackedScene" uid="uid://drd6pe1coj784" path="res://huzz.tscn" id="35_12dxd"]
 [ext_resource type="Resource" uid="uid://c8jrdydjoyq6c" path="res://resources/cinematic_tween.tres" id="36_12dxd"]
 [ext_resource type="Script" uid="uid://bqpglrnrnwpa2" path="res://gameplay_music.gd" id="37_bsapx"]
 [ext_resource type="AudioStream" uid="uid://dr5fefwreyvht" path="res://Audio/MusicLevel1.mp3" id="38_gdd2h"]
+[ext_resource type="AudioStream" uid="uid://c7v00jvvgkm4c" path="res://Audio/BossScream.mp3" id="38_jl032"]
 [ext_resource type="AudioStream" uid="uid://dk72bxm5v7x4y" path="res://Audio/MusicLevel2.mp3" id="39_7xxcv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5gpbq"]
@@ -1259,9 +1261,9 @@ texture = ExtResource("18_dudfa")
 [node name="VagonGrande2" type="Sprite2D" parent="BG" unique_id=1639527081]
 modulate = Color(0.5803922, 0.3019608, 0.18039216, 1)
 z_index = -5
-position = Vector2(39590, -1103)
-scale = Vector2(1.2854931, 1.0730911)
-texture = ExtResource("18_dudfa")
+position = Vector2(39588, -1073)
+scale = Vector2(1.25, 0.903)
+texture = ExtResource("30_7xxcv")
 
 [node name="Sprite2D" type="Sprite2D" parent="BG" unique_id=159860643]
 
@@ -1322,6 +1324,33 @@ position = Vector2(22400.002, -913)
 scale = Vector2(2.712, 1)
 color = Color(1.0662901, 1.0662901, 1.0662901, 0.58431375)
 energy = 12.37
+shadow_enabled = true
+texture = ExtResource("23_dyhf1")
+texture_scale = 3.44
+
+[node name="PointLight2D7" type="PointLight2D" parent="BG" unique_id=930725170]
+position = Vector2(37309, -794)
+scale = Vector2(2.152, 1)
+color = Color(1.0662901, 1.0662901, 1.0662901, 0.58431375)
+energy = 12.37
+shadow_enabled = true
+texture = ExtResource("23_dyhf1")
+texture_scale = 3.44
+
+[node name="PointLight2D8" type="PointLight2D" parent="BG" unique_id=1882010894]
+position = Vector2(41757, -772)
+scale = Vector2(2.152, 1)
+color = Color(1.0662901, 1.0662901, 1.0662901, 0.58431375)
+energy = 12.37
+shadow_enabled = true
+texture = ExtResource("23_dyhf1")
+texture_scale = 3.44
+
+[node name="PointLight2D9" type="PointLight2D" parent="BG" unique_id=1761597001]
+position = Vector2(39610.004, -977)
+scale = Vector2(2.152, 1)
+color = Color(1.0662901, 1.0662901, 1.0662901, 0.58431375)
+energy = 3.47
 shadow_enabled = true
 texture = ExtResource("23_dyhf1")
 texture_scale = 3.44
@@ -1456,6 +1485,7 @@ position = Vector2(40192, -592)
 max_health = 275
 phase2_threshold = 0.65
 projectile_damage = 3
+parry_damage = 5
 parry_speed_multiplier = 2.0
 double_shot_delay = 0.4
 shoot_charge_phase2 = 0.3
@@ -1472,6 +1502,8 @@ cinematic_player_spot = NodePath("../Cinematic Player Spot")
 cinematic_boss_spot = NodePath("../Cinematic Boss Spot")
 cinematic_camera_offset = Vector2(0, -140)
 cinematic_tween = ExtResource("36_12dxd")
+scream_sound = ExtResource("38_jl032")
+scream_offset = 0.1
 music_volume_db = -19.0
 reposition_chance = 0.5
 spam_hits_needed = 3
@@ -1511,7 +1543,7 @@ shape = SubResource("RectangleShape2D_2fmis")
 environment = SubResource("Environment_e3xdn")
 
 [node name="Cinematic Player Spot" type="Marker2D" parent="." unique_id=437113443]
-position = Vector2(38645, -900)
+position = Vector2(38629, -960)
 gizmo_extents = 0.0
 
 [node name="Cinematic Boss Spot" type="Marker2D" parent="." unique_id=1845469908]
