@@ -20,6 +20,7 @@ fire_scene = ExtResource("4_7dqgm")
 fire_height_px = 500.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1405968729]
+light_mask = 512
 position = Vector2(-4.0000076, 4)
 scale = Vector2(0.34390888, 0.34390888)
 texture = ExtResource("3_4eun3")
