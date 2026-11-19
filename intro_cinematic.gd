@@ -1,3 +1,4 @@
+
 extends Control
 ## Cinemática inicial: imágenes + texto con efecto máquina de escribir.
 ## Todo se edita desde el Inspector del nodo.
@@ -81,6 +82,10 @@ var _last_char: int = 0
 var _scroll: ScrollContainer
 var _scroll_target: float = 0.0
 
+# NUEVO: controla cuándo está permitido el scroll automático.
+var _auto_scroll: bool = true
+
+
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -156,10 +161,14 @@ func _build_ui() -> void:
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_scroll.custom_minimum_size = Vector2(0, 60)               # minimo pequeño, el resto lo da el layout
+	_scroll.custom_minimum_size = Vector2(0, 60)
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL     # ocupa lo que sobra y deja visible el botón
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(_scroll)
+
+	# NUEVO: detectar cuando el jugador mueve la barra o la rueda.
+	_scroll.get_v_scroll_bar().scrolling.connect(_on_user_scrolled)
+	_scroll.gui_input.connect(_on_scroll_gui_input)
 
 	_label = Label.new()
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -292,6 +301,10 @@ func _show_scene(i: int) -> void:
 	_label.visible_characters = 0
 	_scroll.scroll_vertical = 0
 	_scroll_target = 0.0
+
+	# NUEVO: activar el scroll automático al comenzar cada escena.
+	_auto_scroll = true
+
 	_next_btn.visible = false
 	await _fade_to(0.0)
 	_busy = false
@@ -322,7 +335,7 @@ func _start_typing(s: CinematicScene) -> void:
 				end += 1
 		_type_tween.tween_method(_set_chars, pos, end, float(end - pos) / maxf(speed, 1.0))
 		if end < total:
-			_type_tween.tween_interval(paragraph_pause)  # pausa entre párrafos
+			_type_tween.tween_interval(paragraph_pause)
 		pos = end
 	_type_tween.finished.connect(_on_typing_done)
 
@@ -340,16 +353,23 @@ func _set_chars(v) -> void:
 			_type_player.play()
 
 
+# ============================================================ SCROLL AUTOMÁTICO
+
 func _process(delta: float) -> void:
 	if _scroll == null:
 		return
-	# Scroll suave hacia la línea que se está escribiendo
-	var cur := float(_scroll.scroll_vertical)
-	var diff := _scroll_target - cur
-	if absf(diff) < 1.0:
-		_scroll.scroll_vertical = int(_scroll_target)
-	else:
-		_scroll.scroll_vertical = int(cur + diff * minf(1.0, delta * 8.0))
+
+	# Scroll suave hacia la línea que se está escribiendo (solo si es automático)
+	if _auto_scroll:
+		var cur := float(_scroll.scroll_vertical)
+		var diff := _scroll_target - cur
+		if absf(diff) < 1.0:
+			_scroll.scroll_vertical = int(_scroll_target)
+			if not _typing:
+				_auto_scroll = false
+		else:
+			_scroll.scroll_vertical = int(cur + diff * minf(1.0, delta * 8.0))
+
 	# Difuminado superior: solo aparece cuando ya hay texto arriba que se sale
 	var mat := _label.material as ShaderMaterial
 	if mat:
@@ -362,9 +382,27 @@ func _on_typing_done() -> void:
 	_typing = false
 	_type_player.stop()  # corta el sonido de escribir
 	_label.visible_characters = -1
+
+	# NUEVO: lleva el scroll suavemente al final del texto completo.
+	_scroll_target = maxf(0.0, _label.get_minimum_size().y - _scroll.size.y + 8.0)
+
 	_next_btn.text = text_last if _index >= scenes.size() - 1 else text_next
 	_next_btn.visible = true
 	_next_btn.grab_focus()
+
+
+# ============================================================ NUEVAS FUNCIONES DE DETECCIÓN
+
+func _on_user_scrolled() -> void:
+	_auto_scroll = false
+
+
+func _on_scroll_gui_input(event: InputEvent) -> void:
+	var wheel: bool = event is InputEventMouseButton and event.pressed \
+		and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN)
+
+	if wheel or event is InputEventScreenDrag or event is InputEventPanGesture:
+		_auto_scroll = false
 
 
 func _on_next_pressed() -> void:
