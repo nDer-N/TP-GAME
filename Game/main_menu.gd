@@ -142,7 +142,7 @@ extends Control
 @export var loading_sub_font_size: int = 22
 @export var loading_font_color: Color = Color.WHITE
 ## Color de brillo: línea, barra, brasas y bordes.
-@export var loading_accent_color: Color = Color(1.0, 0.78, 0.35)
+@export var loading_accent_color: Color = Color(0, 1, 1)
 ## Oscurece el menú de fondo (0 = nada, 1 = negro total).
 @export_range(0.0, 1.0) var loading_dim: float = 0.6
 ## Alto de las barras de cine (0 = sin barras).

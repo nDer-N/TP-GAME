@@ -47,7 +47,7 @@
 [ext_resource type="Script" uid="uid://bqpglrnrnwpa2" path="res://gameplay_music.gd" id="37_bsapx"]
 [ext_resource type="AudioStream" uid="uid://dr5fefwreyvht" path="res://Audio/MusicLevel1.mp3" id="38_gdd2h"]
 [ext_resource type="AudioStream" uid="uid://dk72bxm5v7x4y" path="res://Audio/MusicLevel2.mp3" id="39_7xxcv"]
-[ext_resource type="AudioStream" uid="uid://u3xg3g6ale1h" path="res://Audio/Grito2Boss.mp3" id="45_cd6k6"]
+[ext_resource type="AudioStream" uid="uid://c7v00jvvgkm4c" path="res://Audio/BossScream.mp3" id="45_ptw4k"]
 [ext_resource type="Script" uid="uid://bxq2dty7jwdno" path="res://boss_doors.gd" id="49_ptw4k"]
 [ext_resource type="Texture2D" uid="uid://behvnvcbaysuj" path="res://textures/tiles/ceiling/fillers.png" id="50_0l7fi"]
 
@@ -2052,9 +2052,9 @@ cinematic_player_spot = NodePath("../Cinematic Player Spot")
 cinematic_boss_spot = NodePath("../Cinematic Boss Spot")
 cinematic_camera_offset = Vector2(0, -140)
 cinematic_tween = ExtResource("36_12dxd")
-scream_sound = ExtResource("45_cd6k6")
+scream_sound = ExtResource("45_ptw4k")
+scream_volume_db = 3.0
 scream_offset = 0.1
-scream_double_pitch = 0.95
 music_volume_db = -19.0
 reposition_chance = 0.5
 spam_hits_needed = 3
@@ -2100,11 +2100,12 @@ gizmo_extents = 201.5
 script = ExtResource("37_bsapx")
 songs = Array[AudioStream]([ExtResource("38_gdd2h"), ExtResource("39_7xxcv")])
 
-[node name="BossDoors" type="Node2D" parent="." unique_id=1558799672 node_paths=PackedStringArray("triggers", "doors", "boss")]
+[node name="BossDoors" type="Node2D" parent="." unique_id=1558799672 node_paths=PackedStringArray("triggers", "doors", "boss", "player")]
 script = ExtResource("49_ptw4k")
 triggers = [NodePath("Area2D"), NodePath("Area2D2")]
 doors = [NodePath("StaticBody2D"), NodePath("StaticBody2D2")]
 boss = NodePath("../Boss1")
+player = NodePath("../Node2D")
 close_delay = 1.0
 
 [node name="Area2D" type="Area2D" parent="BossDoors" unique_id=481616463]

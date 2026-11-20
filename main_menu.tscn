@@ -13,18 +13,26 @@ grow_vertical = 2
 script = ExtResource("1_06t4h")
 game_title = "TP-GAME"
 credits_text = "Desarrollo
-Joshidito Studios
+Eclipse Studios
 
-Arte
-La mera verga de Bruno Palacios
+Animaciones
+Bruno Palacios Cacho
+
+Tiles
+Bruno Palacios Cacho
+Armando Joshua Hermosillo García
+
 
 Música y sonido
-PS ahorita esta Flamewall
+Creo - Marine Snow
+Camellia - Flamewall
 
 Hecho con Godot Engine
 
 ¡Gracias por jugar!"
 button_spacing = 0
+button_hover_font_color = Color(0.6136281, 0.97323555, 0.9999998, 1)
+slot_accent_color = Color(0.031958047, 0.9235606, 0.99999994, 1)
 menu_music = ExtResource("2_7vrkn")
 music_volume_db = -15.0
 music_fade_in = 2.0
