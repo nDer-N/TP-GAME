@@ -2064,6 +2064,7 @@ shockwave_push_distance = 600.0
 max_repeats_phase2 = 3
 rest_time = 0.2
 rest_time_phase2 = 0.1
+debug_keys = true
 
 [node name="TrainKillZone" type="Area2D" parent="." unique_id=1982293897 groups=["train_bounds"]]
 position = Vector2(40192, -512)
