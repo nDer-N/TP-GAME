@@ -13,6 +13,7 @@ enum BarPosition { TOP_CENTER, BOTTOM_CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, 
 
 ## Metodos que se intentaran llamar en el jugador para dañarlo (en orden).
 const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
+const SCREAM_FX_BUS := "BossScreamFX"
 
 @export_group("Vida")
 ## Tu espada pega 40 por golpe: 400 de vida = 10 golpes.
@@ -124,6 +125,22 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## El dash se mueve por codigo e IGNORA plataformas y paredes (no se atora), pero se detiene antes de un vacio.
 @export var dash_stop_at_edges := true
 @export var dash_edge_margin := 50.0            # distancia de seguridad antes del borde (pixeles)
+## Si es true, al llegar al borde de una plataforma el dash SIGUE: cae y continua por el piso donde aterrice
+## (la linea de aviso muestra todo el recorrido, caida incluida). Si es false, se detiene antes del borde.
+@export var dash_fall_off_edges := true
+## Distancia minima para que valga la pena dashear. Si es menor prueba el otro lado; si tampoco puede, salta en su lugar.
+@export var dash_min_distance := 150.0
+## Caida maxima permitida. Si no hay piso antes de esto, el dash se corta en el borde.
+@export var dash_max_fall := 900.0
+## Si es true, el dash se limita a los bordes invisibles de la arena (comportamiento antiguo).
+## Si es false, corre hasta donde pueda (pared real o el borde del piso) sin límite de arena.
+@export var dash_limit_to_arena := false
+## Distancia maxima de seguridad del dash cuando no esta limitado por la arena.
+@export var dash_max_distance := 4000.0
+## Si es true, el recorrido del dash se recalcula mientras el aviso sigue al jugador (hasta `dash_lock_time` antes de arrancar).
+@export var dash_track_player_during_warning := true
+## Tiempo antes de arrancar el dash en el que el recorrido se fija y ya no sigue al jugador.
+@export var dash_lock_time := 0.25
 
 @export_group("Efectos del dash")
 @export var dash_vfx := true                   # polvo, escombros y explosion al arrancar/frenar
@@ -169,6 +186,58 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## Zoom de la cámara durante la cinemática (Paso 2)
 @export var cinematic_zoom := Vector2(1.0, 1.0)
 
+@export_group("Audio del grito (fase 2)")
+## Arrastra aqui el audio del grito (.wav, .ogg, .mp3). Vacio = sin sonido.
+@export var scream_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_volume_db := 0.0
+@export_range(0.5, 2.0, 0.01) var scream_pitch := 1.0
+@export var scream_bus := "Master"
+## Cuando suena el grito respecto al INICIO de la animacion del grito (WEEP):
+## negativo = suena ANTES (ej. -0.3), 0 = a la vez, positivo = suena DESPUES (ej. 0.4)
+@export var scream_offset := 0.0
+
+@export_group("Efectos del grito (fase 2)")
+## Interruptor general: apaga todos los efectos y capas de abajo y deja solo el grito
+@export var scream_fx_enabled := true
+
+@export_subgroup("Procesado de la voz")
+## Distorsion (0 = nada, 0.3 = sutil, 0.6+ = muy agresivo).
+@export_range(0.0, 1.0, 0.01) var scream_distortion := 0.35
+## Refuerzo de graves en dB (0 = nada).
+@export_range(0.0, 15.0, 0.5) var scream_bass_boost_db := 6.0
+## Reverb: cuanto "eco de sala" tiene (0 = nada).
+@export_range(0.0, 1.0, 0.01) var scream_reverb_wet := 0.25
+@export_range(0.0, 1.0, 0.01) var scream_reverb_room := 0.6
+## Compresor: hace el grito mas parejo y "pesado".
+@export var scream_compress := true
+
+@export_subgroup("Segunda voz (grave)")
+## Repite el grito mas grave encima, suena demoniaco.
+@export var scream_double_voice := true
+@export_range(0.3, 1.5, 0.01) var scream_double_pitch := 0.7
+@export_range(-40.0, 12.0) var scream_double_volume_db := -4.0
+## Desfase extra respecto al grito principal (segundos).
+@export var scream_double_offset := 0.0
+
+@export_subgroup("Capas extra")
+## Golpe seco al inicio (explosion, trueno, impacto).
+@export var scream_impact_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_impact_volume_db := 0.0
+@export var scream_impact_offset := 0.0
+## Boom grave (sub-bass drop).
+@export var scream_sub_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_sub_volume_db := 0.0
+@export var scream_sub_offset := 0.0
+## Retumbo / viento / energia que acompaña todo el grito.
+@export var scream_rumble_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_rumble_volume_db := -6.0
+@export var scream_rumble_offset := 0.0
+
+@export_subgroup("Musica durante el grito")
+## Cuanto baja la musica mientras grita (0 = no la toca).
+@export_range(-40.0, 0.0, 0.5) var scream_duck_music_db := -12.0
+@export var scream_duck_time := 0.15
+
 @export_group("Musica")
 ## Arrastra aqui tu cancion (.mp3, .ogg o .wav). Vacio = sin musica. Para quitarla/cambiarla solo cambia este campo.
 @export var boss_music: AudioStream
@@ -205,6 +274,20 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var shockwave_damage := 1
 @export var shockwave_push_distance := 420.0             # cuanto empuja al jugador
 @export var shockwave_color := Color(1.0, 0.85, 0.5, 0.85)
+
+@export_group("Pisotón por cercanía")
+## Si el jugador esta muy pegado (o encima) del jefe, hace el pisotón.
+@export var close_stomp_enabled := true
+## Cuanto sobresale la zona a cada lado del cuerpo del jefe (pixeles).
+@export var close_stomp_margin_x := 60.0
+## Cuanto sobresale hacia ARRIBA (para cuando el jugador esta encima).
+@export var close_stomp_margin_up := 160.0
+## Segundos que el jugador tiene que estar dentro de la zona para que se active.
+@export var close_stomp_time_needed := 0.4
+## Segundos minimos entre un pisotón por cercanía y otro.
+@export var close_stomp_cooldown := 3.0
+## Aviso antes del pisotón por cercanía (el normal usa shockwave_windup).
+@export var close_stomp_windup := 0.5
 
 @export_group("Variedad (fase 2)")
 ## Maximo de veces SEGUIDAS que puede repetir el mismo ataque en fase 2 (2 = puede hacerlo dos veces y luego cambia).
@@ -271,7 +354,7 @@ var _player: Node2D
 var _arena_left := 0.0
 var _arena_right := 0.0
 var _marker: ColorRect
-var _dash_marker: ColorRect
+var _dash_line: Line2D
 var _dash_dust: CPUParticles2D
 var _dash_debris: CPUParticles2D
 var _ghost_timer := 0.0
@@ -292,6 +375,15 @@ var _cine_temp_cam: Camera2D # Cámara exclusiva para la cinemática
 
 # --- Variables para el zoom de la cámara en la cinemática (Pasos 1 y 2) ---
 var _cine_player_zoom := Vector2.ONE
+
+# --- Variables para el pisotón por cercanía ---
+var _close_timer := 0.0
+var _last_close_stomp := -999.0
+
+# --- Variables para el replanificado del dash durante el aviso ---
+var _dash_path: PackedVector2Array
+var _dash_dir := 1.0
+var _dash_modes_used: Array = []
 
 @onready var visual: ColorRect = $Visual
 @onready var damage_area: Area2D = $DamageArea
@@ -318,9 +410,10 @@ func _ready() -> void:
 		_build_health_bar()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _alert_active:
 		_alert_update()
+	_update_close_timer(delta)
 	_check_player_dead()
 
 var _player_was_dead := false
@@ -636,6 +729,7 @@ func _duck_set(on: bool) -> void:
 ## Si el jefe desaparece sin morir (reinicio de nivel, etc.) no dejamos la musica ni el bus alterados.
 func _exit_tree() -> void:
 	_fight_over = true      # corta cualquier ataque en curso (dead pasa a ser true)
+	_scream_fx_bus_remove() # <- NUEVA
 	_duck_set(false)
 	if is_inside_tree() and get_tree().process_frame.is_connected(_music_sync_pitch):
 		get_tree().process_frame.disconnect(_music_sync_pitch)
@@ -902,6 +996,18 @@ func _attack_loop_body() -> void:
 			_after_special()
 			await _chase(rest_time_phase2 if phase == 2 else rest_time)
 			continue
+
+		# Pisotón por cercanía: el jugador esta pegado o encima del jefe.
+		if _close_stomp_ready():
+			_last_close_stomp = Time.get_ticks_msec() / 1000.0
+			_close_timer = 0.0
+			await _attack_shockwave(close_stomp_windup, true)
+			if dead:
+				return
+			_recent_hits.clear()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
+
 		# De vez en cuando se mueve a otra plataforma en lugar de atacar.
 		if reposition_enabled and _attacks_since_move >= reposition_min_attacks and randf() < reposition_chance:
 			await _attack_reposition()
@@ -952,15 +1058,145 @@ func _enter_phase2() -> void:
 	
 	if animation_controller:
 		animation_controller.is_phase_2 = true
-		# El grito (weep) sigue con el jugador congelado.
-		#if WeepNoise:
-		#	WeepNoise.emit()
-		
-		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
+
+	# El grito (weep) sigue con el jugador congelado.
+	await _scream_sequence()
 	
 	# El jugador recupera el control justo antes de que el jefe empiece a atacar.
 	_cinematic_end()
 	await _telegraph(1.0, Color(1, 0.2, 0.2))
+
+
+## Grito + animacion WEEP. Todos los offsets son respecto al INICIO de la animacion:
+## negativo = antes, 0 = a la vez, positivo = despues.
+func _scream_sequence() -> void:
+	var fx_bus := _scream_fx_bus_create()
+	var fx_on := scream_fx_enabled
+
+	# Cada item: [stream, volumen_db, pitch, offset, bus]
+	var items: Array = []
+	if scream_sound:
+		items.append([scream_sound, scream_volume_db, scream_pitch, scream_offset, fx_bus])
+		if fx_on and scream_double_voice:
+			items.append([scream_sound, scream_double_volume_db, scream_pitch * scream_double_pitch,
+				scream_offset + scream_double_offset, fx_bus])
+
+	if fx_on:
+		if scream_impact_sound:
+			items.append([scream_impact_sound, scream_impact_volume_db, 1.0, scream_impact_offset, scream_bus])
+		if scream_sub_sound:
+			items.append([scream_sub_sound, scream_sub_volume_db, 1.0, scream_sub_offset, scream_bus])
+		if scream_rumble_sound:
+			items.append([scream_rumble_sound, scream_rumble_volume_db, 1.0, scream_rumble_offset, scream_bus])
+
+	# Si algun sonido va ANTES de la animacion, se espera ese tiempo antes de arrancarla.
+	var lead := 0.0
+	for it in items:
+		lead = maxf(lead, -float(it[3]))
+
+	var end_time := 0.0
+	for it in items:
+		var delay: float = float(it[3]) + lead
+		end_time = maxf(end_time, delay + it[0].get_length() / maxf(float(it[2]), 0.01))
+		_play_sfx(it[0], it[1], it[2], it[4], delay)   # sin await: corren en paralelo
+
+	_scream_duck(true)
+	_scream_fx_cleanup(end_time + 1.5)                  # borra el bus temporal cuando todo termine
+
+	if lead > 0.0:
+		await _wait(lead)
+		if dead:
+			return
+
+	if animation_controller:
+		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
+
+	_scream_duck(false)
+
+
+func _play_sfx(stream: AudioStream, vol_db: float, pitch: float, bus: String, delay := 0.0) -> void:
+	if stream == null:
+		return
+	if delay > 0.0:
+		await _wait(delay)
+	if dead:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = vol_db
+	player.pitch_scale = pitch
+	player.bus = bus
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_parent().add_child(player)      # fuera del jefe para que no se corte si se libera
+	player.finished.connect(player.queue_free)
+	player.play()
+
+
+## Crea un bus temporal con efectos (graves, distorsion, compresor, reverb, limitador).
+func _scream_fx_bus_create() -> String:
+	if not scream_fx_enabled:
+		return scream_bus
+	_scream_fx_bus_remove()
+	AudioServer.add_bus()
+	var idx := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(idx, SCREAM_FX_BUS)
+	AudioServer.set_bus_send(idx, scream_bus)
+
+	if scream_bass_boost_db > 0.0:
+		var eq := AudioEffectEQ6.new()
+		eq.set_band_gain_db(0, scream_bass_boost_db)     # 32 Hz
+		eq.set_band_gain_db(1, scream_bass_boost_db)     # 100 Hz
+		AudioServer.add_bus_effect(idx, eq)
+
+	if scream_distortion > 0.0:
+		var dist := AudioEffectDistortion.new()
+		dist.mode = AudioEffectDistortion.MODE_OVERDRIVE
+		dist.drive = scream_distortion
+		dist.post_gain = -3.0
+		AudioServer.add_bus_effect(idx, dist)
+
+	if scream_compress:
+		var comp := AudioEffectCompressor.new()
+		comp.threshold = -18.0
+		comp.ratio = 4.0
+		comp.gain = 4.0
+		AudioServer.add_bus_effect(idx, comp)
+
+	if scream_reverb_wet > 0.0:
+		var rev := AudioEffectReverb.new()
+		rev.room_size = scream_reverb_room
+		rev.wet = scream_reverb_wet
+		rev.dry = 1.0
+		AudioServer.add_bus_effect(idx, rev)
+
+	var lim := AudioEffectLimiter.new()      # evita que se sature/clipee con tanto efecto
+	lim.ceiling_db = -1.0
+	AudioServer.add_bus_effect(idx, lim)
+	return SCREAM_FX_BUS
+
+
+func _scream_fx_bus_remove() -> void:
+	var idx := AudioServer.get_bus_index(SCREAM_FX_BUS)
+	if idx >= 0:
+		AudioServer.remove_bus(idx)
+
+
+func _scream_fx_cleanup(after: float) -> void:
+	await get_tree().create_timer(after, true, false, true).timeout
+	_scream_fx_bus_remove()
+
+
+## Baja la musica mientras dura el grito y la regresa despues.
+func _scream_duck(on: bool) -> void:
+	if not scream_fx_enabled or scream_duck_music_db == 0.0:
+		return
+	if _music_player == null or not is_instance_valid(_music_player):
+		return
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
+	var target := music_volume_db + (scream_duck_music_db if on else 0.0)
+	_music_tween = _music_player.create_tween()
+	_music_tween.tween_property(_music_player, "volume_db", target, scream_duck_time)
 
 
 func _choose_attack() -> int:
@@ -1196,21 +1432,48 @@ func _attack_dash() -> void:
 		var dir := signf(p.global_position.x - global_position.x)
 		if dir == 0.0:
 			dir = 1.0
-			
-		# --- NUEVO: Hacer que el jefe mire hacia donde va a hacer el dash ---
+
+		# Calcula el recorrido completo ANTES de avisar. Si es muy corto, prueba el otro lado.
+		var path := _compute_dash_path(dir)
+		if _path_len(path) < dash_min_distance:
+			dir = -dir
+			path = _compute_dash_path(dir)
+		if _path_len(path) < dash_min_distance:
+			# No puede dashear hacia ningun lado: hace un salto en su lugar.
+			if i == 0:
+				_last_attack = Attack.JUMP
+				_repeat_count = 1
+				await _attack_jump()
+			return
+
 		$AnimatedSprite2D.flip_h = dir < 0.0
-		# ------------------------------------------------------------------
-
-		var target_x := _arena_right if dir > 0.0 else _arena_left
-		target_x = _dash_limit_x(dir, target_x)   # se acorta si hay un vacio en el camino
-
 		velocity.x = 0.0
+
 		if dash_show_warning:
 			if animation_controller:
 				animation_controller.force_state(animation_controller.VisualState.DASH_WINDUP)
-				
-			_show_dash_path(target_x)
-			await _dash_warning(dash_windup if i == 0 else 0.4)
+			_show_dash_path(path)
+			var total := dash_windup if i == 0 else 0.4
+			var elapsed := 0.0
+			var bright := false
+			while elapsed < total and not dead:
+				# Mientras no se haya fijado, el recorrido sigue al jugador.
+				if dash_track_player_during_warning and elapsed < total - dash_lock_time:
+					if _dash_plan_now(dir):
+						dir = _dash_dir
+						path = _dash_path
+						$AnimatedSprite2D.flip_h = dir < 0.0
+						_show_dash_path(path)
+				# Mismo temblor y parpadeo que _dash_warning().
+				bright = not bright
+				visual.self_modulate = Color(2.5, 2.5, 2.5) if bright else Color(0.4, 0.4, 0.4)
+				visual.position = _visual_base_pos + Vector2(
+					randf_range(-dash_shake_pixels, dash_shake_pixels),
+					randf_range(-dash_shake_pixels * 0.4, dash_shake_pixels * 0.4))
+				await _wait(0.06)
+				elapsed += 0.06
+			visual.position = _visual_base_pos
+			visual.self_modulate = Color.WHITE
 			_hide_dash_path()
 		else:
 			await _wait(dash_windup if i == 0 else 0.15)
@@ -1219,42 +1482,163 @@ func _attack_dash() -> void:
 
 		_hit_this_attack = false
 		_dash_vfx_start(dir)
-		
 		if animation_controller:
 			animation_controller.force_state(animation_controller.VisualState.DASH_MOVE)
-			
-		_scripted = true                      # se mueve por codigo: no choca con plataformas ni paredes
+
+		_scripted = true
 		velocity = Vector2.ZERO
-		var elapsed := 0.0
-		while not dead and (global_position.x - target_x) * dir < 0.0 and elapsed < 3.0:
-			var delta := get_physics_process_delta_time()
-			# Nunca pasa de target_x (que ya esta recortado antes del vacio).
-			var step := minf(dash_speed * delta, absf(target_x - global_position.x))
-			global_position.x += dir * step
+		var dt := get_physics_process_delta_time()
+		for pt in path:        # un punto del recorrido por frame de fisica
+			if dead:
+				break
+			global_position = pt
 			_try_damage_player()
-			_dash_vfx_tick(delta)
+			_dash_vfx_tick(dt)
 			await _next_frame()
-			elapsed += delta
 		_scripted = false
 		velocity = Vector2.ZERO
 		_dash_vfx_stop(dir)
+
+		# Para que la arena no lo regrese de golpe al borde cuando el dash termina fuera de ella
+		if not dash_limit_to_arena:
+			_arena_left = minf(_arena_left, global_position.x)
+			_arena_right = maxf(_arena_right, global_position.x)
+
 		if dead:
 			return
 		await _wait(0.4)
 
-## Hasta donde puede llegar el dash: se detiene `dash_edge_margin` antes de un vacio.
-func _dash_limit_x(dir: float, target_x: float) -> float:
-	if not dash_stop_at_edges:
-		return target_x
-	var y := global_position.y
-	var x := global_position.x
-	var last := x
-	while (x - target_x) * dir < 0.0:
-		x += dir * 16.0
-		if not _ground_at(x + dir * dash_edge_margin, y):
-			return last
-		last = x
-	return target_x
+
+func _path_len(path: PackedVector2Array) -> float:
+	if path.is_empty():
+		return 0.0
+	return path[path.size() - 1].distance_to(global_position)
+
+
+## Recalcula el recorrido del dash hacia el jugador actual. Devuelve true si hay uno valido.
+func _dash_plan_now(current_dir: float) -> bool:
+	var p := _get_player()
+	if p == null:
+		return false
+	var dir := signf(p.global_position.x - global_position.x)
+	if dir == 0.0:
+		dir = current_dir
+	var path := _compute_dash_path(dir)
+	if _path_len(path) < dash_min_distance:
+		dir = -dir
+		path = _compute_dash_path(dir)
+	if _path_len(path) < dash_min_distance:
+		return false
+	_dash_dir = dir
+	_dash_path = path
+	return true
+
+
+## Simula el dash: corre por el piso, se sale del borde, cae y sigue donde aterrice.
+## Devuelve un punto por frame de fisica (el dash simplemente recorre estos puntos).
+func _compute_dash_path(dir: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var dt := get_physics_process_delta_time()
+	var pos := global_position
+	var start_y := pos.y
+	var vy := 0.0
+	var grounded := true
+	var last_ground_count := 0
+	var limit_x := pos.x + dir * dash_max_distance
+	if dash_limit_to_arena:
+		limit_x = _arena_right if dir > 0.0 else _arena_left
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	var pl := _get_player()
+	if pl is CollisionObject2D:
+		ex.append(pl.get_rid())
+
+	for _i in int(4.0 / dt):
+		var remaining := (limit_x - pos.x) * dir
+		if grounded and remaining <= 0.0:
+			break
+		var step_x := clampf(dash_speed * dt, 0.0, maxf(remaining, 0.0))
+		var nx := pos.x + dir * step_x
+		# Pared real adelante: en el suelo se detiene; en el aire deja de avanzar y solo cae.
+		if _wall_ahead(pos, dir, step_x, space, ex):
+			if grounded:
+				break
+			nx = pos.x
+		if grounded:
+			var look := nx if dash_fall_off_edges else nx + dir * dash_edge_margin
+			if _ground_at(look, pos.y):
+				pos.x = nx
+			elif dash_fall_off_edges:
+				pos.x = nx
+				grounded = false
+				vy = 0.0
+			else:
+				break
+		else:
+			vy += gravity * dt
+			var ny := pos.y + vy * dt
+			var q := PhysicsRayQueryParameters2D.create(
+				Vector2(nx, pos.y - 4.0), Vector2(nx, ny + 2.0), collision_mask)
+			q.exclude = ex
+			var hit := space.intersect_ray(q)
+			if not hit.is_empty() and hit.normal.y < -0.7:
+				pos = hit.position + Vector2(0, -1)
+				grounded = true
+				vy = 0.0
+			else:
+				pos = Vector2(nx, ny)
+				if pos.y - start_y > dash_max_fall:
+					break
+		pts.append(pos)
+		if grounded:
+			last_ground_count = pts.size()
+
+	if pts.size() > last_ground_count:
+		pts.resize(last_ground_count)
+	return pts
+
+
+## true si hay una PARED (superficie vertical) justo delante del cuerpo del jefe.
+func _wall_ahead(pos: Vector2, dir: float, step_x: float, space: PhysicsDirectSpaceState2D, ex: Array[RID]) -> bool:
+	var shape := damage_shape.shape as RectangleShape2D
+	var half := shape.size.x * damage_shape.global_scale.abs().x / 2.0
+	var h := visual.size.y
+	for fy in [20.0, h * 0.5, h - 10.0]:       # pies, medio y cabeza
+		var from := Vector2(pos.x, pos.y - fy)
+		var q := PhysicsRayQueryParameters2D.create(from, from + Vector2(dir * (half + step_x), 0.0), collision_mask)
+		q.exclude = ex
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty() and absf(hit.normal.x) > 0.7:
+			return true
+	return false
+
+
+## Linea roja que muestra TODO el recorrido del dash (incluida la caida).
+func _show_dash_path(path: PackedVector2Array) -> void:
+	if _dash_line == null:
+		_dash_line = Line2D.new()
+		_dash_line.top_level = true
+		_dash_line.default_color = Color(1, 0, 0, 0.22)
+		_dash_line.joint_mode = Line2D.LINE_JOINT_ROUND
+		add_child(_dash_line)
+	_dash_line.global_position = Vector2.ZERO
+	_dash_line.global_rotation = 0.0
+	var rect := damage_shape.shape as RectangleShape2D
+	_dash_line.width = rect.size.y
+	var off := Vector2(0, damage_shape.position.y)
+	var pts := PackedVector2Array()
+	pts.append(global_position + off)
+	var step := 4        # un punto de cada 4 para que la linea sea ligera
+	for k in range(0, path.size(), step):
+		pts.append(path[k] + off)
+	pts.append(path[path.size() - 1] + off)
+	_dash_line.points = pts
+	_dash_line.show()
+
+
+func _hide_dash_path() -> void:
+	if _dash_line:
+		_dash_line.hide()
 
 
 ## true si hay piso en esa x a la altura de los pies del jefe (ignora plataformas mas altas/bajas).
@@ -1351,23 +1735,49 @@ func _register_hit() -> void:
 		_recent_hits.pop_front()
 
 
-func _attack_shockwave() -> void:
+## Zona alrededor del jefe que cuenta como "muy pegado / encima".
+func _stomp_zone_rect() -> Rect2:
+	return _damage_rect().grow_individual(close_stomp_margin_x, close_stomp_margin_up, close_stomp_margin_x, 30.0)
+
+
+## Cuenta cuanto tiempo lleva el jugador dentro de la zona (se reinicia si sale).
+func _update_close_timer(delta: float) -> void:
+	if not close_stomp_enabled or not active or dead or _cinematic_active:
+		_close_timer = 0.0
+		return
+	if not is_instance_valid(_player):
+		_close_timer = 0.0
+		return
+	if _stomp_zone_rect().intersects(_player_rect(_player)):
+		_close_timer += delta
+	else:
+		_close_timer = 0.0
+
+
+func _close_stomp_ready() -> bool:
+	if not close_stomp_enabled or _close_timer < close_stomp_time_needed:
+		return false
+	return Time.get_ticks_msec() / 1000.0 - _last_close_stomp >= close_stomp_cooldown
+
+
+func _attack_shockwave(windup := -1.0, zone_hit := false) -> void:
 	if _get_player() == null:
 		return
 	velocity.x = 0.0
+	var w := windup if windup > 0.0 else shockwave_windup
 	
 	if animation_controller:
 		animation_controller.force_state(animation_controller.VisualState.SHOCKWAVE_WINDUP)
 		
-	_telegraph_tween(shockwave_windup, Color(0.5, 0.85, 1.0))
-	await _dash_warning(shockwave_windup)     # tiembla y parpadea
+	_telegraph_tween(w, Color(0.5, 0.85, 1.0))
+	await _dash_warning(w)     # tiembla y parpadea
 	if dead:
 		return
-	await _shockwave_blast()
+	await _shockwave_blast(zone_hit)
 
 
 ## Dos ondas bajas que corren por el piso hacia los lados; se esquivan saltando. Empujan al jugador.
-func _shockwave_blast() -> void:
+func _shockwave_blast(zone_hit := false) -> void:
 	if animation_controller:
 		animation_controller.play_and_wait(animation_controller.VisualState.SHOCKWAVE_BLAST)
 		
@@ -1391,6 +1801,18 @@ func _shockwave_blast() -> void:
 
 	var traveled := 0.0
 	var hit_player := false
+	
+	# Pisotón por cercanía: daña y empuja a quien este pegado o encima del jefe.
+	if zone_hit:
+		var zp := _get_player()
+		if zp and _stomp_zone_rect().intersects(_player_rect(zp)):
+			hit_player = true
+			apply_damage(zp, shockwave_damage)
+			var zdir := signf(zp.global_position.x - origin.x)
+			if zdir == 0.0:
+				zdir = 1.0
+			_push_player(zdir, shockwave_push_distance)
+	
 	while traveled < shockwave_range and not dead:
 		var delta := get_physics_process_delta_time()
 		traveled += shockwave_speed * delta
@@ -1868,27 +2290,6 @@ func _dash_warning(time: float) -> void:
 		elapsed += 0.06
 	visual.position = _visual_base_pos
 	visual.self_modulate = Color.WHITE
-
-
-## Franja roja en el piso que muestra por donde va a pasar el dash.
-func _show_dash_path(target_x: float) -> void:
-	if _dash_marker == null:
-		_dash_marker = ColorRect.new()
-		_dash_marker.top_level = true
-		_dash_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_dash_marker.color = Color(1, 0, 0, 0.22)
-		add_child(_dash_marker)
-	var rect := damage_shape.shape as RectangleShape2D
-	var left := minf(global_position.x, target_x)
-	var width := absf(target_x - global_position.x)
-	_dash_marker.size = Vector2(width, rect.size.y)
-	_dash_marker.global_position = Vector2(left, global_position.y + damage_shape.position.y - rect.size.y / 2.0)
-	_dash_marker.show()
-
-
-func _hide_dash_path() -> void:
-	if _dash_marker:
-		_dash_marker.hide()
 
 
 func _show_marker(target: Vector2) -> void:

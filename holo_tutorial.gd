@@ -13,6 +13,8 @@ extends Area2D
 @export var flicker: bool = true
 @export var tecla_repetir: Key = KEY_E
 @export var texto_hint: String = "[E] Ver tutorial"
+## Teclas que NO cierran el tutorial al presionarlas (ej. la tecla de un poder que se explica aqui).
+@export var teclas_que_no_cierran: Array[Key] = [KEY_C]
 @export var hint_offset: Vector2 = Vector2(0, -80)
 
 @export_group("Diagrama")
@@ -22,6 +24,16 @@ extends Area2D
 @export var separacion_diagrama_texto: float = 12.0
 ## Ignora el margen transparente de los frames al calcular tamaño y posición.
 @export var recortar_transparencia: bool = true
+
+@export_group("Ajuste automático")
+## Ancho máximo al que se puede estirar el panel si el texto es largo.
+@export var ancho_panel_max: float = 640.0
+## Tamaño mínimo de letra antes de rendirse (se achica solo si ensanchar no alcanza).
+@export var tamano_fuente_min: int = 14
+## Margen mínimo entre el panel y los bordes de la pantalla (en píxeles de pantalla).
+@export var margen_pantalla: float = 40.0
+## Cuánto se ensancha el panel en cada intento.
+@export var paso_ancho: float = 20.0
 
 # teclas para cambiar de página (configurables desde el Inspector)
 @export var tecla_pagina_izq: Key = KEY_A
@@ -59,8 +71,18 @@ var alturas_texto: Array[float] = []
 var info_paginas: Array[Dictionary] = []
 var alto_contenido := 0.0
 
+# ajuste automático
+var ancho_actual := 0.0
+var fuente_base := 16
+var fuente_actual := 16
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
+	# guardamos el tamaño de letra original y el ancho base
+	fuente_base = label.get_theme_font_size("font_size")
+	fuente_actual = fuente_base
+	ancho_actual = ancho_panel
 
 	# el script calcula la posición asumiendo el sprite centrado
 	diagrama.centered = true
@@ -223,42 +245,81 @@ func _medir_diagrama(anim: StringName, ancho_max: float) -> Dictionary:
 	var s := minf(minf(ancho_max / rect.size.x, alto_diagrama_max / rect.size.y), 1.0)
 	return {"tam": (rect.size * s).round(), "escala": s, "rect": rect, "frame": info["frame"]}
 
-func _acomodar() -> void:
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var ancho_texto := ancho_panel - padding * 2.0
-	label.size = Vector2(ancho_texto, 0)
+# Mide todas las páginas con un ancho y tamaño de letra dados.
+func _calcular_layout(ancho: float, fuente: int) -> Dictionary:
+	var ancho_texto := ancho - padding * 2.0
+	var font := label.get_theme_font("font")
+	var interlineado := label.get_theme_constant("line_spacing")
+	var alturas: Array[float] = []
+	var infos: Array[Dictionary] = []
+	var alto_max := 0.0
 
-	alturas_texto.clear()
-	info_paginas.clear()
-	alto_contenido = 0.0
-
-	# medimos TODAS las páginas (texto + diagrama) y usamos la más alta
 	for i in lista_paginas.size():
 		var h_texto := 0.0
 		if lista_paginas[i] != "":
-			label.text = lista_paginas[i]
-			label.size = Vector2(ancho_texto, 0)
-			await get_tree().process_frame
-			h_texto = maxf(label.size.y, label.get_minimum_size().y)
-		alturas_texto.append(h_texto)
+			var tam := font.get_multiline_string_size(
+				lista_paginas[i], HORIZONTAL_ALIGNMENT_LEFT, ancho_texto, fuente)
+			var lineas := maxi(1, roundi(tam.y / font.get_height(fuente)))
+			h_texto = tam.y + interlineado * (lineas - 1) + 2.0
+		alturas.append(h_texto)
 
 		var info := _medir_diagrama(lista_animaciones[i], ancho_texto)
-		info_paginas.append(info)
+		infos.append(info)
 		var tam_d: Vector2 = info["tam"]
 
 		var h := h_texto + tam_d.y
 		if h_texto > 0.0 and tam_d.y > 0.0:
 			h += separacion_diagrama_texto
-		alto_contenido = maxf(alto_contenido, h)
+		alto_max = maxf(alto_max, h)
+
+	return {"alturas": alturas, "infos": infos, "alto_contenido": alto_max}
+
+func _acomodar() -> void:
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 	var extra := 26.0 if _es_multipagina() else 0.0   # espacio para el "1/3"
+	var vp := get_viewport().get_visible_rect().size
+
+	# límites (en unidades del panel, ya descontando la escala y el margen)
+	var ancho_tope := minf(ancho_panel_max, (vp.x - margen_pantalla * 2.0) / escala_panel)
+	ancho_tope = maxf(ancho_tope, ancho_panel)
+	var alto_tope := (vp.y - margen_pantalla * 2.0) / escala_panel
+
+	# primero ensanchar; si no cabe, achicar la letra y repetir
+	var elegido: Dictionary = {}
+	var f := fuente_base
+	while f >= tamano_fuente_min and elegido.is_empty():
+		var w := ancho_panel
+		while w <= ancho_tope + 0.01:
+			var lay := _calcular_layout(w, f)
+			var alto_total: float = lay["alto_contenido"] + padding * 2.0 + extra
+			if alto_total <= alto_tope:
+				elegido = lay
+				ancho_actual = w
+				fuente_actual = f
+				break
+			w += paso_ancho
+		f -= 1
+
+	# si nada cupo, usamos el máximo ancho y la letra mínima (mejor esfuerzo)
+	if elegido.is_empty():
+		ancho_actual = ancho_tope
+		fuente_actual = tamano_fuente_min
+		elegido = _calcular_layout(ancho_actual, fuente_actual)
+
+	alturas_texto = elegido["alturas"]
+	info_paginas = elegido["infos"]
+	alto_contenido = elegido["alto_contenido"]
+
+	label.add_theme_font_size_override("font_size", fuente_actual)
+
 	var alto := maxf(alto_contenido + padding * 2.0 + extra, 100.0)
 
-	fondo.size = Vector2(ancho_panel, alto)
+	fondo.size = Vector2(ancho_actual, alto)
 	fondo.position = -fondo.size / 2.0
-	linea.size = Vector2(ancho_panel, 2)
+	linea.size = Vector2(ancho_actual, 2)
 	linea.position = fondo.position
 
 	# posición de flechas e indicador
@@ -266,8 +327,8 @@ func _acomodar() -> void:
 	flecha_izq.size = Vector2(padding, 40)
 	flecha_izq.position = Vector2(fondo.position.x, centro_y - 20)
 	flecha_der.size = Vector2(padding, 40)
-	flecha_der.position = Vector2(fondo.position.x + ancho_panel - padding, centro_y - 20)
-	indicador.size = Vector2(ancho_panel, 24)
+	flecha_der.position = Vector2(fondo.position.x + ancho_actual - padding, centro_y - 20)
+	indicador.size = Vector2(ancho_actual, 24)
 	indicador.position = Vector2(fondo.position.x, fondo.position.y + alto - 28)
 
 	layout_listo = true
@@ -279,7 +340,7 @@ func _colocar_contenido() -> void:
 	if not layout_listo:
 		return
 
-	var ancho_texto := ancho_panel - padding * 2.0
+	var ancho_texto := ancho_actual - padding * 2.0
 	var h_texto: float = alturas_texto[pagina_actual]
 	var info: Dictionary = info_paginas[pagina_actual]
 	var tam_d: Vector2 = info["tam"]
@@ -358,6 +419,8 @@ func _dir_pagina(event: InputEvent) -> int:
 
 func _es_movimiento(event: InputEvent) -> bool:
 	if event is InputEventKey:
+		if event.physical_keycode in teclas_que_no_cierran or event.keycode in teclas_que_no_cierran:
+			return false
 		return event.pressed and not event.echo
 	if event is InputEventJoypadButton:
 		return event.pressed

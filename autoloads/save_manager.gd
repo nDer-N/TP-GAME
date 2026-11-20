@@ -106,10 +106,16 @@ func _write_slot(slot: int, data: Dictionary) -> void:
 
 
 ## Guarda la partida. Si "data" no trae nombre, se conserva el que ya tenía.
+## "created" (fecha de creación) se escribe una sola vez y se conserva siempre.
 func save_game(slot: int, data: Dictionary) -> void:
 	if not data.has("name"):
 		data["name"] = get_slot_name(slot)
-	data["timestamp"] = Time.get_unix_time_from_system()
+	var now: float = Time.get_unix_time_from_system()
+	if not data.has("created"):
+		var old: Dictionary = read_slot(slot)
+		# Partidas antiguas sin "created": usamos su fecha de guardado como aproximación.
+		data["created"] = old.get("created", old.get("timestamp", now))
+	data["timestamp"] = now   # último guardado (lo usa "Continuar")
 	data["version"] = 1
 	_write_slot(slot, data)
 	current_slot = slot
@@ -174,6 +180,7 @@ func new_game(slot: int, save_name: String = "") -> void:
 		clean = "Partida %d" % slot
 	var data: Dictionary = {
 		"name": clean,
+		"created": Time.get_unix_time_from_system(),
 		"playtime": 0.0,
 		"has_checkpoint": false,
 		"checkpoint_x": 0.0,
@@ -196,15 +203,33 @@ func load_game(slot: int) -> bool:
 	return true
 
 
-## Texto de resumen para los botones de slot.
+## Fecha en formato dd/mm/aaaa, en hora local.
+func _format_date(unix: float) -> String:
+	var bias_minutes: int = int(Time.get_time_zone_from_system().get("bias", 0))
+	var local: int = int(unix) + bias_minutes * 60
+	var dt: Dictionary = Time.get_datetime_dict_from_unix_time(local)
+	return "%02d/%02d/%04d" % [dt["day"], dt["month"], dt["year"]]
+
+
+## Tiempo de juego como "5 h 32 min".
+func _format_playtime(seconds: float) -> String:
+	var total_minutes: int = floori(seconds / 60.0)
+	var hours: int = total_minutes / 60
+	var minutes: int = total_minutes % 60
+	return "%d h %02d min" % [hours, minutes]
+
+
+## Texto de resumen para los botones de slot:
+## nombre, fecha de creación y horas de juego.
 func get_slot_summary(slot: int) -> String:
 	var d: Dictionary = read_slot(slot)
 	if d.is_empty():
 		return "Espacio %d  —  Vacío" % slot
-	var date: String = Time.get_datetime_string_from_unix_time(int(d.get("timestamp", 0)), true)
-	var secs: int = int(d.get("playtime", 0.0))
-	var time_str: String = "%02d:%02d:%02d" % [secs / 3600, (secs % 3600) / 60, secs % 60]
-	return "%s  —  %s  —  %s" % [get_slot_name(slot), date, time_str]
+	var created: float = float(d.get("created", d.get("timestamp", 0.0)))
+	return "%s\nCreada: %s  ·  Tiempo de juego: %s" % [
+		get_slot_name(slot),
+		_format_date(created),
+		_format_playtime(float(d.get("playtime", 0.0)))]
 
 
 # ------------------------------------------------------------------ AJUSTES
