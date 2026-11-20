@@ -56,7 +56,7 @@ shape = SubResource("RectangleShape2D_bgaq0")
 collision_mask = 17
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea" unique_id=651827931]
-position = Vector2(0, -109)
+position = Vector2(0, -110)
 shape = SubResource("RectangleShape2D_yjy12")
 
 [node name="BossAnimationController" type="Node" parent="." unique_id=1974185963 node_paths=PackedStringArray("animated_sprite")]
