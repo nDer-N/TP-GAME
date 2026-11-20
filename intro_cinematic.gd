@@ -1,4 +1,3 @@
-
 extends Control
 ## Cinemática inicial: imágenes + texto con efecto máquina de escribir.
 ## Todo se edita desde el Inspector del nodo.
@@ -82,7 +81,9 @@ var _last_char: int = 0
 var _scroll: ScrollContainer
 var _scroll_target: float = 0.0
 
-# NUEVO: controla cuándo está permitido el scroll automático.
+# Controla cuándo el scroll automático está activo.
+# Mientras se escribe SIEMPRE sigue al texto; al terminar baja al final
+# y después suelta el control para que el jugador mueva la barra libremente.
 var _auto_scroll: bool = true
 
 
@@ -166,7 +167,7 @@ func _build_ui() -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(_scroll)
 
-	# NUEVO: detectar cuando el jugador mueve la barra o la rueda.
+	# Detectar cuando el jugador mueve la barra o la rueda (solo cuenta al terminar de escribir).
 	_scroll.get_v_scroll_bar().scrolling.connect(_on_user_scrolled)
 	_scroll.gui_input.connect(_on_scroll_gui_input)
 
@@ -302,7 +303,7 @@ func _show_scene(i: int) -> void:
 	_scroll.scroll_vertical = 0
 	_scroll_target = 0.0
 
-	# NUEVO: activar el scroll automático al comenzar cada escena.
+	# Activar el scroll automático al comenzar cada escena.
 	_auto_scroll = true
 
 	_next_btn.visible = false
@@ -318,6 +319,7 @@ func _start_typing(s: CinematicScene) -> void:
 	if s != null and s.text_speed > 0.0:
 		speed = s.text_speed
 	_typing = true
+	_auto_scroll = true
 	_last_char = 0
 	if total == 0:
 		_on_typing_done()
@@ -355,20 +357,31 @@ func _set_chars(v) -> void:
 
 # ============================================================ SCROLL AUTOMÁTICO
 
+# Máximo valor al que realmente puede llegar la barra.
+func _max_scroll() -> float:
+	var bar := _scroll.get_v_scroll_bar()
+	return maxf(0.0, bar.max_value - bar.page)
+
+
 func _process(delta: float) -> void:
 	if _scroll == null:
 		return
 
-	# Scroll suave hacia la línea que se está escribiendo (solo si es automático)
+	# Scroll suave hacia la línea que se está escribiendo.
+	# Mientras se escribe siempre sigue al texto (aunque haya pausas de párrafo).
 	if _auto_scroll:
+		var target := minf(_scroll_target, _max_scroll())
 		var cur := float(_scroll.scroll_vertical)
-		var diff := _scroll_target - cur
-		if absf(diff) < 1.0:
-			_scroll.scroll_vertical = int(_scroll_target)
+		var diff := target - cur
+		if absf(diff) <= 1.0:
+			_scroll.scroll_vertical = int(target)
+			# Solo suelta el control cuando ya terminó de escribir y llegó al final
 			if not _typing:
 				_auto_scroll = false
 		else:
-			_scroll.scroll_vertical = int(cur + diff * minf(1.0, delta * 8.0))
+			var step := maxf(absf(diff) * minf(1.0, delta * 8.0), 1.0)
+			step = minf(step, absf(diff))
+			_scroll.scroll_vertical = int(cur + signf(diff) * step)
 
 	# Difuminado superior: solo aparece cuando ya hay texto arriba que se sale
 	var mat := _label.material as ShaderMaterial
@@ -383,7 +396,9 @@ func _on_typing_done() -> void:
 	_type_player.stop()  # corta el sonido de escribir
 	_label.visible_characters = -1
 
-	# NUEVO: lleva el scroll suavemente al final del texto completo.
+	# Lleva el scroll suavemente al final del texto completo.
+	# Cuando llegue, _process suelta el control y el jugador puede mover la barra.
+	_auto_scroll = true
 	_scroll_target = maxf(0.0, _label.get_minimum_size().y - _scroll.size.y + 8.0)
 
 	_next_btn.text = text_last if _index >= scenes.size() - 1 else text_next
@@ -391,13 +406,19 @@ func _on_typing_done() -> void:
 	_next_btn.grab_focus()
 
 
-# ============================================================ NUEVAS FUNCIONES DE DETECCIÓN
+# ============================================================ DETECCIÓN DEL JUGADOR
 
+# Mientras se escribe se ignora al jugador (la barra sigue sola);
+# al terminar, cualquier movimiento suyo cancela el scroll automático.
 func _on_user_scrolled() -> void:
+	if _typing:
+		return
 	_auto_scroll = false
 
 
 func _on_scroll_gui_input(event: InputEvent) -> void:
+	if _typing:
+		return
 	var wheel: bool = event is InputEventMouseButton and event.pressed \
 		and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN)
 

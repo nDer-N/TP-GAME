@@ -1067,8 +1067,7 @@ func _enter_phase2() -> void:
 	await _telegraph(1.0, Color(1, 0.2, 0.2))
 
 
-## Reproduce el grito + la animacion WEEP respetando scream_offset.
-## Todos los offsets son respecto al INICIO de la animacion:
+## Grito + animacion WEEP. Todos los offsets son respecto al INICIO de la animacion:
 ## negativo = antes, 0 = a la vez, positivo = despues.
 func _scream_sequence() -> void:
 	var fx_bus := _scream_fx_bus_create()
@@ -1084,11 +1083,11 @@ func _scream_sequence() -> void:
 
 	if fx_on:
 		if scream_impact_sound:
-			items.append([scream_impact_sound, scream_impact_volume_db, 1.0, scream_impact_offset, fx_bus])
+			items.append([scream_impact_sound, scream_impact_volume_db, 1.0, scream_impact_offset, scream_bus])
 		if scream_sub_sound:
-			items.append([scream_sub_sound, scream_sub_volume_db, 1.0, scream_sub_offset, fx_bus])
+			items.append([scream_sub_sound, scream_sub_volume_db, 1.0, scream_sub_offset, scream_bus])
 		if scream_rumble_sound:
-			items.append([scream_rumble_sound, scream_rumble_volume_db, 1.0, scream_rumble_offset, fx_bus])
+			items.append([scream_rumble_sound, scream_rumble_volume_db, 1.0, scream_rumble_offset, scream_bus])
 
 	# Si algun sonido va ANTES de la animacion, se espera ese tiempo antes de arrancarla.
 	var lead := 0.0

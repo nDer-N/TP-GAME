@@ -51,8 +51,11 @@
 [ext_resource type="Texture2D" uid="uid://2y7fokfv7h4c" path="res://textures/tiles/BoxesMisc/Electricidad.png" id="43_h6w2h"]
 [ext_resource type="Texture2D" uid="uid://csygfct1fkhau" path="res://textures/tiles/floor/Metal Conexion.png" id="44_26eip"]
 [ext_resource type="Texture2D" uid="uid://cpblvwam1bupx" path="res://textures/tiles/floor/MetalMiddle.png" id="47_2psta"]
+[ext_resource type="Texture2D" uid="uid://8vpokj2w8p2y" path="res://textures/tiles/Deco/carbon.png" id="47_k5nxg"]
 [ext_resource type="Texture2D" uid="uid://cmyumwrk7mxic" path="res://textures/tiles/floor/MetalConexionEnd.png" id="48_2psta"]
 [ext_resource type="Texture2D" uid="uid://cvw6urbm8rsy1" path="res://textures/tiles/floor/Metal.png" id="48_3d76s"]
+[ext_resource type="Texture2D" uid="uid://b7a7psk8fqsjj" path="res://textures/tiles/Deco/cARBON esq.png" id="48_q8aq7"]
+[ext_resource type="Texture2D" uid="uid://bv05ob5y66bls" path="res://textures/tiles/Deco/CarbonMedio.png" id="49_q8aq7"]
 [ext_resource type="Texture2D" uid="uid://dp1pddu0muia1" path="res://textures/tiles/ceiling/FillTrainCorner2 (1).png" id="50_lfy30"]
 [ext_resource type="Texture2D" uid="uid://chs2vwmpdqmdj" path="res://textures/tiles/ceiling/FillTrainMiddle (1).png" id="51_e00vl"]
 [ext_resource type="Texture2D" uid="uid://c7esht6lxxnr2" path="res://textures/tiles/ceiling/FillTrainMiddleD (1).png" id="53_k5nxg"]
@@ -2810,6 +2813,27 @@ texture_region_size = Vector2i(64, 64)
 1:1/0 = 0
 1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ygfdj"]
+texture = ExtResource("47_k5nxg")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_uttgo"]
+texture = ExtResource("48_q8aq7")
+texture_region_size = Vector2i(64, 64)
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_e362e"]
+texture = ExtResource("49_q8aq7")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kgaw8"]
 texture = ExtResource("47_2psta")
 texture_region_size = Vector2i(64, 64)
@@ -3011,3 +3035,6 @@ sources/58 = SubResource("TileSetAtlasSource_gm7p1")
 sources/59 = SubResource("TileSetAtlasSource_jawad")
 sources/60 = SubResource("TileSetAtlasSource_o187s")
 sources/61 = SubResource("TileSetAtlasSource_euhs6")
+sources/50 = SubResource("TileSetAtlasSource_ygfdj")
+sources/51 = SubResource("TileSetAtlasSource_uttgo")
+sources/52 = SubResource("TileSetAtlasSource_e362e")

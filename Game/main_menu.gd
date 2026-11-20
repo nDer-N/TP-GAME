@@ -35,11 +35,22 @@ extends Control
 @export var font_size: int = 24
 @export var font_color: Color = Color.WHITE
 
+@export_group("Texto - Contorno y sombra")
+## Marco alrededor de las letras. 0 = sin marco.
+@export var text_outline_size: int = 6
+@export var text_outline_color: Color = Color(0, 0, 0, 1)
+## Marco más grueso solo para el título.
+@export var title_outline_size: int = 12
+## Sombra debajo del texto (solo en etiquetas; los botones no la soportan).
+@export var text_shadow_enabled: bool = true
+@export var text_shadow_color: Color = Color(0, 0, 0, 0.6)
+@export var text_shadow_offset: Vector2 = Vector2(2, 3)
+
 @export_group("Botones - Aspecto")
 @export var button_font: Font
 @export var button_font_size: int = 24
 @export var button_size: Vector2 = Vector2(320, 48)
-@export var slot_button_size: Vector2 = Vector2(460, 64)
+@export var slot_button_size: Vector2 = Vector2(560, 84)
 @export var button_spacing: int = 12
 @export var button_font_color: Color = Color.WHITE
 @export var button_hover_font_color: Color = Color(1, 0.9, 0.5)
@@ -65,8 +76,13 @@ extends Control
 @export var delete_icon: Texture2D
 ## Icono para cambiar el nombre. Si lo dejas vacío se usa uno incluido.
 @export var rename_icon: Texture2D
-@export var icon_button_size: Vector2 = Vector2(64, 64)
+@export var icon_button_size: Vector2 = Vector2(84, 84)
 @export var name_max_length: int = 24
+## Color de brillo de las tarjetas de partida (borde, número y resplandor).
+@export var slot_accent_color: Color = Color(1.0, 0.78, 0.35)
+@export var text_slot_empty: String = "Espacio vacío"
+@export var text_slot_empty_new: String = "Toca para empezar una aventura"
+@export var text_slot_empty_load: String = "Sin partida guardada"
 
 @export_group("Textos de los botones")
 @export var text_continue: String = "Continuar"
@@ -117,6 +133,26 @@ extends Control
 @export var click_sound: AudioStream
 @export var hover_sound: AudioStream
 
+@export_group("Pantalla de carga")
+@export var text_loading: String = "CARGANDO"
+## Usa {name} para mostrar el nombre de la partida.
+@export var text_loading_slot: String = "Partida: {name}"
+@export var loading_font: Font
+@export var loading_font_size: int = 56
+@export var loading_sub_font_size: int = 22
+@export var loading_font_color: Color = Color.WHITE
+## Color de brillo: línea, barra, brasas y bordes.
+@export var loading_accent_color: Color = Color(1.0, 0.78, 0.35)
+## Oscurece el menú de fondo (0 = nada, 1 = negro total).
+@export_range(0.0, 1.0) var loading_dim: float = 0.6
+## Alto de las barras de cine (0 = sin barras).
+@export var loading_cinema_bars: float = 90.0
+@export var loading_bar_width: float = 420.0
+@export var loading_embers: bool = true
+@export var loading_fade_time: float = 0.6
+## Tiempo mínimo que se ve la pantalla (para que alcance a lucirse).
+@export var loading_min_time: float = 1.6
+
 # ============================================================== INTERNO
 const TRASH_SVG := "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 6 5 6 21 6'/><path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/><path d='M10 11v6M14 11v6'/><path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'/></svg>"
 const PENCIL_SVG := "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 20h9'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'/></svg>"
@@ -129,6 +165,11 @@ var slots_title: Label
 var slot_buttons: Array[Button] = []
 var rename_buttons: Array[Button] = []
 var delete_buttons: Array[Button] = []
+var slot_rows: Array[Control] = []
+var slot_contents: Array[Control] = []
+var slot_nums: Array[Label] = []
+var slot_names: Array[Label] = []
+var slot_infos: Array[Label] = []
 var continue_btn: Button
 var confirm: ConfirmationDialog
 var delete_confirm: ConfirmationDialog
@@ -141,6 +182,8 @@ var click_player: AudioStreamPlayer
 var hover_player: AudioStreamPlayer
 var delete_tex: Texture2D
 var rename_tex: Texture2D
+var loading_layer: CanvasLayer
+var _current_slot: int = -1
 
 
 func _ready() -> void:
@@ -196,6 +239,18 @@ func _build_theme() -> void:
 	t.default_font_size = font_size
 	t.set_color("font_color", "Label", font_color)
 
+	# Marco negro en todos los textos
+	for type_name in ["Label", "Button", "CheckButton"]:
+		t.set_constant("outline_size", type_name, text_outline_size)
+		t.set_color("font_outline_color", type_name, text_outline_color)
+
+	# Sombra (solo Label)
+	if text_shadow_enabled:
+		t.set_color("font_shadow_color", "Label", text_shadow_color)
+		t.set_constant("shadow_offset_x", "Label", int(text_shadow_offset.x))
+		t.set_constant("shadow_offset_y", "Label", int(text_shadow_offset.y))
+		t.set_constant("shadow_outline_size", "Label", text_outline_size)
+
 	if button_font != null:
 		t.set_font("font", "Button", button_font)
 	t.set_font_size("font_size", "Button", button_font_size)
@@ -229,6 +284,7 @@ func _build_audio() -> void:
 	hover_player = AudioStreamPlayer.new()
 	hover_player.stream = hover_sound
 	add_child(hover_player)
+
 
 func _music_start() -> void:
 	if menu_music == null:
@@ -310,7 +366,7 @@ func _build_ui() -> void:
 	root.add_child(_build_title())
 
 	var holder := Control.new()
-	holder.custom_minimum_size = Vector2(640, 420)
+	holder.custom_minimum_size = Vector2(800, 440)
 	root.add_child(holder)
 
 	_build_main_page(holder)
@@ -372,6 +428,8 @@ func _build_title() -> Control:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", title_font_size)
 	title.add_theme_color_override("font_color", title_color)
+	title.add_theme_constant_override("outline_size", title_outline_size)
+	title.add_theme_color_override("font_outline_color", text_outline_color)
 	if title_font != null:
 		title.add_theme_font_override("font", title_font)
 	return title
@@ -432,19 +490,124 @@ func _build_main_page(holder: Control) -> void:
 	_make_button(text_quit, func(): get_tree().quit(), p)
 
 
+func _card_box(bg: Color, border: Color, border_w: int, left_w: int, glow: int) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(button_corner_radius + 4)
+	sb.border_width_left = left_w
+	sb.border_width_top = border_w
+	sb.border_width_right = border_w
+	sb.border_width_bottom = border_w
+	sb.border_color = border
+	sb.set_content_margin_all(10)
+	if glow > 0:
+		sb.shadow_color = Color(border.r, border.g, border.b, 0.35)
+		sb.shadow_size = glow
+	return sb
+
+
+func _apply_card_styles(b: Button, accent: Color) -> void:
+	var soft := Color(accent.r, accent.g, accent.b, 0.35)
+	var hover := _card_box(Color(0.13, 0.10, 0.20, 0.96), accent, 2, 6, 14)
+	b.add_theme_stylebox_override("normal", _card_box(Color(0.06, 0.05, 0.11, 0.90), soft, 1, 5, 0))
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("focus", hover)
+	b.add_theme_stylebox_override("pressed", _card_box(Color(0.04, 0.03, 0.08, 1.0), accent, 2, 6, 0))
+	b.add_theme_stylebox_override("disabled", _card_box(Color(0.05, 0.05, 0.07, 0.6), Color(1, 1, 1, 0.10), 1, 5, 0))
+
+
+## Contenido de una tarjeta de partida: número grande, línea divisoria,
+## nombre y una línea pequeña con la fecha y las horas de juego.
+func _build_slot_card(card: Button) -> void:
+	var accent: Color = slot_accent_color
+
+	var m := MarginContainer.new()
+	m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 8)
+	m.add_theme_constant_override("margin_bottom", 8)
+	card.add_child(m)
+
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 18)
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.add_child(h)
+
+	var num := Label.new()
+	num.custom_minimum_size = Vector2(56, 0)
+	num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	num.add_theme_font_size_override("font_size", font_size + 16)
+	num.add_theme_color_override("font_color", accent)
+	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(num)
+
+	var divider := ColorRect.new()
+	divider.color = Color(accent.r, accent.g, accent.b, 0.30)
+	divider.custom_minimum_size = Vector2(2, 0)
+	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(divider)
+
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 2)
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(v)
+
+	var name_l := Label.new()
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_l.clip_text = true
+	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_l.add_theme_font_size_override("font_size", font_size + 2)
+	name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(name_l)
+
+	var info_l := Label.new()
+	info_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	info_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_l.clip_text = true
+	info_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info_l.add_theme_font_size_override("font_size", maxi(font_size - 6, 12))
+	info_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	info_l.add_theme_constant_override("outline_size", 3)
+	info_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(info_l)
+
+	# El nombre se ilumina al pasar el ratón o enfocar la tarjeta
+	var light := func(): name_l.add_theme_color_override("font_color", button_hover_font_color)
+	var dim := func(): name_l.add_theme_color_override("font_color", font_color)
+	card.mouse_entered.connect(light)
+	card.focus_entered.connect(light)
+	card.mouse_exited.connect(dim)
+	card.focus_exited.connect(dim)
+
+	slot_contents.append(m)
+	slot_nums.append(num)
+	slot_names.append(name_l)
+	slot_infos.append(info_l)
+
+
 func _build_slots_page(holder: Control) -> void:
 	var p := _make_page(holder, "slots")
 	slots_title = _make_heading("", p)
 	for i in range(1, SaveManager.SLOT_COUNT + 1):
 		var row := HBoxContainer.new()
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
-		row.add_theme_constant_override("separation", 8)
+		row.add_theme_constant_override("separation", 10)
 		p.add_child(row)
+		slot_rows.append(row)
 
 		var sb := _make_button("", _on_slot_pressed.bind(i), row, slot_button_size)
-		sb.clip_text = true
+		_build_slot_card(sb)
+		_apply_card_styles(sb, slot_accent_color)
 		var rb := _make_icon_button(rename_tex, "✎", text_rename_tooltip, _on_rename_pressed.bind(i), row)
 		var db := _make_icon_button(delete_tex, "X", text_delete_tooltip, _on_delete_pressed.bind(i), row)
+		_apply_card_styles(rb, slot_accent_color)
+		_apply_card_styles(db, Color(0.95, 0.30, 0.30))
 		slot_buttons.append(sb)
 		rename_buttons.append(rb)
 		delete_buttons.append(db)
@@ -534,11 +697,24 @@ func _open_slots(mode: String) -> void:
 	for i in slot_buttons.size():
 		var slot: int = i + 1
 		var has: bool = SaveManager.has_save(slot)
-		slot_buttons[i].text = SaveManager.get_slot_summary(slot)
+		slot_nums[i].text = "%02d" % slot
+		if has:
+			# El resumen trae el nombre en la primera línea y los datos en la segunda
+			var parts: PackedStringArray = SaveManager.get_slot_summary(slot).split("\n", true, 1)
+			slot_names[i].text = parts[0]
+			slot_infos[i].text = parts[1] if parts.size() > 1 else ""
+		else:
+			slot_names[i].text = text_slot_empty
+			slot_infos[i].text = text_slot_empty_new if mode == "new" else text_slot_empty_load
 		slot_buttons[i].disabled = (mode == "load" and not has)
+		slot_contents[i].modulate.a = 0.4 if (mode == "load" and not has) else 1.0
 		# Renombrar y eliminar solo aparecen en "Cargar" y si hay partida
 		rename_buttons[i].visible = (mode == "load" and has)
 		delete_buttons[i].visible = (mode == "load" and has)
+
+		# Entrada escalonada de cada fila
+		slot_rows[i].modulate.a = 0.0
+		create_tween().tween_property(slot_rows[i], "modulate:a", 1.0, 0.35).set_delay(0.07 * i)
 	_show_page("slots")
 
 
@@ -614,6 +790,7 @@ func _on_delete_confirmed() -> void:
 func _start_new_game(slot: int, save_name: String) -> void:
 	if _leaving:
 		return
+	_current_slot = slot
 	SaveManager.new_game(slot, save_name)
 	_go_to_game(true)   # true = pasar por la cinemática
 
@@ -621,21 +798,248 @@ func _start_new_game(slot: int, save_name: String) -> void:
 func _load_slot(slot: int) -> void:
 	if _leaving:
 		return
+	_current_slot = slot
 	if SaveManager.load_game(slot):
 		_go_to_game()
 
+
+# ============================================================ PANTALLA DE CARGA
+
+func _grad_tex(colors: PackedColorArray, offsets: PackedFloat32Array, radial: bool, w: int, h: int) -> Texture2D:
+	var g := Gradient.new()
+	g.offsets = offsets
+	g.colors = colors
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.width = w
+	t.height = h
+	if radial:
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 0.5)
+	else:
+		t.fill_from = Vector2(0, 0)
+		t.fill_to = Vector2(1, 0)
+	return t
+
+
+func _show_loading() -> void:
+	if loading_layer != null:
+		return
+	var vp: Vector2 = get_viewport_rect().size
+	var accent: Color = loading_accent_color
+	var clear := Color(accent.r, accent.g, accent.b, 0.0)
+
+	loading_layer = CanvasLayer.new()
+	loading_layer.layer = 100
+	add_child(loading_layer)
+
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP  # bloquea clics al menú
+	loading_layer.add_child(root)
+
+	var tw := create_tween().set_parallel(true)
+	tw.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	# ---------- Oscurecer + viñeta
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, loading_dim)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.modulate.a = 0.0
+	root.add_child(dim)
+	tw.tween_property(dim, "modulate:a", 1.0, loading_fade_time)
+
+	var vig := TextureRect.new()
+	vig.texture = _grad_tex(
+		PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.9)]),
+		PackedFloat32Array([0.4, 1.0]), true, 256, 256)
+	vig.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vig.stretch_mode = TextureRect.STRETCH_SCALE
+	vig.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vig.modulate.a = 0.0
+	root.add_child(vig)
+	tw.tween_property(vig, "modulate:a", 1.0, loading_fade_time)
+
+	# ---------- Brasas flotantes
+	if loading_embers:
+		var p := CPUParticles2D.new()
+		p.texture = _grad_tex(
+			PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)]),
+			PackedFloat32Array([0.0, 1.0]), true, 16, 16)
+		var ramp := Gradient.new()
+		ramp.offsets = PackedFloat32Array([0.0, 0.2, 0.75, 1.0])
+		ramp.colors = PackedColorArray([clear, accent, accent, clear])
+		p.color_ramp = ramp
+		p.amount = 70
+		p.lifetime = 6.0
+		p.preprocess = 4.0
+		p.position = Vector2(vp.x * 0.5, vp.y + 10)
+		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+		p.emission_rect_extents = Vector2(vp.x * 0.5, 5)
+		p.direction = Vector2(0, -1)
+		p.spread = 18.0
+		p.gravity = Vector2.ZERO
+		p.initial_velocity_min = 40.0
+		p.initial_velocity_max = 130.0
+		p.scale_amount_min = 0.3
+		p.scale_amount_max = 0.9
+		root.add_child(p)
+
+	# ---------- Barras de cine
+	if loading_cinema_bars > 0.0:
+		var h: float = loading_cinema_bars
+
+		var top := ColorRect.new()
+		top.color = Color.BLACK
+		top.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		top.offset_top = -h
+		top.offset_bottom = 0.0
+		top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(top)
+		var top_line := ColorRect.new()
+		top_line.color = accent
+		top_line.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		top_line.offset_top = -2.0
+		top_line.offset_bottom = 0.0
+		top_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		top.add_child(top_line)
+		tw.tween_property(top, "offset_top", 0.0, loading_fade_time)
+		tw.tween_property(top, "offset_bottom", h, loading_fade_time)
+
+		var bottom := ColorRect.new()
+		bottom.color = Color.BLACK
+		bottom.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		bottom.offset_top = 0.0
+		bottom.offset_bottom = h
+		bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(bottom)
+		var bottom_line := ColorRect.new()
+		bottom_line.color = accent
+		bottom_line.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		bottom_line.offset_top = 0.0
+		bottom_line.offset_bottom = 2.0
+		bottom_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bottom.add_child(bottom_line)
+		tw.tween_property(bottom, "offset_top", -h, loading_fade_time)
+		tw.tween_property(bottom, "offset_bottom", 0.0, loading_fade_time)
+
+	# ---------- Contenido central
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(center)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.modulate.a = 0.0
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.add_child(box)
+	tw.tween_property(box, "modulate:a", 1.0, loading_fade_time).set_delay(0.15)
+
+	# Título con letras que se abren
+	var fv := FontVariation.new()
+	if loading_font != null:
+		fv.base_font = loading_font
+	elif font != null:
+		fv.base_font = font
+	else:
+		fv.base_font = ThemeDB.fallback_font
+	fv.spacing_glyph = 36
+
+	var title := Label.new()
+	title.text = text_loading
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", fv)
+	title.add_theme_font_size_override("font_size", loading_font_size)
+	title.add_theme_color_override("font_color", loading_font_color)
+	title.add_theme_constant_override("outline_size", 10)
+	title.add_theme_color_override("font_outline_color", Color(accent.r, accent.g, accent.b, 0.35))
+	box.add_child(title)
+	tw.tween_property(fv, "spacing_glyph", 12, loading_fade_time * 2.0)
+
+	# Brillo pulsante del título
+	var pulse := create_tween().set_loops()
+	pulse.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(title, "self_modulate", Color(1.0, 0.9, 0.7, 0.8), 0.9)
+	pulse.tween_property(title, "self_modulate", Color(1, 1, 1, 1), 0.9)
+
+	# Línea ornamental
+	var line := TextureRect.new()
+	line.texture = _grad_tex(
+		PackedColorArray([clear, accent, clear]),
+		PackedFloat32Array([0.0, 0.5, 1.0]), false, 512, 4)
+	line.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	line.stretch_mode = TextureRect.STRETCH_SCALE
+	line.custom_minimum_size = Vector2(loading_bar_width + 120.0, 3)
+	line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(line)
+
+	# Nombre de la partida
+	if _current_slot != -1:
+		var sub := Label.new()
+		sub.text = text_loading_slot.replace("{name}", SaveManager.get_slot_name(_current_slot))
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub.add_theme_font_size_override("font_size", loading_sub_font_size)
+		sub.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+		if loading_font != null:
+			sub.add_theme_font_override("font", loading_font)
+		box.add_child(sub)
+
+	# Barra con destello que recorre
+	var bar := Control.new()
+	bar.custom_minimum_size = Vector2(loading_bar_width, 6)
+	bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	bar.clip_contents = true
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(bar)
+
+	var track := ColorRect.new()
+	track.color = Color(1, 1, 1, 0.12)
+	track.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(track)
+
+	var glint_w: float = loading_bar_width * 0.4
+	var glint := TextureRect.new()
+	glint.texture = _grad_tex(
+		PackedColorArray([clear, accent, clear]),
+		PackedFloat32Array([0.0, 0.5, 1.0]), false, 128, 6)
+	glint.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	glint.stretch_mode = TextureRect.STRETCH_SCALE
+	glint.size = Vector2(glint_w, 6)
+	glint.position = Vector2(-glint_w, 0)
+	glint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(glint)
+
+	var sweep := create_tween().set_loops()
+	sweep.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	sweep.tween_property(glint, "position:x", loading_bar_width, 1.1)
+	sweep.tween_callback(func(): glint.position.x = -glint_w)
+
+
+# ============================================================ CAMBIO DE ESCENA
 
 func _go_to_game(play_intro: bool = false) -> void:
 	if _leaving:
 		return
 	_leaving = true
+	var t0: int = Time.get_ticks_msec()
+	_show_loading()
 	var target: String = game_scene
 	var saved_scene: String = str(SaveManager.pending_load_data.get("scene", ""))
-	
+
 	if play_intro and intro_scene != "" and ResourceLoader.exists(intro_scene):
 		target = intro_scene
 	elif saved_scene != "" and ResourceLoader.exists(saved_scene):
 		target = saved_scene
-		
+
 	await _music_fade_out()
+	var elapsed: float = (Time.get_ticks_msec() - t0) / 1000.0
+	if elapsed < loading_min_time:
+		await get_tree().create_timer(loading_min_time - elapsed).timeout
 	get_tree().change_scene_to_file(target)
