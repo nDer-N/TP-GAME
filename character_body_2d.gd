@@ -581,6 +581,8 @@ func _on_tp_hit_enemy(enemy: Node2D, hit_position: Vector2) -> void:
 		ChargeCam.priority = 0
 	set_outline(false)
 	flash_sprite(0.5, Color(0, 1, 0.9))
+	HitStop.request(0.5)
+	ScreenFlashLayer.flash(0.4, 0.5)
 	
 	# Efecto visual de salida
 	if teleport_vfx_scene:
