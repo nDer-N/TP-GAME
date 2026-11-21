@@ -3,6 +3,29 @@
 [ext_resource type="Script" uid="uid://cygkaxg65v7se" path="res://Game/main_menu.gd" id="1_06t4h"]
 [ext_resource type="AudioStream" uid="uid://daoilea6pk043" path="res://Audio/Creo - Marine Snow.mp3" id="2_7vrkn"]
 [ext_resource type="Texture2D" uid="uid://bm7i107wv8s66" path="res://resources/RailboundLogo.png" id="2_fu7sn"]
+[ext_resource type="Texture2D" uid="uid://cwpl22b7xohgs" path="res://textures/UI/buttons.png" id="3_jix8l"]
+[ext_resource type="Texture2D" uid="uid://wxm5ukqsavo8" path="res://textures/UI/buttons2.png" id="4_glbon"]
+[ext_resource type="Texture2D" uid="uid://sxc5rvm7354j" path="res://textures/UI/buttons2_2.png" id="5_dy7ct"]
+[ext_resource type="Texture2D" uid="uid://bm6ns3ujjh2cf" path="res://textures/UI/buttons_2.png" id="5_qe12f"]
+[ext_resource type="Texture2D" uid="uid://d1yxhqyrqibmp" path="res://textures/UI/buttons2_3.png" id="6_0o4t1"]
+[ext_resource type="Texture2D" uid="uid://b8ph7ymi88hhd" path="res://textures/UI/buttons_3.png" id="6_8qtwp"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_qe12f"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_glbon")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_dy7ct")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_0o4t1")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 12.0
+}]
 
 [node name="MainMenu" type="Control" unique_id=545539263]
 layout_mode = 3
@@ -34,14 +57,28 @@ Electroswing Groove - Tin Can Triumph
 Hecho con Godot Engine
 
 ¡Gracias por jugar!"
+menu_area_width = 0.6000000000000001
+submenu_logo_scale = 0.8999999999999999
+submenu_anim_time = 0.5
 title_logo = ExtResource("2_fu7sn")
-title_logo_size = Vector2(550, 250)
+title_logo_size = Vector2(600, 200)
 title_font_size = 0
-title_spacing = 0
+title_spacing = 40
+text_outline_color = Color(0, 0, 0, 0)
 button_spacing = 0
-button_hover_font_color = Color(0.6136281, 0.97323555, 0.9999998, 1)
-slot_accent_color = Color(0.031958047, 0.9235606, 0.99999994, 1)
+button_hover_font_color = Color(0, 1, 0.78431374, 1)
+button_normal_texture = ExtResource("3_jix8l")
+button_hover_texture = ExtResource("4_glbon")
+button_hover_overlay = false
+button_hover_scale = 1.3
+button_other_scale = 0.9
+button_fx_time = 0.3
+button_hover_sprite_frames = SubResource("SpriteFrames_qe12f")
+button_normal_variants = Array[Texture2D]([ExtResource("3_jix8l"), ExtResource("5_qe12f"), ExtResource("6_8qtwp")])
+slot_accent_color = Color(0, 1, 0.78431374, 1)
 menu_music = ExtResource("2_7vrkn")
 music_volume_db = -15.0
 music_fade_in = 2.0
 music_fade_out = 2.0
+loading_accent_color = Color(0, 1, 0.78431374, 1)
+loading_embers = false
