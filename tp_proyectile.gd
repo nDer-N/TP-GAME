@@ -16,6 +16,7 @@ var target_half_height: float = 0.0
 var _afterimage_timer: float = 0.0
 signal landed(position: Vector2)
 signal died(did_die : bool)
+signal hit_enemy(enemy: Node2D, hit_position: Vector2)
 
 
 @onready var sprite: Sprite2D = $Sprite2D   # asegúrate de que exista
@@ -44,6 +45,13 @@ func _physics_process(delta: float) -> void:
 
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		
+		
+		if collider and collider.is_in_group("enemies"):
+			hit_enemy.emit(collider, collision.get_position())
+			queue_free()
+			return
 		_bounce(collision, velocity_before_collision)
 	_update_afterimage(delta)
 		

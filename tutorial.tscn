@@ -2032,7 +2032,7 @@ texture_scale = 3.44
 [node name="Boss1" parent="." unique_id=718000262 node_paths=PackedStringArray("cinematic_player_spot", "cinematic_boss_spot") instance=ExtResource("34_brok5")]
 process_priority = 1
 position = Vector2(40192, -592)
-max_health = 275
+max_health = 175
 phase2_threshold = 0.65
 projectile_damage = 3
 parry_damage = 5

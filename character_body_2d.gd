@@ -570,10 +570,89 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	projectile.launch(global_position, target_position, charge_power2, half_height)
 	projectile.died.connect(_on_tp_expired)
 	projectile.landed.connect(_on_tp_landed)
+	projectile.hit_enemy.connect(_on_tp_hit_enemy) 
 	
 func _on_tp_expired(did_die : bool):
 	if (did_die):
 		set_outline(false)
+
+func _on_tp_hit_enemy(enemy: Node2D, hit_position: Vector2) -> void:
+	if ChargeCam.priority > 0:
+		ChargeCam.priority = 0
+	set_outline(false)
+	flash_sprite(0.5, Color(0, 1, 0.9))
+	
+	# Efecto visual de salida
+	if teleport_vfx_scene:
+		var vfx_out = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_out)
+		vfx_out.global_position = global_position
+		vfx_out.setup(-1.0)
+		
+	# --- SISTEMA ANTI-CLIP ---
+	var dir = (hit_position - global_position).normalized()
+	
+	# Punto inicial de aparición: 40 píxeles antes del impacto
+	var target_pos = hit_position - dir * 40.0
+	
+	# Preparamos la consulta de física para ver si el jugador cabe ahí
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsShapeQueryParameters2D.new()
+	query.shape = collision_shape.shape
+	query.collision_mask = collision_mask # La máscara de colisión del jugador
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	
+	# Excluimos al jugador y al enemigo para no detectarlos en la prueba
+	var exclude_rids: Array[RID] = [get_rid()]
+	if enemy is CollisionObject2D:
+		exclude_rids.append(enemy.get_rid())
+	query.exclude = exclude_rids
+	
+	# Función auxiliar para comprobar si está bloqueado
+		# Función auxiliar para comprobar si está bloqueado
+	var is_blocked := func(pos: Vector2) -> bool:
+		# Copiamos la transformación actual y solo cambiamos la posición
+		var new_transform = global_transform
+		new_transform.origin = pos
+		
+		query.transform = new_transform * collision_shape.transform
+		return not space_state.intersect_shape(query, 1).is_empty()
+	
+	# Si el punto inicial está bloqueado, retrocedemos más en la línea del disparo
+	if is_blocked.call(target_pos):
+		target_pos = hit_position - dir * 70.0
+		
+		# Si sigue bloqueado (ej. disparo contra una pared), retrocedemos aún más
+		if is_blocked.call(target_pos):
+			target_pos = hit_position - dir * 100.0
+			
+			# Si definitivamente no hay espacio (ej. pasillo muy angosto), 
+			# lo ponemos un poco más arriba para evitar que se atasque
+			if is_blocked.call(target_pos):
+				target_pos.y -= 64.0
+	# -------------------------
+	
+	# Aplicamos la nueva posición
+	global_position = target_pos
+	velocity = Vector2.ZERO
+	_snap_all_tp_orbs()
+	
+	# Efecto visual de llegada
+	if teleport_vfx_scene:
+		var vfx_in = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_in)
+		vfx_in.global_position = global_position
+		vfx_in.setup(1.0)
+		
+	# Damos invulnerabilidad por medio segundo para que no reciba daño por contacto
+	invulnerable_timer = 0.5
+	
+	# FORZAMOS EL SLASH HACIA EL ENEMIGO (ignorando el cooldown)
+	if slash_controller:
+		slash_controller.try_attack(enemy.global_position, true)
+	
+	aim_pcam.priority = 0
 		
 func _on_tp_landed(landing_position: Vector2) -> void:
 	if ChargeCam.priority > 0:

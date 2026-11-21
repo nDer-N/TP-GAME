@@ -78,8 +78,8 @@ func _is_downward(dir: Vector2) -> bool:
 	return angle_deg >= 45.0 and angle_deg <= 135.0
 
 
-func try_attack() -> void:
-	if cooldown_timer > 0 or is_attacking:
+func try_attack(target_pos: Vector2 = Vector2.INF, ignore_cooldown: bool = false) -> void:
+	if not ignore_cooldown and (cooldown_timer > 0 or is_attacking):
 		return
 		
 	_already_hit.clear()
@@ -90,7 +90,8 @@ func try_attack() -> void:
 	is_attacking = true
 	hitTime = hit_detect_Timer
 
-	var target = body.get_global_mouse_position()
+	# Si nos pasan una posición (el enemigo), apuntamos ahí. Si no, al mouse.
+	var target = target_pos if target_pos != Vector2.INF else body.get_global_mouse_position()
 	var origin = body.global_position
 	var direction = (target - origin).normalized()
 
