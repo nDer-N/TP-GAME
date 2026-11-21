@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cygkaxg65v7se" path="res://Game/main_menu.gd" id="1_06t4h"]
 [ext_resource type="AudioStream" uid="uid://daoilea6pk043" path="res://Audio/Creo - Marine Snow.mp3" id="2_7vrkn"]
+[ext_resource type="Texture2D" uid="uid://bm7i107wv8s66" path="res://resources/RailboundLogo.png" id="2_fu7sn"]
 
 [node name="MainMenu" type="Control" unique_id=545539263]
 layout_mode = 3
@@ -33,6 +34,10 @@ Electroswing Groove - Tin Can Triumph
 Hecho con Godot Engine
 
 ¡Gracias por jugar!"
+title_logo = ExtResource("2_fu7sn")
+title_logo_size = Vector2(550, 250)
+title_font_size = 0
+title_spacing = 0
 button_spacing = 0
 button_hover_font_color = Color(0.6136281, 0.97323555, 0.9999998, 1)
 slot_accent_color = Color(0.031958047, 0.9235606, 0.99999994, 1)
