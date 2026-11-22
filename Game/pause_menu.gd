@@ -126,6 +126,17 @@ extends CanvasLayer
 @export_group("Sonido")
 @export var click_sound: AudioStream
 @export var hover_sound: AudioStream
+## Sonido SOLO para los botones que dicen "Volver" (text_back). Vacío = usa el click normal.
+@export var back_sound: AudioStream
+## Volumen de cada efecto en decibeles (0 = original, negativo = más bajo, -6 ≈ la mitad).
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var click_volume_db: float = 0.0
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var hover_volume_db: float = 0.0
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var back_volume_db: float = 0.0
+## Al pausar, congela TODA la musica/audio del juego (aunque el reproductor este en "Siempre" procesar,
+## como la musica del jefe) y la reanuda al volver. Los sonidos del propio menu siguen sonando.
+@export var pause_game_audio: bool = true
+## Los nodos que esten en este grupo NO se pausan (por si quieres musica de menu o algo que siga sonando).
+@export var keep_playing_group: StringName = &"pause_menu_keep_playing"
 
 # ============================================================== INTERNO
 var is_open: bool = false
@@ -139,6 +150,8 @@ var volume_slider: HSlider
 var fullscreen_check: CheckButton
 var click_player: AudioStreamPlayer
 var hover_player: AudioStreamPlayer
+var back_player: AudioStreamPlayer
+var _paused_audio: Array = []   # reproductores que pausamos nosotros (para reanudar solo esos)
 
 var _n_tex: Texture2D
 var _h_tex: Texture2D
@@ -320,15 +333,55 @@ func _prep_button_tex(tex: Texture2D) -> Texture2D:
 func _build_audio() -> void:
 	click_player = AudioStreamPlayer.new()
 	click_player.stream = click_sound
+	click_player.volume_db = click_volume_db
 	add_child(click_player)
 	hover_player = AudioStreamPlayer.new()
 	hover_player.stream = hover_sound
+	hover_player.volume_db = hover_volume_db
 	add_child(hover_player)
+
+	back_player = AudioStreamPlayer.new()
+	back_player.stream = back_sound
+	back_player.volume_db = back_volume_db
+	add_child(back_player)
+
+
+## Congela todos los reproductores que estan sonando (excepto los del menu y el grupo de excepciones).
+## Se recorre todo el arbol porque algunos (como la musica del jefe) usan PROCESS_MODE_ALWAYS
+## y no se detienen solos con get_tree().paused.
+func _pause_audio() -> void:
+	_paused_audio.clear()
+	if not pause_game_audio:
+		return
+	for n in get_tree().root.find_children("*", "", true, false):
+		if n == click_player or n == hover_player or n == back_player:
+			continue
+		if not (n is AudioStreamPlayer or n is AudioStreamPlayer2D or n is AudioStreamPlayer3D):
+			continue
+		if n.is_in_group(keep_playing_group):
+			continue
+		if n.playing and not n.stream_paused:
+			n.stream_paused = true
+			_paused_audio.append(n)
+
+
+func _resume_audio() -> void:
+	for n in _paused_audio:
+		if is_instance_valid(n):
+			n.stream_paused = false
+	_paused_audio.clear()
 
 
 func _play_click() -> void:
 	if click_sound != null:
 		click_player.play()
+
+
+func _play_back() -> void:
+	if back_sound != null:
+		back_player.play()
+	else:
+		_play_click()
 
 
 func _play_hover() -> void:
@@ -449,7 +502,8 @@ func _make_button(text: String, callback: Callable, parent: Control, size: Vecto
 	b.text = text
 	b.custom_minimum_size = button_size if size == Vector2.ZERO else size
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	b.pressed.connect(_play_click)
+	# Los botones que dicen "Volver" usan su propio sonido; los demas, el click normal.
+	b.pressed.connect(_play_back if text == text_back else _play_click)
 	b.pressed.connect(callback)
 	# Efecto hover (escala, contorno, color de texto). El mouse toma el foco,
 	# así que el sonido de hover sale del foco.
@@ -693,6 +747,7 @@ func _open() -> void:
 	is_open = true
 	visible = true
 	confirm_overlay.visible = false
+	_pause_audio()
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_show_page("main")
@@ -703,6 +758,7 @@ func _resume() -> void:
 	visible = false
 	confirm_overlay.visible = false
 	get_tree().paused = false
+	_resume_audio()
 
 
 # ============================================================ SALIR / GUARDAR
@@ -729,6 +785,7 @@ func _on_exit_confirmed() -> void:
 		is_open = false
 		visible = false
 		get_tree().paused = false
+		_resume_audio()
 		SaveManager.end_session()
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		if ResourceLoader.exists(main_menu_scene):

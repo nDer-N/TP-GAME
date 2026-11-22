@@ -229,6 +229,12 @@ extends Control
 @export var music_bus: String = "Master"
 @export var click_sound: AudioStream
 @export var hover_sound: AudioStream
+## Sonido SOLO para los botones que dicen "Volver" (text_back). Vacío = usa el click normal.
+@export var back_sound: AudioStream
+## Volumen de cada efecto en decibeles (0 = original, negativo = más bajo, -6 ≈ la mitad).
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var click_volume_db: float = 0.0
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var hover_volume_db: float = 0.0
+@export_range(-60.0, 6.0, 0.5, "suffix:dB") var back_volume_db: float = 0.0
 
 @export_group("Pantalla de carga")
 @export var text_loading: String = "CARGANDO"
@@ -312,6 +318,7 @@ var pending_slot: int = -1
 var music_player: AudioStreamPlayer
 var click_player: AudioStreamPlayer
 var hover_player: AudioStreamPlayer
+var back_player: AudioStreamPlayer
 var delete_tex: Texture2D
 var rename_tex: Texture2D
 var loading_layer: CanvasLayer
@@ -503,11 +510,18 @@ func _build_audio() -> void:
 
 	click_player = AudioStreamPlayer.new()
 	click_player.stream = click_sound
+	click_player.volume_db = click_volume_db
 	add_child(click_player)
 
 	hover_player = AudioStreamPlayer.new()
 	hover_player.stream = hover_sound
+	hover_player.volume_db = hover_volume_db
 	add_child(hover_player)
+
+	back_player = AudioStreamPlayer.new()
+	back_player.stream = back_sound
+	back_player.volume_db = back_volume_db
+	add_child(back_player)
 
 
 func _music_start() -> void:
@@ -540,6 +554,13 @@ func _music_fade_out() -> void:
 func _play_click() -> void:
 	if click_sound != null:
 		click_player.play()
+
+
+func _play_back() -> void:
+	if back_sound != null:
+		back_player.play()
+	else:
+		_play_click()
 
 
 func _play_hover() -> void:
@@ -738,7 +759,8 @@ func _make_button(text: String, callback: Callable, parent: Control, size: Vecto
 	b.text = text
 	b.custom_minimum_size = button_size if size == Vector2.ZERO else size
 	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	b.pressed.connect(_play_click)
+	# Los botones que dicen "Volver" usan su propio sonido; los demas, el click normal.
+	b.pressed.connect(_play_back if text == text_back else _play_click)
 	b.pressed.connect(callback)
 	if size == Vector2.ZERO:
 		# Botones normales del menú: llevan efecto hover. Al pasar el mouse

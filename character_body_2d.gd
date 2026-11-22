@@ -52,6 +52,17 @@ extends CharacterBody2D
 @export var hit_noise_emitter: PhantomCameraNoiseEmitter2D
 @export var death_noise_emitter: PhantomCameraNoiseEmitter2D
 @export var death_cam: PhantomCamera2D
+
+@export_group("Pantalla de muerte")
+## Al morir, todo el mundo se pone negro y solo se ve la animacion del jugador (la UI no se toca).
+@export var death_blackout_enabled := true
+@export var death_blackout_color := Color.BLACK
+## Tiempo que tarda en oscurecerse (0 = instantaneo).
+@export var death_blackout_fade_in := 0.15
+## Tiempo que tarda en aclararse al reaparecer.
+@export var death_blackout_fade_out := 0.3
+## Orden de dibujo (max 4096). Debe ser mayor que cualquier z_index de tu mundo; el sprite usa este +1.
+@export var death_blackout_z := 3000
 	
 
 var _pogo_jump_active: bool = false
@@ -66,6 +77,9 @@ var _was_on_floor: bool = false
 var _outline_active: bool = false
 var _hit_timer: float = 0.0
 var _flash_tween: Tween = null
+var _blackout: ColorRect = null
+var _blackout_tween: Tween = null
+var _sprite_z_backup := {}
 var current_speed: float = speed
 var jumps_left: int = 2
 var facing_direction: int = 1
@@ -846,6 +860,73 @@ func deactivate_boss_cam() -> void:
 	if BossCAM:
 		BossCAM.priority = _boss_cam_previous_priority
 	
+func _process(_delta: float) -> void:
+	if _blackout and _blackout.visible:
+		_update_blackout_rect()
+
+
+## Cubre TODO el mundo (todo lo que se dibuja en el canvas por defecto) con un rectangulo negro
+## y sube el sprite del jugador por encima. La UI vive en CanvasLayers, que se dibujan sobre el mundo,
+## asi que no se ve afectada.
+func _start_death_blackout() -> void:
+	if not death_blackout_enabled:
+		return
+	if _blackout_tween and _blackout_tween.is_valid():
+		_blackout_tween.kill()
+	if _blackout == null:
+		_blackout = ColorRect.new()
+		_blackout.top_level = true            # ignora la posicion del jugador
+		_blackout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_blackout.z_as_relative = false
+		add_child(_blackout)
+	_blackout.z_index = death_blackout_z
+	_update_blackout_rect()
+	var c := death_blackout_color
+	c.a = 0.0
+	_blackout.color = c
+	_blackout.show()
+
+	# El sprite del jugador se dibuja encima del negro.
+	if _sprite_z_backup.is_empty():
+		_sprite_z_backup = {"z": sprite.z_index, "rel": sprite.z_as_relative}
+	sprite.z_as_relative = false
+	sprite.z_index = death_blackout_z + 1
+
+	if death_blackout_fade_in <= 0.0:
+		_blackout.color.a = death_blackout_color.a
+	else:
+		_blackout_tween = create_tween()
+		_blackout_tween.tween_property(_blackout, "color:a", death_blackout_color.a, death_blackout_fade_in)
+
+
+func _end_death_blackout() -> void:
+	if _blackout == null or not _blackout.visible:
+		return
+	if _blackout_tween and _blackout_tween.is_valid():
+		_blackout_tween.kill()
+	_blackout_tween = create_tween()
+	_blackout_tween.tween_property(_blackout, "color:a", 0.0, maxf(death_blackout_fade_out, 0.0))
+	_blackout_tween.tween_callback(_finish_death_blackout)
+
+
+func _finish_death_blackout() -> void:
+	if _blackout:
+		_blackout.hide()
+	if not _sprite_z_backup.is_empty():
+		sprite.z_index = _sprite_z_backup["z"]
+		sprite.z_as_relative = _sprite_z_backup["rel"]
+		_sprite_z_backup = {}
+
+
+## Ajusta el rectangulo negro a lo que ve la camara (con margen), aunque cambie el zoom o se mueva.
+func _update_blackout_rect() -> void:
+	var vp := get_viewport()
+	var world_rect: Rect2 = vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	world_rect = world_rect.grow(300.0)
+	_blackout.global_position = world_rect.position
+	_blackout.size = world_rect.size
+
+
 func _schedule_respawn() -> void:
 	await get_tree().create_timer(respawn_delay).timeout
 	if not is_inside_tree():
@@ -854,6 +935,7 @@ func _schedule_respawn() -> void:
 
 func _respawn() -> void:
 	death_cam.priority = 0
+	_end_death_blackout()
 	_pogo_jump_active = false
 	#deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
@@ -922,6 +1004,7 @@ func die() -> void:
 		death_noise_emitter.emit()
 	
 	death_cam.priority = 100
+	_start_death_blackout()
 	set_outline(false) 
 	_slash_lunge_timer = 0.0         
 	_slash_lunge_velocity = 0.0

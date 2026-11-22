@@ -8,6 +8,8 @@
 [ext_resource type="SpriteFrames" uid="uid://bwu8fpor7iqbk" path="res://resources/HoverButton.tres" id="5_8qtwp"]
 [ext_resource type="Texture2D" uid="uid://bm6ns3ujjh2cf" path="res://textures/UI/buttons_2.png" id="5_qe12f"]
 [ext_resource type="Texture2D" uid="uid://b8ph7ymi88hhd" path="res://textures/UI/buttons_3.png" id="6_8qtwp"]
+[ext_resource type="AudioStream" uid="uid://bfd8526n5qi6j" path="res://Audio/sfx/exports/confirm_05_spell_sealed.wav" id="9_0o4t1"]
+[ext_resource type="AudioStream" uid="uid://b4twgyqngoa4c" path="res://Audio/sfx/exports/hover_04_ghost_breath.wav" id="10_0k4wn"]
 
 [node name="MainMenu" type="Control" unique_id=545539263]
 layout_mode = 3
@@ -62,5 +64,9 @@ menu_music = ExtResource("2_7vrkn")
 music_volume_db = -15.0
 music_fade_in = 2.0
 music_fade_out = 2.0
+click_sound = ExtResource("9_0o4t1")
+hover_sound = ExtResource("10_0k4wn")
+click_volume_db = -4.0
+hover_volume_db = -6.5
 loading_accent_color = Color(0, 1, 0.78431374, 1)
 loading_embers = false
