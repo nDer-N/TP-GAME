@@ -1,8 +1,76 @@
 [gd_scene format=3 uid="uid://bgwxtqhpq7ohk"]
 
-[ext_resource type="Texture2D" uid="uid://tarx8kt3ecuj" path="res://resources/HitSprite.png" id="1_4xvey"]
+[ext_resource type="Texture2D" uid="uid://e5dxxor6xgs6" path="res://animations/SLASH/TUNG_0000.png" id="1_b6bro"]
+[ext_resource type="Texture2D" uid="uid://c77rme6x82rsr" path="res://animations/SLASH/TUNG_0001.png" id="2_7e15h"]
+[ext_resource type="Texture2D" uid="uid://cf4y0x1o6gujh" path="res://animations/SLASH/TUNG_0002.png" id="3_gepg3"]
+[ext_resource type="Texture2D" uid="uid://drhjetdl07308" path="res://animations/SLASH/TUNG_0003.png" id="4_ayj4g"]
+[ext_resource type="Texture2D" uid="uid://1njrwvvic8vu" path="res://animations/SLASH/TUNG_0004.png" id="5_c72j5"]
+[ext_resource type="Texture2D" uid="uid://da581kvjvd8dc" path="res://animations/SLASH/TUNG_0005.png" id="6_xc2o8"]
+[ext_resource type="Texture2D" uid="uid://dhhuw04up6rrk" path="res://animations/SLASH/TUNG_0006.png" id="7_j0os6"]
+[ext_resource type="Texture2D" uid="uid://crcqxhlrl6e0s" path="res://animations/SLASH/TUNG_0007.png" id="8_pvhdt"]
+[ext_resource type="Texture2D" uid="uid://bimx27ake3bhx" path="res://animations/SLASH/TUNG_0008.png" id="9_ljstb"]
+[ext_resource type="Texture2D" uid="uid://8qyf7mrndk3i" path="res://animations/SLASH/TUNG_0009.png" id="10_un3l3"]
+[ext_resource type="Texture2D" uid="uid://bwvxo140ag1an" path="res://animations/SLASH/TUNG_0010.png" id="11_ic3aj"]
+[ext_resource type="Texture2D" uid="uid://c3xhqu7djqiql" path="res://animations/SLASH/TUNG_0011.png" id="12_ey1jh"]
+[ext_resource type="Texture2D" uid="uid://b5afbgnrbajh6" path="res://animations/SLASH/TUNG_0012.png" id="13_3nrx4"]
+[ext_resource type="Texture2D" uid="uid://e6knyyyg1cyu" path="res://animations/SLASH/TUNG_0013.png" id="14_smcc4"]
 
-[node name="Sprite2D" type="Sprite2D" unique_id=163074409]
-position = Vector2(0, -7.9999924)
-scale = Vector2(1, 0.93703705)
-texture = ExtResource("1_4xvey")
+[sub_resource type="SpriteFrames" id="SpriteFrames_b5emg"]
+animations = [{
+"frames": [{
+"duration": 0.5,
+"texture": ExtResource("1_b6bro")
+}, {
+"duration": 0.5,
+"texture": ExtResource("2_7e15h")
+}, {
+"duration": 0.5,
+"texture": ExtResource("3_gepg3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_ayj4g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_c72j5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_xc2o8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_j0os6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_pvhdt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_ljstb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_un3l3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_ic3aj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_ey1jh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_3nrx4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_smcc4")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 24.0
+}]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" unique_id=1117563209]
+z_index = 100
+position = Vector2(40, 168)
+sprite_frames = SubResource("SpriteFrames_b5emg")
+frame = 8
+frame_progress = 0.618352
+
+[node name="Pivot" type="Marker2D" parent="." unique_id=2033485131]
+position = Vector2(-8, -240)

@@ -1985,7 +1985,7 @@ animacion = &"djump"
 position = Vector2(5908, -770)
 scale = Vector2(2, 2)
 texto = ""
-paginas = Array[String](["Mantenga C para curar 1 de Vida y ademas recarga tus TPs", "Mantenga Click Derecho  para Apuntar el TP mientras mas tiempo lo mantenga mas largo es el lanzado, suelte para disparar el TP"])
+paginas = Array[String](["Mantenga C para curar 1 de Vida y ademas recarga tus TPs", "Mantenga Click Derecho  para Apuntar el TP mientras mas tiempo lo mantenga mas largo es el lanzado, suelte para disparar el TP. Al lanzarlo a un enemigo, se ejecutará un ataque"])
 animaciones = Array[StringName]([&"charge", &"shoot"])
 
 [node name="HoloTutorial6" parent="." unique_id=972421841 instance=ExtResource("33_pm7ge")]

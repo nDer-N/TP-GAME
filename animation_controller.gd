@@ -64,6 +64,12 @@ var _combo_timer: float = 0.0
 var _aim_phase: AimPhase = AimPhase.NONE
 var _aim_visible: bool = false
 
+# true cuando una animación "scripted" (aim / slash) está pisando la animación del estado actual.
+# _current_state NO cambia mientras suena esa animación, así que sin esta bandera set_state()
+# creía que "ya estaba en WALK/JUMP/..." y no volvía a reproducir la animación normal (te quedabas
+# deslizándote con la animación de apuntar).
+var _anim_overridden: bool = false
+
 
 func _ready() -> void:
 	if animated_sprite == null:
@@ -96,7 +102,7 @@ func is_movement_locked() -> bool:
 func set_state(new_state: VisualState) -> void:
 	if _locked:
 		return
-	if new_state == _current_state:
+	if new_state == _current_state and not _anim_overridden:
 		return
 	_set_state(new_state)
 	
@@ -116,6 +122,7 @@ func _set_state(new_state: VisualState) -> void:
 	var anim_name: String = animation_map.get(int(new_state), "")
 	if anim_name == "":
 		return
+	_anim_overridden = false
 	if anim_name == _current_anim and animated_sprite.is_playing():
 		return
 	_current_anim = anim_name
@@ -306,6 +313,7 @@ func _play_animation(anim_name: String) -> void:
 		print("[AC]   → ANIMACIÓN NO EXISTE en SpriteFrames: ", anim_name)
 		return
 	_current_anim = anim_name
+	_anim_overridden = true
 	animated_sprite.play(anim_name)
 	print("[AC]   → play OK")
 

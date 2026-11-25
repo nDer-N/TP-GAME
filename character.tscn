@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="PackedScene" uid="uid://dmlwse5x03oql" path="res://PlayerHitPaticles.tscn" id="11_xc4g8"]
+[ext_resource type="PackedScene" uid="uid://bgwxtqhpq7ohk" path="res://HitSprite.tscn" id="12_3fhje"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
@@ -184,7 +185,6 @@ metadata/_custom_type_script = "uid://dimvdouy8g0sv"
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
 process_mode = 3
 physics_interpolation_mode = 1
-top_level = true
 position = Vector2(0, -208)
 zoom = Vector2(0.41, 0.41)
 editor_draw_limits = true
@@ -341,6 +341,14 @@ hit_vfx_scene = ExtResource("11_xc4g8")
 hit_noise_emitter = NodePath("../PhantomCameraNoiseEmitter2D")
 death_noise_emitter = NodePath("../DeathNoise")
 death_cam = NodePath("../Camera2D/PhantomCameraHost/DeathCamera")
+enemy_hit_vfx_scene = ExtResource("12_3fhje")
+enemy_hit_vfx_offset = Vector2(0, -100)
+enemy_hit_vfx_z_index = 100
+enemy_hit_vfx_scale_min = 0.6
+enemy_hit_vfx_scale_max = 1.5
+death_blackout_fade_in = 0.0
+tp_afterimage_duration = 0.5
+tp_afterimage_lifetime = 0.5
 
 [node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
 position = Vector2(7.9999995, 59.999996)
