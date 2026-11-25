@@ -87,10 +87,17 @@ func simulate_projectile(from: Vector2, target: Vector2, charge_power: float, co
 				var normal = collision.normal
 				var collider = collision.collider
 				
+				if collider and collider.is_in_group("enemies"):
+					# Usamos la posición del enemigo para que el marcador quede perfecto sobre él
+					landing_position = collider.global_position
+					has_landed = true
+					add_point(to_local(landing_position))
+					break
+				
 				if collider and collider.is_in_group("TECHO"):
-					vel = prev_vel.bounce(normal) * config.bounce_decay
+					vel = config.ceiling_bounce(prev_vel, normal)
 					bounces += 1
-					pos = collision.position + normal * 2
+					pos = collision.position + normal * config.ceiling_push_out
 					if bounces >= config.max_bounces:
 						has_landed = true
 						landing_position = pos

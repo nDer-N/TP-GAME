@@ -17,6 +17,8 @@
 [ext_resource type="Script" uid="uid://ios6m86c4lm6" path="res://Trayectory_Line.gd" id="10_jb3kq"]
 [ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
+[ext_resource type="PackedScene" uid="uid://dmlwse5x03oql" path="res://PlayerHitPaticles.tscn" id="11_xc4g8"]
+[ext_resource type="PackedScene" uid="uid://bgwxtqhpq7ohk" path="res://HitSprite.tscn" id="12_3fhje"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
@@ -37,17 +39,32 @@
 [ext_resource type="Texture2D" uid="uid://ga12ap7csuh2" path="res://animations/blade/blade_0004.png" id="35_xc8pg"]
 [ext_resource type="Texture2D" uid="uid://rbkuibno0tuh" path="res://animations/blade/blade_0005.png" id="36_aeagw"]
 [ext_resource type="Texture2D" uid="uid://bpexwqnrm6qaw" path="res://resources/lightTe.png" id="38_lphiu"]
+[ext_resource type="Resource" uid="uid://qodueyo88gdl" path="res://resources/noise_damage.tres" id="40_grlnq"]
 [ext_resource type="Script" uid="uid://cg251daqe32dw" path="res://animation_controller.gd" id="40_xc8pg"]
+[ext_resource type="Script" uid="uid://dimvdouy8g0sv" path="res://addons/phantom_camera/scripts/resources/phantom_camera_noise_2d.gd" id="41_grlnq"]
 
 [sub_resource type="Resource" id="Resource_7tnxx"]
 script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
 
+[sub_resource type="Resource" id="Resource_lphiu"]
+script = ExtResource("3_c1b4b")
+transition = 5
+ease = 1
+metadata/_custom_type_script = "uid://8umksf8e80fw"
+
 [sub_resource type="Resource" id="Resource_qi5as"]
 script = ExtResource("3_c1b4b")
 transition = 5
 ease = 1
+
+[sub_resource type="Resource" id="Resource_grlnq"]
+script = ExtResource("3_c1b4b")
+duration = 0.8
+transition = 5
+ease = 1
+metadata/_custom_type_script = "uid://8umksf8e80fw"
 
 [sub_resource type="Curve" id="Curve_k2app"]
 _data = [Vector2(0.003759399, 0.86153847), 0.0, 0.0, 0, 0, Vector2(0.9924812, 0), 0.0, 0.0, 0, 0]
@@ -155,13 +172,20 @@ animations = [{
 "speed": 24.0
 }]
 
+[sub_resource type="Resource" id="Resource_xc8pg"]
+script = ExtResource("41_grlnq")
+amplitude = 40.0
+frequency = 10.0
+positional_noise = false
+rotational_noise = true
+metadata/_custom_type_script = "uid://dimvdouy8g0sv"
+
 [node name="Node2D" type="Node2D" unique_id=1720170991]
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
 process_mode = 3
 physics_interpolation_mode = 1
-top_level = true
-position = Vector2(750, -208)
+position = Vector2(0, -208)
 zoom = Vector2(0.41, 0.41)
 editor_draw_limits = true
 
@@ -189,14 +213,30 @@ metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 [node name="RegularCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=371364123 node_paths=PackedStringArray("follow_target")]
 process_mode = 3
 top_level = true
-position = Vector2(750, -208)
+position = Vector2(0, -208)
 script = ExtResource("2_jb3kq")
 priority = 1
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
 zoom = Vector2(0.41, 0.41)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, -200)
+follow_offset = Vector2(0, -200)
+follow_damping = true
+follow_damping_value = Vector2(0.2, 0.15)
+draw_limits = true
+noise_emitter_layer = 1
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
+[node name="BossCAM" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1581615279 node_paths=PackedStringArray("follow_target")]
+process_mode = 3
+top_level = true
+position = Vector2(0, -58)
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+zoom = Vector2(0.31, 0.31)
+tween_resource = SubResource("Resource_lphiu")
+follow_offset = Vector2(0, -50)
 follow_damping = true
 follow_damping_value = Vector2(0.2, 0.15)
 draw_limits = true
@@ -215,28 +255,40 @@ draw_limits = true
 _preview_noise = false
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
+[node name="DeathCamera" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1181137375 node_paths=PackedStringArray("follow_target")]
+top_level = true
+position = Vector2(0, -8)
+script = ExtResource("2_jb3kq")
+follow_mode = 5
+follow_target = NodePath("../../../CharacterBody2D")
+tween_resource = SubResource("Resource_grlnq")
+draw_limits = true
+_preview_noise = false
+noise_emitter_layer = 1
+metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
+
 [node name="CeilingCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1637117747 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, -308)
+position = Vector2(0, -308)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
 zoom = Vector2(0.2, 0.2)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, -300)
+follow_offset = Vector2(0, -300)
 follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
 [node name="BasementCam" type="Node2D" parent="Camera2D/PhantomCameraHost" unique_id=1688982036 node_paths=PackedStringArray("follow_target")]
 top_level = true
-position = Vector2(750, 292)
+position = Vector2(0, 292)
 script = ExtResource("2_jb3kq")
 follow_mode = 5
 follow_target = NodePath("../../../CharacterBody2D")
 zoom = Vector2(0.4, 0.4)
 tween_resource = SubResource("Resource_7tnxx")
-follow_offset = Vector2(750, 300)
+follow_offset = Vector2(0, 300)
 follow_damping = true
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
@@ -251,7 +303,7 @@ tween_resource = ExtResource("5_xvb2f")
 draw_limits = true
 metadata/_custom_type_script = "uid://bhexx6mj1xv3q"
 
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM") groups=["player"]]
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=420209718 node_paths=PackedStringArray("RegularCamera", "aim_pcam", "CeilingCam", "BasementCam", "ChargeCam", "trajectory_line", "HitCAM", "BossCAM", "hit_noise_emitter", "death_noise_emitter", "death_cam") groups=["player"]]
 light_mask = 2
 position = Vector2(0, -8)
 scale = Vector2(1, 2)
@@ -262,15 +314,18 @@ speed = 700.0
 sprint_multiplier = 1.78
 gravity = 3000.0
 low_jump_multiplier = 4.0
-friction = 3000.0
+friction = 10000.0
 tp_projectile_scene = ExtResource("2_px5sl")
 physics_config = ExtResource("3_0qfo5")
+RegularCamera = NodePath("../Camera2D/PhantomCameraHost/RegularCamera")
 aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
 CeilingCam = NodePath("../Camera2D/PhantomCameraHost/CeilingCam")
 BasementCam = NodePath("../Camera2D/PhantomCameraHost/BasementCam")
 ChargeCam = NodePath("../Camera2D/PhantomCameraHost/ChargeCam")
 trajectory_line = NodePath("Preview")
-max_hits = 5
+max_hits = 4
+damage_flash_color = Color(1, 0, 0, 1)
+death_flash_color = Color(0.40518534, 0.9999997, 0.9974949, 1)
 HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
 HitCAM_duration = 0.5
 teleport_vfx_scene = ExtResource("8_hvi53")
@@ -280,6 +335,20 @@ side_slash_lunge_speed = 2000.0
 side_slash_lunge_duration = 0.1
 tp_charge_orb_scene = ExtResource("10_uswop")
 tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
+BossCAM = NodePath("../Camera2D/PhantomCameraHost/BossCAM")
+pogo_bounce_velocity = 1600.0
+hit_vfx_scene = ExtResource("11_xc4g8")
+hit_noise_emitter = NodePath("../PhantomCameraNoiseEmitter2D")
+death_noise_emitter = NodePath("../DeathNoise")
+death_cam = NodePath("../Camera2D/PhantomCameraHost/DeathCamera")
+enemy_hit_vfx_scene = ExtResource("12_3fhje")
+enemy_hit_vfx_offset = Vector2(0, -100)
+enemy_hit_vfx_z_index = 100
+enemy_hit_vfx_scale_min = 0.6
+enemy_hit_vfx_scale_max = 1.5
+death_blackout_fade_in = 0.0
+tp_afterimage_duration = 0.5
+tp_afterimage_lifetime = 0.5
 
 [node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
 position = Vector2(7.9999995, 59.999996)
@@ -302,7 +371,7 @@ material = SubResource("ShaderMaterial_xvb2f")
 position = Vector2(-12.499978, -16.749992)
 scale = Vector2(0.42625, 0.208125)
 sprite_frames = ExtResource("10_5said")
-animation = &"DOWNSLASHStart"
+animation = &"airdeath"
 
 [node name="PlayerHitbox" type="CollisionShape2D" parent="CharacterBody2D" unique_id=874646740]
 shape = SubResource("RectangleShape2D_0qfo5")
@@ -347,8 +416,10 @@ script = ExtResource("13_bwfjh")
 attack_damage = 3
 attack_cooldown = 0.0
 slash_animation_name = "slash2"
+hit_delay = 0.0
 hit_radius = 370.0
 hit_arc_degrees = 180.0
+hit_detect_Timer = 0.2
 
 [node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="CharacterBody2D/SlashController" unique_id=1086077083]
 process_mode = 3
@@ -375,7 +446,7 @@ collision_mask = 15
 monitorable = false
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="CharacterBody2D/SlashHitbox" unique_id=1511599528]
-polygon = PackedVector2Array(0, 4, 232, -32, 232, 40)
+polygon = PackedVector2Array(0, 4, 232, -48, 232, 56)
 
 [node name="AnimationController" type="Node2D" parent="CharacterBody2D" unique_id=573841322 node_paths=PackedStringArray("animated_sprite")]
 process_mode = 3
@@ -390,3 +461,17 @@ position = Vector2(0, 4)
 scale = Vector2(2.3551495, -1.6392627)
 energy = 0.83
 texture = ExtResource("38_lphiu")
+
+[node name="PhantomCameraNoiseEmitter2D" type="Node2D" parent="." unique_id=976211622]
+process_mode = 3
+script = ExtResource("14_3d8aq")
+noise = ExtResource("40_grlnq")
+duration = 0.3
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"
+
+[node name="DeathNoise" type="Node2D" parent="." unique_id=1147396732]
+process_mode = 3
+script = ExtResource("14_3d8aq")
+noise = SubResource("Resource_xc8pg")
+duration = 3.0
+metadata/_custom_type_script = "uid://bhd4nuiu23e7l"

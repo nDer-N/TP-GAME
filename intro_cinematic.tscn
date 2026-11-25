@@ -1,0 +1,111 @@
+[gd_scene format=3 uid="uid://lagu8akam247"]
+
+[ext_resource type="Script" uid="uid://daueoun61fr1i" path="res://intro_cinematic.gd" id="1_6ydyj"]
+[ext_resource type="Script" uid="uid://bn3e3sv6kteds" path="res://cinematic_scene.gd" id="2_jamx0"]
+[ext_resource type="Texture2D" uid="uid://d3oe6yv8nv4fb" path="res://CinematicaIncial/Escena 1.png" id="3_pnu8h"]
+[ext_resource type="Texture2D" uid="uid://cv60pb6maa3f7" path="res://CinematicaIncial/escena 2.png" id="4_uabi4"]
+[ext_resource type="Texture2D" uid="uid://kq1csejqrq88" path="res://CinematicaIncial/escena 3.png" id="5_bdypj"]
+[ext_resource type="Texture2D" uid="uid://dbc85fqbuejqk" path="res://CinematicaIncial/escena 4.png" id="6_2ff7f"]
+[ext_resource type="Texture2D" uid="uid://c1vvyojn1kvco" path="res://CinematicaIncial/escena 5.png" id="7_kc251"]
+[ext_resource type="Texture2D" uid="uid://00h7hum0kson" path="res://CinematicaIncial/secuencia6.png" id="8_m46jl"]
+[ext_resource type="Texture2D" uid="uid://dhfaoo5obkj53" path="res://CinematicaIncial/Escena 7.png" id="9_cxjvu"]
+[ext_resource type="Texture2D" uid="uid://b6vm44bgtgqio" path="res://CinematicaIncial/Escena 8.png" id="10_55rep"]
+[ext_resource type="AudioStream" uid="uid://b6d8n142h7lsg" path="res://Audio/MusicIntro.mp3" id="11_pnu8h"]
+[ext_resource type="AudioStream" uid="uid://dka4fwxlsapax" path="res://Audio/bbc_manual-typ_07029109_1.mp3" id="12_uabi4"]
+
+[sub_resource type="Resource" id="Resource_5pgor"]
+script = ExtResource("2_jamx0")
+image = ExtResource("3_pnu8h")
+text = "En este mundo, las ciudades se alzan protegidas tras enormes murallas, que protegen de  males que amenazan con consumirlo todo.
+
+En Erbion Unidos, muchos de sus habitantes viven resguardados entre los muros, disfrutando de una vida tranquila y segura. Sin embargo, no todos tienen ese privilegio.
+
+Lejos de la seguridad de las ciudades, miles de personas viven en las afueras, donde el peligro acecha en cada rincón.
+"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_sid8i"]
+script = ExtResource("2_jamx0")
+image = ExtResource("4_uabi4")
+text = "Cada persona posee un poder, aunque no todos son iguales ni tienen el mismo potencial.
+
+Muchos utilizan sus habilidades para proteger a los inocentes y a aquellos que se cree que poseen poderes débiles.
+
+A estas personas se les conoce como \"Héroes\", individuos que han decidido convertirse en los guardianes de sus pueblos, sin importar quién necesite su ayuda usando sus poderes."
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_5f1xr"]
+script = ExtResource("2_jamx0")
+image = ExtResource("5_bdypj")
+text = "A tan solo tres días de una de las ciudades más importantes de Erbion Unidos, se encuentra un pequeño pueblo que alberga a una heroína bastante particular: una de las personas consideradas poseedoras de uno de los poderes más fuertes de todo el país.
+
+El poder lo es todo. La fuerza con la que alguien nace puede determinar su vida. Aquí, no solo importa quién eres, sino también el poder que posees... o, mejor dicho, el poder que los demás creen que tienes.
+"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_ce03n"]
+script = ExtResource("2_jamx0")
+image = ExtResource("6_2ff7f")
+text = "Bajo su protección, el pueblo ha prosperado y sus habitantes disfrutan de una tranquilidad que pocos lugares pueden presumir. Aunque no es la única heroína que vive allí, es ella quien carga con el título de protectora y quien vela por la seguridad de todos.
+
+Su poder y sus hazañas no tardaron en llamar la atención de numerosas ciudades de Erbion Unidos. Con el tiempo, se convirtió en una luchadora reconocida y en una figura admirada por muchos.
+
+Sin embargo, la fama no solo atrae admiración. Su reputación y, sobre todo, el poder que posee también han despertado el interés de ciertas personas."
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_lc542"]
+script = ExtResource("2_jamx0")
+image = ExtResource("7_kc251")
+text = "Pero no todo en este mundo gira en torno a héroes y protectores.
+
+En las sombras de las grandes ciudades existe un mercado negro dedicado al tráfico de poderes. Grupos criminales se encargan de robar estas habilidades para venderlas al mejor postor o a cualquiera que esté dispuesto a pagar por hacerse con un poder ajeno.
+
+Entre todos ellos, existe una organización que destaca por encima de las demás, considerada la más peligrosa de todo Erbion Unidos. Sus integrantes han puesto especial atención de una heroína, atraídos por el extraordinario poder que posee.
+
+Con un interés particular en hacerse con semejante habilidad, la organización ha decidido poner sus ojos sobre aquel pueblo. Y ahora, sus integrantes se dirigen hacia allí a bordo de su propio tren."
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_1xjgl"]
+script = ExtResource("2_jamx0")
+image = ExtResource("8_m46jl")
+text = "Los miembros más importantes de cierta organización decidieron enfrentarse a ella personalmente.
+
+Aunque al principio logró hacerles frente y esquivar sus ataques, cuando el líder de la organización apareció de repente. Fue ante su presencia cuando la heroína finalmente cayó y perdió aquello que la hacía tan reconocida: su poder.
+
+Pero en este mundo, arrebatarle el poder a alguien no es tan sencillo. Para poder transferir una habilidad, es necesario entregar otro poder a cambio. De lo contrario, el poder arrebatado desaparece para siempre, perdiéndose sin posibilidad de recuperarlo.
+"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_7cwxj"]
+script = ExtResource("2_jamx0")
+image = ExtResource("9_cxjvu")
+text = "La organización decidió entregarle un nuevo poder a cambio del que le habían arrebatado. Sin embargo, para ellos, aquella habilidad no era más que un poder inútil: la capacidad de teletransportarse mediante llamas.
+
+Tras perder el poder que la había convertido en una de las heroínas más reconocidas de Erbion Unidos, la derrota comenzó a apoderarse de sus pensamientos. Para ella, ya no había nada que pudiera hacer. Sin su antigua habilidad, creía que sería incapaz de seguir protegiendo a su pueblo, dejándolo indefenso ante los peligros.
+
+"
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[sub_resource type="Resource" id="Resource_nce57"]
+script = ExtResource("2_jamx0")
+image = ExtResource("10_55rep")
+text = "Sin pensarlo dos veces la heroína corrió tras el tren de la organización y consiguió subir a bordo.
+
+Con un único objetivo en mente: recuperar su antiguo poder y regresar a su pueblo para proteger a quienes dependen de ella.
+
+Ahora, a bordo del tren de aquellos que le arrebataron todo, tendrá que enfrentarse a numerosos obstáculos, utilizando esa habilidad que tanto ellos como ella consideran inútil.
+
+Su objetivo es encontrar su antiguo poder, cueste lo que cueste."
+metadata/_custom_type_script = "uid://bn3e3sv6kteds"
+
+[node name="IntroCinematic" type="Control" unique_id=1549025067]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_6ydyj")
+scenes = Array[ExtResource("2_jamx0")]([SubResource("Resource_5pgor"), SubResource("Resource_sid8i"), SubResource("Resource_5f1xr"), SubResource("Resource_ce03n"), SubResource("Resource_lc542"), SubResource("Resource_1xjgl"), SubResource("Resource_7cwxj"), SubResource("Resource_nce57")])
+music = ExtResource("11_pnu8h")
+type_sound = ExtResource("12_uabi4")
+type_sound_volume_db = -15.226999999999997
+type_sound_every = 7

@@ -1,0 +1,133 @@
+[gd_scene format=3 uid="uid://bpc4tlyngy2p7"]
+
+[ext_resource type="Script" uid="uid://cdsnb6gi3vwlb" path="res://boss.gd" id="1_a8swx"]
+[ext_resource type="Script" uid="uid://ccby7w8j74qn8" path="res://boss_animation_controller.gd" id="2_2nlvs"]
+[ext_resource type="AudioStream" uid="uid://gl2ighfhup0o" path="res://Audio/FREE DL Flamewall Symphonic Speed Metal.mp3" id="2_p7pij"]
+[ext_resource type="SpriteFrames" uid="uid://deqrnkdm8c3kw" path="res://resources/BOSS_1_ANIMAATIONS.tres" id="3_y66il"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bgaq0"]
+size = Vector2(160, 260)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yjy12"]
+size = Vector2(260, 219)
+
+[node name="Boss1" type="CharacterBody2D" unique_id=718000262 node_paths=PackedStringArray("animation_controller")]
+collision_layer = 3
+script = ExtResource("1_a8swx")
+max_health = 30
+phase2_threshold = null
+arena_half_width = null
+activation_height = null
+jump_can_leave_arena = null
+contact_damage = null
+projectile_damage = null
+parry_damage = 10
+parry_speed_multiplier = null
+show_health_bar = null
+boss_name = null
+bar_height = 25.0
+shoot_from_center = null
+muzzle_offset = null
+aim_offset = null
+projectile_speed = null
+projectile_speed_phase2 = null
+double_shot_delay = null
+shoot_charge = null
+shoot_charge_phase2 = null
+gravity = null
+jump_time = null
+jump_time_phase2 = null
+jump_windup = null
+jump_windup_phase2 = null
+second_jump_windup = null
+impact_duration = null
+dash_speed = null
+dash_windup = null
+dash_show_warning = null
+dash_shake_pixels = null
+dash_passes = null
+dash_stop_at_edges = null
+dash_edge_margin = null
+dash_vfx = null
+dash_afterimages = null
+dust_color = null
+debris_color = null
+jump_vfx = null
+jump_afterimages = null
+jump_cracks = null
+crack_only_on_ground = null
+crack_max_depth = null
+crack_count = null
+crack_length = null
+crack_lifetime = null
+crack_fade_time = null
+crack_color = null
+crack_glow_color = null
+crack_z_index = null
+jump_camera_shake = null
+animation_controller = NodePath("BossAnimationController")
+boss_music = ExtResource("2_p7pij")
+music_volume_db = -22.223
+music_fade_in = 4.0
+music_fade_out = null
+music_loop = null
+music_bus = null
+duck_bus = null
+duck_amount_db = null
+reposition_enabled = null
+reposition_chance = null
+reposition_min_attacks = null
+reposition_windup = null
+reposition_max_up = null
+reposition_max_down = null
+reposition_min_distance = null
+reposition_scan_step = null
+spam_defense_enabled = null
+spam_hits_needed = null
+spam_window = null
+spam_position_tolerance = null
+shockwave_windup = null
+shockwave_speed = null
+shockwave_range = null
+shockwave_height = null
+shockwave_damage = null
+shockwave_push_distance = null
+shockwave_color = null
+max_repeats_phase2 = null
+dash_passes_count_as_repeats = null
+rest_time = null
+rest_time_phase2 = null
+chase_speed = null
+chase_speed_phase2 = null
+chase_stop_distance = null
+debug_keys = null
+
+[node name="Visual" type="ColorRect" parent="." unique_id=2075780140]
+visible = false
+offset_left = -80.0
+offset_top = -260.0
+offset_right = 80.0
+color = Color(0.13661176, 0.10513685, 0.5272385, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2139131377]
+position = Vector2(0, -130)
+shape = SubResource("RectangleShape2D_bgaq0")
+
+[node name="DamageArea" type="Area2D" parent="." unique_id=765462930]
+collision_mask = 17
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DamageArea" unique_id=651827931]
+position = Vector2(0, -109)
+shape = SubResource("RectangleShape2D_yjy12")
+
+[node name="BossAnimationController" type="Node" parent="." unique_id=1974185963 node_paths=PackedStringArray("animated_sprite")]
+script = ExtResource("2_2nlvs")
+animated_sprite = NodePath("../AnimatedSprite2D")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=273488834]
+position = Vector2(-16, -160.00002)
+scale = Vector2(0.4115478, 0.41154787)
+sprite_frames = ExtResource("3_y66il")
+animation = &"weep_p2"
+frame = 23
+frame_progress = 1.0

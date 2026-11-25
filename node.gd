@@ -18,6 +18,10 @@ func jump_processing(delta: float) -> void:
 		jumps_left = 2
 	else:
 		coyote_timer -= delta
+		# Salto aéreo: si dejaste el suelo sin saltar (caíste de una plataforma) y ya se
+		# acabó el coyote time, el salto "de suelo" se da por perdido y te queda el aéreo.
+		if coyote_timer <= 0.0 and jumps_left == 2:
+			jumps_left = 1
 	
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer_timer = jump_buffer_time

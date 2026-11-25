@@ -1,7 +1,11 @@
 extends Area2D
 
 @export_multiline var texto: String = "WASD para moverte"
+## Animación del diagrama para el modo de una sola página (nombre dentro del SpriteFrames de $Panel/Diagrama).
+@export var animacion: StringName = &""
 @export_multiline var paginas: Array[String] = []   # si hay 2+ se activan las flechas
+## Animación de cada página (mismo índice que "paginas"). Vacío = página sin diagrama.
+@export var animaciones: Array[StringName] = []
 @export var una_sola_vez: bool = true
 @export var ancho_panel: float = 420.0
 @export var padding: float = 20.0
@@ -9,9 +13,29 @@ extends Area2D
 @export var flicker: bool = true
 @export var tecla_repetir: Key = KEY_E
 @export var texto_hint: String = "[E] Ver tutorial"
+## Teclas que NO cierran el tutorial al presionarlas (ej. la tecla de un poder que se explica aqui).
+@export var teclas_que_no_cierran: Array[Key] = [KEY_C]
 @export var hint_offset: Vector2 = Vector2(0, -80)
 
-# NUEVO: teclas para cambiar de página (configurables desde el Inspector)
+@export_group("Diagrama")
+## Alto máximo del diagrama dentro del panel (antes de aplicar escala_panel).
+@export var alto_diagrama_max: float = 180.0
+## Espacio entre el diagrama y el texto cuando una página tiene ambos.
+@export var separacion_diagrama_texto: float = 12.0
+## Ignora el margen transparente de los frames al calcular tamaño y posición.
+@export var recortar_transparencia: bool = true
+
+@export_group("Ajuste automático")
+## Ancho máximo al que se puede estirar el panel si el texto es largo.
+@export var ancho_panel_max: float = 640.0
+## Tamaño mínimo de letra antes de rendirse (se achica solo si ensanchar no alcanza).
+@export var tamano_fuente_min: int = 14
+## Margen mínimo entre el panel y los bordes de la pantalla (en píxeles de pantalla).
+@export var margen_pantalla: float = 40.0
+## Cuánto se ensancha el panel en cada intento.
+@export var paso_ancho: float = 20.0
+
+# teclas para cambiar de página (configurables desde el Inspector)
 @export var tecla_pagina_izq: Key = KEY_A
 @export var tecla_pagina_der: Key = KEY_D
 
@@ -19,6 +43,10 @@ extends Area2D
 @onready var fondo: ColorRect = $Panel/Fondo
 @onready var label: Label = $Panel/Label
 @onready var linea: ColorRect = $Panel/Linea
+@onready var diagrama: AnimatedSprite2D = $Panel/Diagrama
+
+# Cache compartido entre todas las instancias: área visible de cada animación.
+static var _cache_info: Dictionary = {}
 
 var canvas: CanvasLayer
 var dim: ColorRect
@@ -31,19 +59,36 @@ var tween: Tween
 var flicker_tween: Tween
 
 var lista_paginas: Array[String] = []
+var lista_animaciones: Array[StringName] = []
 var pagina_actual := 0
 var flecha_izq: Label
 var flecha_der: Label
 var indicador: Label
 
+# layout medido en _acomodar()
+var layout_listo := false
+var alturas_texto: Array[float] = []
+var info_paginas: Array[Dictionary] = []
+var alto_contenido := 0.0
+
+# ajuste automático
+var ancho_actual := 0.0
+var fuente_base := 16
+var fuente_actual := 16
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# si no hay páginas, usa el texto simple como única página
-	if paginas.is_empty():
-		lista_paginas = [texto]
-	else:
-		lista_paginas = paginas.duplicate()
+	# guardamos el tamaño de letra original y el ancho base
+	fuente_base = label.get_theme_font_size("font_size")
+	fuente_actual = fuente_base
+	ancho_actual = ancho_panel
+
+	# el script calcula la posición asumiendo el sprite centrado
+	diagrama.centered = true
+	diagrama.offset = Vector2.ZERO
+
+	_armar_paginas()
 
 	canvas = CanvasLayer.new()
 	canvas.layer = 100
@@ -67,6 +112,22 @@ func _ready() -> void:
 
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+
+# Combina textos y animaciones en listas del mismo largo.
+func _armar_paginas() -> void:
+	lista_paginas.clear()
+	lista_animaciones.clear()
+
+	var n := maxi(paginas.size(), animaciones.size())
+	if n == 0:
+		# modo simple: un solo texto y (opcionalmente) una animación
+		lista_paginas.append(texto)
+		lista_animaciones.append(animacion)
+		return
+
+	for i in n:
+		lista_paginas.append(paginas[i] if i < paginas.size() else "")
+		lista_animaciones.append(animaciones[i] if i < animaciones.size() else &"")
 
 func _crear_hint() -> void:
 	hint = Label.new()
@@ -107,11 +168,22 @@ func _es_multipagina() -> bool:
 func _mostrar_pagina(i: int) -> void:
 	pagina_actual = clampi(i, 0, lista_paginas.size() - 1)
 	label.text = lista_paginas[pagina_actual]
+
+	# reproduce la animación de esta página desde el principio
+	var anim := lista_animaciones[pagina_actual]
+	if diagrama.sprite_frames != null and diagrama.sprite_frames.has_animation(anim):
+		diagrama.play(anim)
+		diagrama.frame = 0
+		diagrama.frame_progress = 0.0
+	else:
+		diagrama.stop()
+
 	var multi := _es_multipagina()
 	flecha_izq.visible = multi and pagina_actual > 0
 	flecha_der.visible = multi and pagina_actual < lista_paginas.size() - 1
 	indicador.visible = multi
 	indicador.text = "%d/%d" % [pagina_actual + 1, lista_paginas.size()]
+	_colocar_contenido()
 
 func _cambiar_pagina(dir: int) -> void:
 	var nueva := pagina_actual + dir
@@ -119,42 +191,178 @@ func _cambiar_pagina(dir: int) -> void:
 		return
 	_mostrar_pagina(nueva)
 
+# Área visible (unión de todos los frames) y tamaño de frame de una animación.
+func _info_animacion(anim: StringName) -> Dictionary:
+	var frames := diagrama.sprite_frames
+	var key := "%d|%s|%s" % [frames.get_instance_id(), anim, recortar_transparencia]
+	if _cache_info.has(key):
+		return _cache_info[key]
+
+	var tam_frame := Vector2.ZERO
+	var union := Rect2i()
+	var hay_union := false
+
+	for i in frames.get_frame_count(anim):
+		var tex := frames.get_frame_texture(anim, i)
+		if tex == null:
+			continue
+		if tam_frame == Vector2.ZERO:
+			tam_frame = tex.get_size()
+		if not recortar_transparencia:
+			break
+		var img := tex.get_image()
+		if img == null:
+			continue
+		var r := img.get_used_rect()
+		if r.size == Vector2i.ZERO:
+			continue
+		union = r if not hay_union else union.merge(r)
+		hay_union = true
+
+	var rect := Rect2(Vector2.ZERO, tam_frame)
+	if recortar_transparencia and hay_union:
+		rect = Rect2(union)
+
+	var info := {"rect": rect, "frame": tam_frame}
+	_cache_info[key] = info
+	return info
+
+# Mide cómo se verá el diagrama de una página: tamaño final, escala y área visible.
+func _medir_diagrama(anim: StringName, ancho_max: float) -> Dictionary:
+	var vacio := {"tam": Vector2.ZERO, "escala": 1.0, "rect": Rect2(), "frame": Vector2.ZERO}
+	if anim == &"" or diagrama.sprite_frames == null:
+		return vacio
+	if not diagrama.sprite_frames.has_animation(anim):
+		push_warning("HoloTutorial: no existe la animación '%s' en $Panel/Diagrama." % anim)
+		return vacio
+
+	var info := _info_animacion(anim)
+	var rect: Rect2 = info["rect"]
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return vacio
+
+	# cabe en el ancho útil y en alto_diagrama_max, sin agrandarse
+	var s := minf(minf(ancho_max / rect.size.x, alto_diagrama_max / rect.size.y), 1.0)
+	return {"tam": (rect.size * s).round(), "escala": s, "rect": rect, "frame": info["frame"]}
+
+# Mide todas las páginas con un ancho y tamaño de letra dados.
+func _calcular_layout(ancho: float, fuente: int) -> Dictionary:
+	var ancho_texto := ancho - padding * 2.0
+	var font := label.get_theme_font("font")
+	var interlineado := label.get_theme_constant("line_spacing")
+	var alturas: Array[float] = []
+	var infos: Array[Dictionary] = []
+	var alto_max := 0.0
+
+	for i in lista_paginas.size():
+		var h_texto := 0.0
+		if lista_paginas[i] != "":
+			var tam := font.get_multiline_string_size(
+				lista_paginas[i], HORIZONTAL_ALIGNMENT_LEFT, ancho_texto, fuente)
+			var lineas := maxi(1, roundi(tam.y / font.get_height(fuente)))
+			h_texto = tam.y + interlineado * (lineas - 1) + 2.0
+		alturas.append(h_texto)
+
+		var info := _medir_diagrama(lista_animaciones[i], ancho_texto)
+		infos.append(info)
+		var tam_d: Vector2 = info["tam"]
+
+		var h := h_texto + tam_d.y
+		if h_texto > 0.0 and tam_d.y > 0.0:
+			h += separacion_diagrama_texto
+		alto_max = maxf(alto_max, h)
+
+	return {"alturas": alturas, "infos": infos, "alto_contenido": alto_max}
+
 func _acomodar() -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var ancho_texto := ancho_panel - padding * 2.0
-	label.size = Vector2(ancho_texto, 0)
-
-	# medimos TODAS las páginas y usamos la más alta
-	var alto_texto := 0.0
-	for i in lista_paginas.size():
-		label.text = lista_paginas[i]
-		label.size = Vector2(ancho_texto, 0)
-		await get_tree().process_frame
-		alto_texto = maxf(alto_texto, maxf(label.size.y, label.get_minimum_size().y))
 
 	var extra := 26.0 if _es_multipagina() else 0.0   # espacio para el "1/3"
-	var alto := maxf(alto_texto + padding * 2.0 + extra, 100.0)
+	var vp := get_viewport().get_visible_rect().size
 
-	fondo.size = Vector2(ancho_panel, alto)
+	# límites (en unidades del panel, ya descontando la escala y el margen)
+	var ancho_tope := minf(ancho_panel_max, (vp.x - margen_pantalla * 2.0) / escala_panel)
+	ancho_tope = maxf(ancho_tope, ancho_panel)
+	var alto_tope := (vp.y - margen_pantalla * 2.0) / escala_panel
+
+	# primero ensanchar; si no cabe, achicar la letra y repetir
+	var elegido: Dictionary = {}
+	var f := fuente_base
+	while f >= tamano_fuente_min and elegido.is_empty():
+		var w := ancho_panel
+		while w <= ancho_tope + 0.01:
+			var lay := _calcular_layout(w, f)
+			var alto_total: float = lay["alto_contenido"] + padding * 2.0 + extra
+			if alto_total <= alto_tope:
+				elegido = lay
+				ancho_actual = w
+				fuente_actual = f
+				break
+			w += paso_ancho
+		f -= 1
+
+	# si nada cupo, usamos el máximo ancho y la letra mínima (mejor esfuerzo)
+	if elegido.is_empty():
+		ancho_actual = ancho_tope
+		fuente_actual = tamano_fuente_min
+		elegido = _calcular_layout(ancho_actual, fuente_actual)
+
+	alturas_texto = elegido["alturas"]
+	info_paginas = elegido["infos"]
+	alto_contenido = elegido["alto_contenido"]
+
+	label.add_theme_font_size_override("font_size", fuente_actual)
+
+	var alto := maxf(alto_contenido + padding * 2.0 + extra, 100.0)
+
+	fondo.size = Vector2(ancho_actual, alto)
 	fondo.position = -fondo.size / 2.0
-	linea.size = Vector2(ancho_panel, 2)
+	linea.size = Vector2(ancho_actual, 2)
 	linea.position = fondo.position
-	label.size = Vector2(ancho_texto, alto - padding * 2.0 - extra)
-	label.position = fondo.position + Vector2(padding, padding)
 
 	# posición de flechas e indicador
 	var centro_y := fondo.position.y + (alto - extra) / 2.0
 	flecha_izq.size = Vector2(padding, 40)
 	flecha_izq.position = Vector2(fondo.position.x, centro_y - 20)
 	flecha_der.size = Vector2(padding, 40)
-	flecha_der.position = Vector2(fondo.position.x + ancho_panel - padding, centro_y - 20)
-	indicador.size = Vector2(ancho_panel, 24)
+	flecha_der.position = Vector2(fondo.position.x + ancho_actual - padding, centro_y - 20)
+	indicador.size = Vector2(ancho_actual, 24)
 	indicador.position = Vector2(fondo.position.x, fondo.position.y + alto - 28)
 
+	layout_listo = true
 	_mostrar_pagina(0)
 	hint.position = hint_offset - hint.size / 2.0
+
+# Coloca diagrama (arriba) y texto (abajo) de la página actual, centrados en la zona de contenido.
+func _colocar_contenido() -> void:
+	if not layout_listo:
+		return
+
+	var ancho_texto := ancho_actual - padding * 2.0
+	var h_texto: float = alturas_texto[pagina_actual]
+	var info: Dictionary = info_paginas[pagina_actual]
+	var tam_d: Vector2 = info["tam"]
+	var sep := separacion_diagrama_texto if (h_texto > 0.0 and tam_d.y > 0.0) else 0.0
+	var h_bloque := tam_d.y + sep + h_texto
+
+	var y := fondo.position.y + padding + (alto_contenido - h_bloque) / 2.0
+
+	diagrama.visible = tam_d.y > 0.0
+	if diagrama.visible:
+		var s: float = info["escala"]
+		var rect: Rect2 = info["rect"]
+		var tam_frame: Vector2 = info["frame"]
+		# centramos el área VISIBLE del dibujo (no el frame completo) en su espacio
+		var centro_destino := Vector2(0.0, y + tam_d.y / 2.0)
+		diagrama.scale = Vector2(s, s)
+		diagrama.position = centro_destino - (rect.get_center() - tam_frame / 2.0) * s
+	y += tam_d.y + sep
+
+	label.visible = h_texto > 0.0
+	label.size = Vector2(ancho_texto, h_texto)
+	label.position = Vector2(fondo.position.x + padding, y)
 
 func _es_jugador(body: Node) -> bool:
 	if body.is_in_group("player"):
@@ -195,7 +403,6 @@ func _input(event: InputEvent) -> void:
 				and event.physical_keycode == tecla_repetir:
 			abrir()
 
-# CAMBIADO: ahora usa tecla_pagina_izq / tecla_pagina_der (A y D por defecto)
 # devuelve -1, 1 o 0
 func _dir_pagina(event: InputEvent) -> int:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -212,6 +419,8 @@ func _dir_pagina(event: InputEvent) -> int:
 
 func _es_movimiento(event: InputEvent) -> bool:
 	if event is InputEventKey:
+		if event.physical_keycode in teclas_que_no_cierran or event.keycode in teclas_que_no_cierran:
+			return false
 		return event.pressed and not event.echo
 	if event is InputEventJoypadButton:
 		return event.pressed

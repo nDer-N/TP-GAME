@@ -9,9 +9,11 @@ signal health_changed(current: int, maximum: int)
 signal died
 
 enum Attack { SHOOT, JUMP, DASH }
+enum BarPosition { TOP_CENTER, BOTTOM_CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 ## Metodos que se intentaran llamar en el jugador para dañarlo (en orden).
 const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
+const SCREAM_FX_BUS := "BossScreamFX"
 
 @export_group("Vida")
 ## Tu espada pega 40 por golpe: 400 de vida = 10 golpes.
@@ -40,7 +42,36 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export_group("Barra de vida")
 @export var show_health_bar := true
 @export var boss_name := "JEFE"
+@export var bar_name_font_size := 20
+@export var show_bar_text := true                       # el "275 / 275"
+@export var show_phase_tick := true                     # marca de la fase 2
+@export_subgroup("Posicion y tamaño")
+@export var bar_position := BarPosition.BOTTOM_CENTER
+@export_range(0.1, 1.0) var bar_width_ratio := 0.5      # ancho respecto a la pantalla
 @export var bar_height := 22.0
+@export var bar_margin := Vector2(40, 40)               # separacion del borde de la pantalla
+@export var bar_extra_offset := Vector2.ZERO            # ajuste fino extra en pixeles
+@export_subgroup("Diseño")
+@export var bar_background_texture: Texture2D           # fondo (vacio = color)
+@export var bar_background_color := Color(0.05, 0.05, 0.05, 0.9)
+@export var bar_fill_texture: Texture2D                 # relleno (vacio = color)
+@export var bar_fill_color := Color(0.85, 0.1, 0.1)
+@export var bar_trail_texture: Texture2D                # estela de daño (vacio = color)
+@export var bar_trail_color := Color(1.0, 0.85, 0.3)
+@export var bar_frame_texture: Texture2D                # marco opcional encima de la barra
+@export var bar_frame_padding := Vector2(8, 8)          # cuanto sobresale el marco
+
+@export_group("Alerta de disparo fuera de pantalla")
+@export var offscreen_alert_enabled := true
+## Arrastra aqui tu propio dibujo para cambiar el diseño. Vacio = usa el texto "?".
+@export var alert_texture: Texture2D
+@export var alert_tint := Color.WHITE                 # color aplicado a tu dibujo
+@export var alert_text := "?"
+@export var alert_font_size := 72
+@export var alert_color := Color(1.0, 0.85, 0.2)
+@export var alert_size := Vector2(64, 64)
+@export var alert_edge_margin := 30.0                 # distancia al borde de la pantalla
+@export var alert_pulse := true                       # late para que se note
 
 @export_group("Disparo")
 ## Si es true, el proyectil sale del CENTRO del cuerpo del jefe (y el parry regresa ahi). Si es false usa muzzle_offset.
@@ -53,6 +84,28 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var shoot_charge := 0.7                # aviso antes de disparar
 @export var shoot_charge_phase2 := 0.45
 
+@export_group("Aparición del proyectil")
+## Arrastra aqui tu PNG. Vacio = usa el cuadrito de color.
+@export var projectile_texture: Texture2D
+## Tamaño del dibujo. 1.0 = tamaño normal, 2.0 = el doble, 0.5 = la mitad.
+@export_range(0.1, 5.0, 0.05) var projectile_scale := 1.0
+## Color aplicado al dibujo (blanco = sin cambio). Tambien tiñe el cuadrito si no hay textura.
+@export var projectile_tint := Color.WHITE
+## Color del proyectil cuando lo devuelves con la espada (parry).
+@export var projectile_reflected_tint := Color(0.2, 0.9, 1.0)
+## Si es true, el dibujo gira hacia donde viaja. Si es false, se queda sin rotar.
+@export var projectile_rotate_to_direction := true
+## Si es true, el tamaño tambien agranda/reduce la hitbox (zona que hace daño). Si es false, no.
+@export var projectile_scale_hitbox := false
+
+## Arrastra aqui tu escena con el AnimatedSprite2D del proyectil.
+@export var projectile_scene: PackedScene
+## Animacion que se reproduce al disparar (si no existe, usa la que tenga por defecto la escena).
+@export var projectile_animation := &"default"
+## Animacion al hacer parry (vacio = sigue con la misma).
+@export var projectile_reflected_animation := &""
+@export_range(0.1, 5.0, 0.05) var projectile_animation_speed := 1.0
+
 @export_group("Salto")
 @export var gravity := 2400.0
 @export var jump_time := 0.8                   # duracion del vuelo (segundos)
@@ -61,6 +114,11 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var jump_windup_phase2 := 0.5
 @export var second_jump_windup := 0.3
 @export var impact_duration := 0.2             # tiempo que dura el daño al aterrizar
+
+## Red de seguridad anti-atravesar-piso.
+@export var landing_unstuck_max := 160.0       # si cae incrustado en el piso, lo sube hasta esto (px) para sacarlo
+@export var landing_snap_distance := 300.0     # tras aterrizar se pega al piso si hay uno a menos de esto (px)
+@export var fall_rescue_distance := 1500.0     # si cae mas que esto debajo de su ultimo punto seguro, lo regresa
 
 @export_group("Dash")
 @export var dash_speed := 1500.0
@@ -72,6 +130,22 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## El dash se mueve por codigo e IGNORA plataformas y paredes (no se atora), pero se detiene antes de un vacio.
 @export var dash_stop_at_edges := true
 @export var dash_edge_margin := 50.0            # distancia de seguridad antes del borde (pixeles)
+## Si es true, al llegar al borde de una plataforma el dash SIGUE: cae y continua por el piso donde aterrice
+## (la linea de aviso muestra todo el recorrido, caida incluida). Si es false, se detiene antes del borde.
+@export var dash_fall_off_edges := true
+## Distancia minima para que valga la pena dashear. Si es menor prueba el otro lado; si tampoco puede, salta en su lugar.
+@export var dash_min_distance := 150.0
+## Caida maxima permitida. Si no hay piso antes de esto, el dash se corta en el borde.
+@export var dash_max_fall := 900.0
+## Si es true, el dash se limita a los bordes invisibles de la arena (comportamiento antiguo).
+## Si es false, corre hasta donde pueda (pared real o el borde del piso) sin límite de arena.
+@export var dash_limit_to_arena := false
+## Distancia maxima de seguridad del dash cuando no esta limitado por la arena.
+@export var dash_max_distance := 4000.0
+## Si es true, el recorrido del dash se recalcula mientras el aviso sigue al jugador (hasta `dash_lock_time` antes de arrancar).
+@export var dash_track_player_during_warning := true
+## Tiempo antes de arrancar el dash en el que el recorrido se fija y ya no sigue al jugador.
+@export var dash_lock_time := 0.25
 
 @export_group("Efectos del dash")
 @export var dash_vfx := true                   # polvo, escombros y explosion al arrancar/frenar
@@ -94,6 +168,81 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 @export var crack_z_index := 10                # que tan "arriba" se dibujan (subelo si el arte del piso las tapa)
 @export var jump_camera_shake := 12.0          # fuerza del temblor de camara al aterrizar (0 = nada)
 
+@export_group("Animaciones")
+@export var animation_controller: Node
+@export var WeepNoise: PhantomCameraNoiseEmitter2D
+
+@export_group("Cinematica fase 2")
+@export var cinematic_enabled := true
+## Marker2D sobre la SUPERFICIE de la plataforma de la IZQUIERDA (donde queda el jugador).
+@export var cinematic_player_spot: Node2D
+## Marker2D sobre la SUPERFICIE de la plataforma de la DERECHA (donde cae el jefe).
+@export var cinematic_boss_spot: Node2D
+## Si es true, la cinematica solo se ve la primera vez (no cada vez que mueres y reinicias).
+@export var cinematic_only_first_time := false
+@export var cinematic_windup := 0.4               # aviso antes de que salten los dos
+@export var cinematic_jump_time := 0.8            # duracion del salto de ambos
+@export var cinematic_pause_after_land := 0.5
+@export var cinematic_pause_before_scream := 0.3
+## AJUSTE DE CÁMARA: Mueve este valor en Y para subir/bajar el encuadre del jefe. (0 = centro, -80 = más arriba)
+@export var cinematic_camera_offset := Vector2(0, -80)
+## ARRASTRA AQUÍ TU RECURSO PhantomCameraTween (.res o .tres) para las transiciones.
+@export var cinematic_tween: Resource
+## Zoom de la cámara durante la cinemática (Paso 2)
+@export var cinematic_zoom := Vector2(1.0, 1.0)
+
+@export_group("Audio del grito (fase 2)")
+## Arrastra aqui el audio del grito (.wav, .ogg, .mp3). Vacio = sin sonido.
+@export var scream_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_volume_db := 0.0
+@export_range(0.5, 2.0, 0.01) var scream_pitch := 1.0
+@export var scream_bus := "Master"
+## Cuando suena el grito respecto al INICIO de la animacion del grito (WEEP):
+## negativo = suena ANTES (ej. -0.3), 0 = a la vez, positivo = suena DESPUES (ej. 0.4)
+@export var scream_offset := 0.0
+
+@export_group("Efectos del grito (fase 2)")
+## Interruptor general: apaga todos los efectos y capas de abajo y deja solo el grito
+@export var scream_fx_enabled := true
+
+@export_subgroup("Procesado de la voz")
+## Distorsion (0 = nada, 0.3 = sutil, 0.6+ = muy agresivo).
+@export_range(0.0, 1.0, 0.01) var scream_distortion := 0.35
+## Refuerzo de graves en dB (0 = nada).
+@export_range(0.0, 15.0, 0.5) var scream_bass_boost_db := 6.0
+## Reverb: cuanto "eco de sala" tiene (0 = nada).
+@export_range(0.0, 1.0, 0.01) var scream_reverb_wet := 0.25
+@export_range(0.0, 1.0, 0.01) var scream_reverb_room := 0.6
+## Compresor: hace el grito mas parejo y "pesado".
+@export var scream_compress := true
+
+@export_subgroup("Segunda voz (grave)")
+## Repite el grito mas grave encima, suena demoniaco.
+@export var scream_double_voice := true
+@export_range(0.3, 1.5, 0.01) var scream_double_pitch := 0.7
+@export_range(-40.0, 12.0) var scream_double_volume_db := -4.0
+## Desfase extra respecto al grito principal (segundos).
+@export var scream_double_offset := 0.0
+
+@export_subgroup("Capas extra")
+## Golpe seco al inicio (explosion, trueno, impacto).
+@export var scream_impact_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_impact_volume_db := 0.0
+@export var scream_impact_offset := 0.0
+## Boom grave (sub-bass drop).
+@export var scream_sub_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_sub_volume_db := 0.0
+@export var scream_sub_offset := 0.0
+## Retumbo / viento / energia que acompaña todo el grito.
+@export var scream_rumble_sound: AudioStream
+@export_range(-40.0, 12.0) var scream_rumble_volume_db := -6.0
+@export var scream_rumble_offset := 0.0
+
+@export_subgroup("Musica durante el grito")
+## Cuanto baja la musica mientras grita (0 = no la toca).
+@export_range(-40.0, 0.0, 0.5) var scream_duck_music_db := -12.0
+@export var scream_duck_time := 0.15
+
 @export_group("Musica")
 ## Arrastra aqui tu cancion (.mp3, .ogg o .wav). Vacio = sin musica. Para quitarla/cambiarla solo cambia este campo.
 @export var boss_music: AudioStream
@@ -105,6 +254,45 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## Opcional: nombre del bus de la musica normal del nivel para bajarle el volumen durante el jefe (vacio = no tocar nada).
 @export var duck_bus := ""
 @export var duck_amount_db := -40.0
+
+@export_group("Moverse entre plataformas")
+## Cada cierto tiempo el jefe salta a otra plataforma (o al piso) para no quedarse siempre en el mismo lugar.
+@export var reposition_enabled := true
+@export_range(0.0, 1.0) var reposition_chance := 0.3    # probabilidad de moverse antes de cada ataque
+@export var reposition_min_attacks := 2                  # minimo de ataques entre un movimiento y otro
+@export var reposition_windup := 0.6                     # aviso antes de saltar (se marca donde caera)
+@export var reposition_max_up := 450.0                   # hasta que altura puede subir (pixeles)
+@export var reposition_max_down := 700.0                 # hasta que profundidad puede bajar
+@export var reposition_min_distance := 250.0             # distancia minima horizontal respecto a donde esta
+@export var reposition_scan_step := 40.0                 # cada cuantos pixeles busca plataformas
+
+@export_group("Anti-spam (onda de choque)")
+## Si le pegan `spam_hits_needed` golpes seguidos sin que se haya movido, suelta una onda que empuja al jugador y se mueve.
+@export var spam_defense_enabled := true
+@export var spam_hits_needed := 8
+@export var spam_window := 6.0                           # los golpes tienen que ser dentro de estos segundos
+@export var spam_position_tolerance := 200.0             # si se mueve mas que esto, el conteo se reinicia
+@export var shockwave_windup := 0.8                      # aviso antes de la onda (tiembla y brilla)
+@export var shockwave_speed := 1000.0
+@export var shockwave_range := 900.0                     # hasta donde llega a cada lado
+@export var shockwave_height := 70.0                     # altura de la onda (se puede saltar por encima)
+@export var shockwave_damage := 1
+@export var shockwave_push_distance := 420.0             # cuanto empuja al jugador
+@export var shockwave_color := Color(1.0, 0.85, 0.5, 0.85)
+
+@export_group("Pisotón por cercanía")
+## Si el jugador esta muy pegado (o encima) del jefe, hace el pisotón.
+@export var close_stomp_enabled := true
+## Cuanto sobresale la zona a cada lado del cuerpo del jefe (pixeles).
+@export var close_stomp_margin_x := 60.0
+## Cuanto sobresale hacia ARRIBA (para cuando el jugador esta encima).
+@export var close_stomp_margin_up := 160.0
+## Segundos que el jugador tiene que estar dentro de la zona para que se active.
+@export var close_stomp_time_needed := 0.4
+## Segundos minimos entre un pisotón por cercanía y otro.
+@export var close_stomp_cooldown := 3.0
+## Aviso antes del pisotón por cercanía (el normal usa shockwave_windup).
+@export var close_stomp_windup := 0.5
 
 @export_group("Variedad (fase 2)")
 ## Maximo de veces SEGUIDAS que puede repetir el mismo ataque en fase 2 (2 = puede hacerlo dos veces y luego cambia).
@@ -126,10 +314,33 @@ const DAMAGE_METHODS := ["take_hit", "take_damage", "hit", "damage", "hurt"]
 ## F1 = quita 40 de vida al jefe (como un golpe de espada) (para probar la fase 2). Desactivalo al terminar.
 @export var debug_keys := true
 
+@export var cinematic_pivot: Node2D
+
+
+
 var health := 0
 var phase := 1
 var active := false
-var dead := false
+
+# --- Reinicio del jefe cuando mata al jugador ---
+var _dead := false
+var _fight_over := false        # true mientras se aborta el combate por reinicio
+var _resetting := false
+var _loop_running := false
+var _start_position := Vector2.ZERO
+var _last_safe_pos := Vector2.ZERO   # ultimo lugar donde estuvo parado en el piso
+var _start_arena_left := 0.0
+var _start_arena_right := 0.0
+
+var _flash_tween: Tween = null
+
+## "dead" es true si el jefe murio O mientras se aborta el combate por reinicio.
+## Asi TODAS las comprobaciones "if dead: return" cortan los ataques en curso sin tocarlas.
+var dead: bool:
+	get:
+		return _dead or _fight_over
+	set(v):
+		_dead = v
 
 var _last_attack := -1
 var _repeat_count := 0          # cuantas veces seguidas se ha usado el mismo ataque
@@ -141,24 +352,49 @@ var _music_player: AudioStreamPlayer
 var _music_tween: Tween
 var _duck_original_db := 0.0
 var _ducked := false
+var _recent_hits: Array[float] = []
+var _spam_anchor := Vector2.ZERO
+var _attacks_since_move := 0
+var _push_prev := 0.0
 var _player: Node2D
 var _arena_left := 0.0
 var _arena_right := 0.0
 var _marker: ColorRect
-var _dash_marker: ColorRect
+var _dash_line: Line2D
 var _dash_dust: CPUParticles2D
 var _dash_debris: CPUParticles2D
 var _ghost_timer := 0.0
 var _visual_base_pos := Vector2.ZERO
 var _bar_root: Control
-var _bar_fill: ColorRect
-var _bar_trail: ColorRect
+var _bar_fill: Control
+var _bar_trail: Control
 var _bar_label: Label
 var _bar_tween: Tween
+var _bar_inner: Array[Control] = []
+var _alert_root: Control
+var _alert_active := false
+var _cinematic_active := false
+var _cinematic_seen := false
+var _cine_tp: Node2D
+var _cine_falling := false
+var _cine_temp_cam: Camera2D # Cámara exclusiva para la cinemática
+
+# --- Variables para el zoom de la cámara en la cinemática (Pasos 1 y 2) ---
+var _cine_player_zoom := Vector2.ONE
+
+# --- Variables para el pisotón por cercanía ---
+var _close_timer := 0.0
+var _last_close_stomp := -999.0
+
+# --- Variables para el replanificado del dash durante el aviso ---
+var _dash_path: PackedVector2Array
+var _dash_dir := 1.0
+var _dash_modes_used: Array = []
 
 @onready var visual: ColorRect = $Visual
 @onready var damage_area: Area2D = $DamageArea
 @onready var damage_shape: CollisionShape2D = $DamageArea/CollisionShape2D
+
 
 
 func _ready() -> void:
@@ -166,6 +402,12 @@ func _ready() -> void:
 	_visual_base_pos = visual.position
 	_arena_left = global_position.x - arena_half_width
 	_arena_right = global_position.x + arena_half_width
+	# Guardamos el estado original para el reinicio
+	_start_position = global_position
+	_last_safe_pos = global_position
+	_start_arena_left = _arena_left
+	_start_arena_right = _arena_right
+	_hook_death_signals(get_node_or_null("/root/Events"), ["player_died", "player_dead", "player_death"])
 	add_to_group("boss")
 	add_to_group("enemies")
 	# El daño al jugador se calcula por codigo; el Area2D solo se usa para definir el tamaño.
@@ -173,6 +415,28 @@ func _ready() -> void:
 	damage_area.monitorable = false
 	if show_health_bar:
 		_build_health_bar()
+
+
+func _process(delta: float) -> void:
+	if _alert_active:
+		_alert_update()
+	_update_close_timer(delta)
+	_check_player_dead()
+
+var _player_was_dead := false
+
+## Vigila la variable is_dead del jugador y reinicia el combate cuando muere.
+func _check_player_dead() -> void:
+	var dead_now: bool = is_instance_valid(_player) and "is_dead" in _player and _player.is_dead
+	var was_dead := _player_was_dead
+	_player_was_dead = dead_now
+	if not active or _resetting:
+		return
+	if not is_instance_valid(_player) or not _player.is_inside_tree():
+		reset_fight()
+		return
+	if dead_now and not was_dead:
+		reset_fight()
 
 
 func _physics_process(delta: float) -> void:
@@ -183,12 +447,22 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	global_position.x = clampf(global_position.x, _arena_left, _arena_right)
 
+	# Red de seguridad: si por cualquier motivo atraviesa el piso, vuelve al ultimo punto seguro.
+	if is_on_floor():
+		_last_safe_pos = global_position
+	elif global_position.y > _last_safe_pos.y + fall_rescue_distance:
+		global_position = _last_safe_pos
+		velocity = Vector2.ZERO
+
 	if not active:
 		var p := _get_player()
-		if p and p.global_position.x >= _arena_left and p.global_position.x <= _arena_right \
+		if p and not ("is_dead" in p and p.is_dead) \
+				and p.global_position.x >= _arena_left and p.global_position.x <= _arena_right \
 				and absf(p.global_position.y - global_position.y) <= activation_height:
 			active = true
 			_show_health_bar()
+			_boss_cam_on()
+			get_tree().call_group("gameplay_music", "start_battle")  # <- NUEVA
 			_music_start()
 			_attack_loop()
 
@@ -199,20 +473,153 @@ func _unhandled_input(event: InputEvent) -> void:
 			take_damage(40)
 
 
+# ---------------------------------------------------------------- REINICIO (el jefe gano)
+
+## Conecta (sin importar cuantos argumentos tenga la señal) las señales de muerte que existan en `obj`.
+func _hook_death_signals(obj: Object, names: Array) -> void:
+	if obj == null:
+		return
+	for s in obj.get_signal_list():
+		if s.name in names:
+			var c := _on_player_died.unbind(s.args.size())
+			if not obj.is_connected(s.name, c):
+				obj.connect(s.name, c)
+
+
+func _on_player_died() -> void:
+	reset_fight()
+
+
+## Llamala cuando el jugador muera (si no usas ninguna de las señales de arriba):
+## el jefe se cura por completo, vuelve a su lugar original y espera a que el jugador regrese.
+func reset_fight() -> void:
+	if _dead or _resetting or not active:
+		return
+	_resetting = true
+	_fight_over = true      # corta todos los ataques en curso (ver "dead")
+
+	# Espera a que el bucle de ataques termine solo (maximo 3 s por seguridad).
+	var waited := 0.0
+	while _loop_running and waited < 3.0:
+		await _next_frame()
+		waited += get_physics_process_delta_time()
+
+	# Limpieza de efectos y estados
+	_cinematic_end()
+	_alert_active = false
+	_alert_hide()
+	_hide_marker()
+	_hide_dash_path()
+	_dash_vfx_stop(0.0, false)
+	_scripted = false
+	_hit_this_attack = false
+	velocity = Vector2.ZERO
+	visual.position = _visual_base_pos
+	visual.modulate = Color.WHITE
+	visual.self_modulate = Color.WHITE
+
+	# Musica, camara y barra
+	_music_stop()
+	get_tree().call_group("gameplay_music", "end_battle")  # <- NUEVA
+	_boss_cam_off()
+	if _bar_root:
+		_bar_root.visible = false
+
+	# Vida, fase y memoria de ataques
+	health = max_health
+	phase = 1
+	_last_attack = -1
+	_repeat_count = 0
+	_attacks_since_move = 0
+	_recent_hits.clear()
+	health_changed.emit(health, max_health)
+	_update_health_bar(false)
+
+	# Posicion y arena originales
+	global_position = _start_position
+	_last_safe_pos = _start_position
+	_arena_left = _start_arena_left
+	_arena_right = _start_arena_right
+
+	if animation_controller:
+		animation_controller.is_phase_2 = false
+		animation_controller.set_state(animation_controller.VisualState.IDLE)
+
+	active = false          # volvera a pelear cuando el jugador entre otra vez a la arena
+	_fight_over = false
+	_resetting = false
+
+
 # ---------------------------------------------------------------- VIDA
 
-func take_damage(amount = 1, _a = null, _b = null) -> void:
-	if dead:
+func take_damage(amount = 1, a = null, _b = null) -> void:
+	if dead or _cinematic_active:
 		return
+	if not (a is String and a == "parry"):
+		_register_hit()
 	var dmg := 1
 	if amount is int or amount is float:
 		dmg = maxi(int(amount), 1)
 	health = maxi(health - dmg, 0)
 	health_changed.emit(health, max_health)
 	_update_health_bar()
-	_flash_hit()
+	flash_sprite(0.15, Color(1, 0, 0, 1))
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.HURT, 0.3)
+		
 	if health == 0:
 		_die()
+		
+
+func flash_sprite(duration: float, color: Color) -> void:
+	# Intentamos obtener el AnimatedSprite2D (o usamos el ColorRect visual si es el caso)
+	var target_node := get_node_or_null("AnimatedSprite2D") as CanvasItem
+	if target_node == null:
+		target_node = visual as CanvasItem
+		
+	if target_node == null or target_node.material == null:
+		return
+		
+	var mat := target_node.material as ShaderMaterial
+	if mat == null:
+		return
+		
+	# Si es un AnimatedSprite2D, actualizamos el tamaño del frame en el shader
+	if target_node is AnimatedSprite2D:
+		_update_shader_frame_size(mat, target_node)
+	
+	# Matar el tween anterior si existe (para que golpes seguidos no se pisen)
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+	
+	# Setear color y arrancar el flash en 1.0
+	mat.set_shader_parameter("flash_color", color)
+	mat.set_shader_parameter("flash_amount", 1.0)
+	
+	# Bajar de 1.0 a 0.0 durante `duration`
+	_flash_tween = create_tween()
+	_flash_tween.tween_method(
+		func(v: float): mat.set_shader_parameter("flash_amount", v),
+		1.0,   # desde
+		0.0,   # hasta
+		duration
+	)
+
+func _update_shader_frame_size(mat: ShaderMaterial, spr: AnimatedSprite2D) -> void:
+	if spr == null or spr.sprite_frames == null:
+		return
+	var anim := spr.animation
+	if not spr.sprite_frames.has_animation(anim):
+		return
+	var frame_count := spr.sprite_frames.get_frame_count(anim)
+	if frame_count <= 0:
+		return
+	# Tamaño del primer frame de la animación actual
+	var tex: Texture2D = spr.sprite_frames.get_frame_texture(anim, 0)
+	if tex == null:
+		return
+	mat.set_shader_parameter("frame_size", Vector2(tex.get_size()))
 
 
 # Alias: tu espada / proyectil puede llamar a cualquiera de estos nombres.
@@ -235,19 +642,27 @@ func receive_damage(amount = 1, a = null, b = null) -> void:
 	take_damage(amount, a, b)
 
 
-func _flash_hit() -> void:
-	var tw := create_tween()
-	visual.self_modulate = Color(3, 3, 3)
-	tw.tween_property(visual, "self_modulate", Color.WHITE, 0.12)
+#func _flash_hit() -> void:
+	#var tw := create_tween()
+	#visual.self_modulate = Color(3, 3, 3)
+	#tw.tween_property(visual, "self_modulate", Color.WHITE, 0.12)
 
 
 func _die() -> void:
 	dead = true
+	_alert_active = false
+	_alert_hide()
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.DEATH)
+		
 	velocity = Vector2.ZERO
 	_hide_marker()
+	_boss_cam_off()
 	_hide_dash_path()
 	_dash_vfx_stop(0.0, false)
 	_music_stop()
+	get_tree().call_group("gameplay_music", "end_battle")  # <- NUEVA
 	visual.position = _visual_base_pos
 	died.emit()
 	_hide_health_bar()
@@ -274,6 +689,9 @@ func _music_start() -> void:
 		elif stream is AudioStreamWAV:
 			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	_music_player = AudioStreamPlayer.new()
+	_music_player.process_mode = Node.PROCESS_MODE_ALWAYS   # no se pausa con el hit stop
+	if not get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.connect(_music_sync_pitch)
 	_music_player.stream = stream
 	_music_player.bus = music_bus
 	_music_player.volume_db = -60.0
@@ -284,15 +702,24 @@ func _music_start() -> void:
 	_duck_set(true)
 
 
+## Compensa Engine.time_scale para que la musica siempre suene a velocidad normal durante el hit stop.
+func _music_sync_pitch() -> void:
+	if _music_player and is_instance_valid(_music_player):
+		_music_player.pitch_scale = clampf(1.0 / maxf(Engine.time_scale, 0.05), 0.01, 4.0)
+
+
 ## Termina la musica (con fade out) cuando el jefe muere.
 func _music_stop() -> void:
 	_duck_set(false)
+	if get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.disconnect(_music_sync_pitch)
 	if _music_player == null or not is_instance_valid(_music_player):
 		return
 	if _music_tween and _music_tween.is_valid():
 		_music_tween.kill()
 	var player := _music_player
 	_music_player = null
+	player.pitch_scale = 1.0
 	var tw := player.create_tween()
 	tw.tween_property(player, "volume_db", -60.0, music_fade_out)
 	tw.finished.connect(player.queue_free)
@@ -316,7 +743,11 @@ func _duck_set(on: bool) -> void:
 
 ## Si el jefe desaparece sin morir (reinicio de nivel, etc.) no dejamos la musica ni el bus alterados.
 func _exit_tree() -> void:
+	_fight_over = true      # corta cualquier ataque en curso (dead pasa a ser true)
+	_scream_fx_bus_remove() # <- NUEVA
 	_duck_set(false)
+	if is_inside_tree() and get_tree().process_frame.is_connected(_music_sync_pitch):
+		get_tree().process_frame.disconnect(_music_sync_pitch)
 	if _music_player and is_instance_valid(_music_player):
 		_music_player.queue_free()
 
@@ -328,72 +759,135 @@ func _build_health_bar() -> void:
 	layer.layer = 20
 	add_child(layer)
 
-	# Contenedor arriba al centro (la mitad del ancho de la pantalla).
 	_bar_root = Control.new()
 	_bar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_bar_root.anchor_left = 0.25
-	_bar_root.anchor_right = 0.75
-	_bar_root.anchor_top = 0.0
-	_bar_root.anchor_bottom = 0.0
-	_bar_root.offset_left = 0.0
-	_bar_root.offset_right = 0.0
-	_bar_root.offset_top = 56.0
-	_bar_root.offset_bottom = 56.0 + bar_height
+	_apply_bar_layout()
 	_bar_root.visible = false
 	layer.add_child(_bar_root)
+	_bar_root.resized.connect(_sync_bar_inner)
 
-	var back := ColorRect.new()
-	back.color = Color(0.05, 0.05, 0.05, 0.9)
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_bar_root.add_child(back)
-	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
+	_make_bar_layer(bar_background_texture, bar_background_color, false)
 	# Barra "fantasma": se queda un momento para que veas cuanta vida acabas de quitar.
-	_bar_trail = _make_bar_rect(Color(1.0, 0.85, 0.3))
-	_bar_fill = _make_bar_rect(Color(0.85, 0.1, 0.1))
+	_bar_trail = _make_bar_layer(bar_trail_texture, bar_trail_color, true)
+	_bar_fill = _make_bar_layer(bar_fill_texture, bar_fill_color, true)
 
 	# Marca del 40% (donde empieza la fase 2).
-	var tick := ColorRect.new()
-	tick.color = Color(1, 1, 1, 0.85)
-	tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tick.anchor_left = phase2_threshold
-	tick.anchor_right = phase2_threshold
-	tick.anchor_top = 0.0
-	tick.anchor_bottom = 1.0
-	tick.offset_left = -1.0
-	tick.offset_right = 1.0
-	_bar_root.add_child(tick)
+	if show_phase_tick:
+		var tick := ColorRect.new()
+		tick.color = Color(1, 1, 1, 0.85)
+		tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tick.anchor_left = phase2_threshold
+		tick.anchor_right = phase2_threshold
+		tick.anchor_top = 0.0
+		tick.anchor_bottom = 1.0
+		tick.offset_left = -1.0
+		tick.offset_right = 1.0
+		_bar_root.add_child(tick)
+
+	if bar_frame_texture:
+		var fr := TextureRect.new()
+		fr.texture = bar_frame_texture
+		fr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fr.stretch_mode = TextureRect.STRETCH_SCALE
+		fr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bar_root.add_child(fr)
+		fr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		fr.offset_left = -bar_frame_padding.x
+		fr.offset_right = bar_frame_padding.x
+		fr.offset_top = -bar_frame_padding.y
+		fr.offset_bottom = bar_frame_padding.y
 
 	var title := Label.new()
 	title.text = boss_name
-	title.position = Vector2(0, -30)
-	title.add_theme_font_size_override("font_size", 20)
+	title.position = Vector2(0, -bar_name_font_size - 10)
+	title.add_theme_font_size_override("font_size", bar_name_font_size)
 	_bar_root.add_child(title)
 
 	_bar_label = Label.new()
 	_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_bar_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar_label.visible = show_bar_text
 	_bar_root.add_child(_bar_label)
 	_bar_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	_update_health_bar(false)
+	_sync_bar_inner.call_deferred()
 
 
-func _make_bar_rect(color: Color) -> ColorRect:
-	var r := ColorRect.new()
-	r.color = color
-	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.anchor_left = 0.0
-	r.anchor_right = 1.0
-	r.anchor_top = 0.0
-	r.anchor_bottom = 1.0
-	r.offset_left = 0.0
-	r.offset_right = 0.0
-	r.offset_top = 0.0
-	r.offset_bottom = 0.0
-	_bar_root.add_child(r)
-	return r
+## Coloca la barra segun bar_position, bar_width_ratio, bar_margin y bar_extra_offset.
+func _apply_bar_layout() -> void:
+	var w := bar_width_ratio
+	var is_top := bar_position in [BarPosition.TOP_CENTER, BarPosition.TOP_LEFT, BarPosition.TOP_RIGHT]
+	match bar_position:
+		BarPosition.TOP_LEFT, BarPosition.BOTTOM_LEFT:
+			_bar_root.anchor_left = 0.0
+			_bar_root.anchor_right = w
+			_bar_root.offset_left = bar_margin.x
+			_bar_root.offset_right = bar_margin.x
+		BarPosition.TOP_RIGHT, BarPosition.BOTTOM_RIGHT:
+			_bar_root.anchor_left = 1.0 - w
+			_bar_root.anchor_right = 1.0
+			_bar_root.offset_left = -bar_margin.x
+			_bar_root.offset_right = -bar_margin.x
+		_:
+			_bar_root.anchor_left = 0.5 - w / 2.0
+			_bar_root.anchor_right = 0.5 + w / 2.0
+			_bar_root.offset_left = 0.0
+			_bar_root.offset_right = 0.0
+	if is_top:
+		var top := bar_margin.y + bar_name_font_size + 10.0   # deja espacio para el nombre
+		_bar_root.anchor_top = 0.0
+		_bar_root.anchor_bottom = 0.0
+		_bar_root.offset_top = top
+		_bar_root.offset_bottom = top + bar_height
+	else:
+		_bar_root.anchor_top = 1.0
+		_bar_root.anchor_bottom = 1.0
+		_bar_root.offset_bottom = -bar_margin.y
+		_bar_root.offset_top = -bar_margin.y - bar_height
+	_bar_root.offset_left += bar_extra_offset.x
+	_bar_root.offset_right += bar_extra_offset.x
+	_bar_root.offset_top += bar_extra_offset.y
+	_bar_root.offset_bottom += bar_extra_offset.y
+
+
+## Crea una capa de la barra (color o textura). Las "clipped" se recortan segun la vida.
+func _make_bar_layer(tex: Texture2D, color: Color, clipped: bool) -> Control:
+	var content: Control
+	if tex:
+		var tr := TextureRect.new()
+		tr.texture = tex
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		content = tr
+	else:
+		var cr := ColorRect.new()
+		cr.color = color
+		content = cr
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not clipped:
+		_bar_root.add_child(content)
+		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		return content
+	var box := Control.new()
+	box.clip_contents = true
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.anchor_left = 0.0
+	box.anchor_top = 0.0
+	box.anchor_right = 1.0
+	box.anchor_bottom = 1.0
+	_bar_root.add_child(box)
+	box.add_child(content)
+	_bar_inner.append(content)
+	return box
+
+
+## El contenido de relleno/estela siempre mide lo de la barra completa; el contenedor solo lo recorta.
+func _sync_bar_inner() -> void:
+	for c in _bar_inner:
+		c.position = Vector2.ZERO
+		c.size = _bar_root.size
 
 
 func _update_health_bar(animate := true) -> void:
@@ -426,15 +920,117 @@ func _hide_health_bar() -> void:
 	create_tween().tween_property(_bar_root, "modulate:a", 0.0, 1.0)
 
 
+# ---------------------------------------------------------------- ALERTA "?" FUERA DE PANTALLA
+
+func _alert_build() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 21
+	add_child(layer)
+	_alert_root = Control.new()
+	_alert_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_alert_root.size = alert_size
+	_alert_root.pivot_offset = alert_size / 2.0
+	_alert_root.visible = false
+	layer.add_child(_alert_root)
+	if alert_texture:
+		var tr := TextureRect.new()
+		tr.texture = alert_texture
+		tr.modulate = alert_tint
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_alert_root.add_child(tr)
+		tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	else:
+		var l := Label.new()
+		l.text = alert_text
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.add_theme_font_size_override("font_size", alert_font_size)
+		l.add_theme_color_override("font_color", alert_color)
+		l.add_theme_color_override("font_outline_color", Color.BLACK)
+		l.add_theme_constant_override("outline_size", 12)
+		_alert_root.add_child(l)
+		l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+## Si el origen del disparo esta fuera de la camara, pone la alerta pegada al borde, en la direccion de donde viene.
+func _alert_update() -> void:
+	if not offscreen_alert_enabled or dead:
+		_alert_hide()
+		return
+	if _alert_root == null:
+		_alert_build()
+	var vp := get_viewport()
+	var rect := vp.get_visible_rect()
+	var screen_pos: Vector2 = vp.get_canvas_transform() * get_shoot_origin()
+	if rect.has_point(screen_pos):
+		_alert_root.visible = false
+		return
+	var c := rect.size / 2.0
+	var d := screen_pos - c
+	var half := c - Vector2(alert_edge_margin, alert_edge_margin) - alert_size / 2.0
+	var s := minf(half.x / maxf(absf(d.x), 0.001), half.y / maxf(absf(d.y), 0.001))
+	_alert_root.position = c + d * s - alert_size / 2.0
+	if alert_pulse:
+		_alert_root.scale = Vector2.ONE * (1.0 + 0.15 * sin(Time.get_ticks_msec() / 1000.0 * 12.0))
+	_alert_root.visible = true
+
+
+func _alert_hide() -> void:
+	if _alert_root:
+		_alert_root.visible = false
+
+
 # ---------------------------------------------------------------- CEREBRO
 
+## Envoltura del bucle: marca cuando esta corriendo para que el reinicio sepa cuando termino.
 func _attack_loop() -> void:
+	_loop_running = true
+	await _attack_loop_body()
+	_loop_running = false
+
+
+func _attack_loop_body() -> void:
 	await _wait(0.5)
 	while not dead:
 		if phase == 1 and health <= max_health * phase2_threshold:
 			await _enter_phase2()
 			if dead:
 				return
+
+		# Defensa anti-spam: si lo estan golpeando sin parar, suelta una onda y se reubica.
+		if spam_defense_enabled and _recent_hits.size() >= spam_hits_needed:
+			await _attack_shockwave()
+			if dead:
+				return
+			await _attack_reposition()
+			if dead:
+				return
+			_after_special()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
+
+		# Pisotón por cercanía: el jugador esta pegado o encima del jefe.
+		if _close_stomp_ready():
+			_last_close_stomp = Time.get_ticks_msec() / 1000.0
+			_close_timer = 0.0
+			await _attack_shockwave(close_stomp_windup, true)
+			if dead:
+				return
+			_recent_hits.clear()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
+
+		# De vez en cuando se mueve a otra plataforma en lugar de atacar.
+		if reposition_enabled and _attacks_since_move >= reposition_min_attacks and randf() < reposition_chance:
+			await _attack_reposition()
+			if dead:
+				return
+			_after_special()
+			await _chase(rest_time_phase2 if phase == 2 else rest_time)
+			continue
 
 		var attack := _choose_attack()
 		# Un dash cuenta como tantos usos como cruces haga (ida y vuelta = 2), para que el limite de repeticiones sea real.
@@ -446,11 +1042,15 @@ func _attack_loop() -> void:
 		_last_attack = attack
 		match attack:
 			Attack.SHOOT:
+				_alert_active = true
 				await _attack_shoot()
+				_alert_active = false
+				_alert_hide()
 			Attack.JUMP:
 				await _attack_jump()
 			Attack.DASH:
 				await _attack_dash()
+		_attacks_since_move += 1
 		if dead:
 			return
 		# Nunca se queda quieto: persigue al jugador hasta el siguiente ataque.
@@ -458,12 +1058,160 @@ func _attack_loop() -> void:
 
 
 func _enter_phase2() -> void:
+	# Cinematica previa (si esta configurada).
+	var cine := _cinematic_available()
+	if cine:
+		await _phase2_cinematic()
+		if dead:
+			_cinematic_end()
+			return
+
 	phase = 2
 	_last_attack = -1
 	_repeat_count = 0
 	phase_changed.emit(phase)
-	visual.color = visual.color.darkened(0.35)
+	
+	if animation_controller:
+		animation_controller.is_phase_2 = true
+
+	# El grito (weep) sigue con el jugador congelado.
+	await _scream_sequence()
+	
+	# El jugador recupera el control justo antes de que el jefe empiece a atacar.
+	_cinematic_end()
 	await _telegraph(1.0, Color(1, 0.2, 0.2))
+
+
+## Grito + animacion WEEP. Todos los offsets son respecto al INICIO de la animacion:
+## negativo = antes, 0 = a la vez, positivo = despues.
+func _scream_sequence() -> void:
+	var fx_bus := _scream_fx_bus_create()
+	var fx_on := scream_fx_enabled
+
+	# Cada item: [stream, volumen_db, pitch, offset, bus]
+	var items: Array = []
+	if scream_sound:
+		items.append([scream_sound, scream_volume_db, scream_pitch, scream_offset, fx_bus])
+		if fx_on and scream_double_voice:
+			items.append([scream_sound, scream_double_volume_db, scream_pitch * scream_double_pitch,
+				scream_offset + scream_double_offset, fx_bus])
+
+	if fx_on:
+		if scream_impact_sound:
+			items.append([scream_impact_sound, scream_impact_volume_db, 1.0, scream_impact_offset, scream_bus])
+		if scream_sub_sound:
+			items.append([scream_sub_sound, scream_sub_volume_db, 1.0, scream_sub_offset, scream_bus])
+		if scream_rumble_sound:
+			items.append([scream_rumble_sound, scream_rumble_volume_db, 1.0, scream_rumble_offset, scream_bus])
+
+	# Si algun sonido va ANTES de la animacion, se espera ese tiempo antes de arrancarla.
+	var lead := 0.0
+	for it in items:
+		lead = maxf(lead, -float(it[3]))
+
+	var end_time := 0.0
+	for it in items:
+		var delay: float = float(it[3]) + lead
+		end_time = maxf(end_time, delay + it[0].get_length() / maxf(float(it[2]), 0.01))
+		_play_sfx(it[0], it[1], it[2], it[4], delay)   # sin await: corren en paralelo
+
+	_scream_duck(true)
+	_scream_fx_cleanup(end_time + 1.5)                  # borra el bus temporal cuando todo termine
+
+	if lead > 0.0:
+		await _wait(lead)
+		if dead:
+			return
+
+	if animation_controller:
+		await animation_controller.play_and_wait(animation_controller.VisualState.WEEP)
+
+	_scream_duck(false)
+
+
+func _play_sfx(stream: AudioStream, vol_db: float, pitch: float, bus: String, delay := 0.0) -> void:
+	if stream == null:
+		return
+	if delay > 0.0:
+		await _wait(delay)
+	if dead:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = vol_db
+	player.pitch_scale = pitch
+	player.bus = bus
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_parent().add_child(player)      # fuera del jefe para que no se corte si se libera
+	player.finished.connect(player.queue_free)
+	player.play()
+
+
+## Crea un bus temporal con efectos (graves, distorsion, compresor, reverb, limitador).
+func _scream_fx_bus_create() -> String:
+	if not scream_fx_enabled:
+		return scream_bus
+	_scream_fx_bus_remove()
+	AudioServer.add_bus()
+	var idx := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(idx, SCREAM_FX_BUS)
+	AudioServer.set_bus_send(idx, scream_bus)
+
+	if scream_bass_boost_db > 0.0:
+		var eq := AudioEffectEQ6.new()
+		eq.set_band_gain_db(0, scream_bass_boost_db)     # 32 Hz
+		eq.set_band_gain_db(1, scream_bass_boost_db)     # 100 Hz
+		AudioServer.add_bus_effect(idx, eq)
+
+	if scream_distortion > 0.0:
+		var dist := AudioEffectDistortion.new()
+		dist.mode = AudioEffectDistortion.MODE_OVERDRIVE
+		dist.drive = scream_distortion
+		dist.post_gain = -3.0
+		AudioServer.add_bus_effect(idx, dist)
+
+	if scream_compress:
+		var comp := AudioEffectCompressor.new()
+		comp.threshold = -18.0
+		comp.ratio = 4.0
+		comp.gain = 4.0
+		AudioServer.add_bus_effect(idx, comp)
+
+	if scream_reverb_wet > 0.0:
+		var rev := AudioEffectReverb.new()
+		rev.room_size = scream_reverb_room
+		rev.wet = scream_reverb_wet
+		rev.dry = 1.0
+		AudioServer.add_bus_effect(idx, rev)
+
+	var lim := AudioEffectLimiter.new()      # evita que se sature/clipee con tanto efecto
+	lim.ceiling_db = -1.0
+	AudioServer.add_bus_effect(idx, lim)
+	return SCREAM_FX_BUS
+
+
+func _scream_fx_bus_remove() -> void:
+	var idx := AudioServer.get_bus_index(SCREAM_FX_BUS)
+	if idx >= 0:
+		AudioServer.remove_bus(idx)
+
+
+func _scream_fx_cleanup(after: float) -> void:
+	await get_tree().create_timer(after, true, false, true).timeout
+	_scream_fx_bus_remove()
+
+
+## Baja la musica mientras dura el grito y la regresa despues.
+func _scream_duck(on: bool) -> void:
+	if not scream_fx_enabled or scream_duck_music_db == 0.0:
+		return
+	if _music_player == null or not is_instance_valid(_music_player):
+		return
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
+	var target := music_volume_db + (scream_duck_music_db if on else 0.0)
+	_music_tween = _music_player.create_tween()
+	_music_tween.tween_property(_music_player, "volume_db", target, scream_duck_time)
 
 
 func _choose_attack() -> int:
@@ -487,23 +1235,51 @@ func _attack_shoot() -> void:
 	if _get_player() == null:
 		await _wait(0.5)
 		return
+		
+	# Fase de carga (telegraph)
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.SHOOT_CHARGE)
+		
 	await _telegraph(shoot_charge_phase2 if phase == 2 else shoot_charge, Color(1, 0.9, 0.3))
 	if dead:
 		return
 
 	if phase == 1:
-		# Fase 1: UN solo proyectil hacia donde esta el jugador (de frente o en diagonal).
-		# Despues el arma se esta cargando, asi que el siguiente ataque sera el salto.
+		# Fase 1: UN solo proyectil
+		if animation_controller:
+			var p := _get_player()
+			if p:
+				$AnimatedSprite2D.flip_h = p.global_position.x < global_position.x
+				
+			# Espera a que termine la animación de disparo antes de continuar
+			await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
+			if dead:
+				return
+				
 		_fire_projectile()
-		await _wait(0.3)
+		# Ya no hace falta el await _wait(0.3) porque play_and_wait ya esperó
+		
 	else:
-		# Fase 2: DISPARO DOBLE, dos proyectiles con 1 segundo de retraso.
-		_fire_projectile()
-		await _wait(double_shot_delay)
-		if dead:
-			return
-		_fire_projectile()
-		await _wait(0.3)
+		# Fase 2: DISPARO DOBLE
+		for i in range(2):
+			if animation_controller:
+				var p := _get_player()
+				if p:
+					$AnimatedSprite2D.flip_h = p.global_position.x < global_position.x
+				
+				# Espera a que termine cada animación de disparo
+				await animation_controller.play_and_wait(animation_controller.VisualState.SHOOT_FIRE)
+				if dead:
+					return
+				
+			_fire_projectile()
+			
+			# Retraso entre el primer y segundo disparo
+			if i == 0:
+				await _wait(double_shot_delay)
+				
+			if dead:
+				return
 
 
 ## Punto de donde sale el proyectil (y a donde regresa al hacer parry).
@@ -527,6 +1303,22 @@ func _fire_projectile() -> void:
 	proj.source = self
 	proj.reflect_damage = parry_damage
 	proj.reflect_speed_mult = parry_speed_multiplier
+	
+	# --- CAMBIO 2: Pasar las propiedades visuales al proyectil ---
+	proj.texture = projectile_texture
+	proj.visual_scale = projectile_scale
+	proj.tint = projectile_tint
+	proj.reflected_tint = projectile_reflected_tint
+	proj.rotate_to_direction = projectile_rotate_to_direction
+	proj.scale_hitbox = projectile_scale_hitbox
+	
+	# --- NUEVO: Pasar las propiedades de animación ---
+	proj.visual_scene = projectile_scene
+	proj.animation_name = projectile_animation
+	proj.reflected_animation_name = projectile_reflected_animation
+	proj.animation_speed = projectile_animation_speed
+	# -------------------------------------------------------------
+
 	get_parent().add_child(proj)
 	proj.global_position = origin
 
@@ -546,6 +1338,10 @@ func _attack_jump() -> void:
 			return
 		var windup := second_jump_windup if i > 0 else (jump_windup_phase2 if phase == 2 else jump_windup)
 		velocity.x = 0.0
+		
+		if animation_controller:
+			animation_controller.force_state(animation_controller.VisualState.JUMP_WINDUP)
+			
 		_telegraph_tween(windup, Color(1, 0.6, 0.2))
 
 		# La marca roja SIGUE al jugador durante el aviso y se fija en el momento de saltar.
@@ -554,7 +1350,7 @@ func _attack_jump() -> void:
 		while elapsed < windup and not dead:
 			target = _landing_point()
 			_show_marker(target)
-			await get_tree().physics_frame
+			await _next_frame()
 			elapsed += get_physics_process_delta_time()
 		if dead:
 			return
@@ -572,17 +1368,46 @@ func _attack_jump() -> void:
 
 
 ## Punto del suelo/plataforma justo debajo del jugador (a donde saltara el jefe).
+## Lanza varios rayos hacia abajo desde distintas alturas, ignorando al jugador y al jefe, y descarta
+## los que empiezan DENTRO de un collider (esos "no pegan" y hacian que el jefe cayera en una altura equivocada).
 func _landing_point() -> Vector2:
 	var p := _get_player()
 	if p == null:
 		return global_position
-	var from := p.global_position + Vector2(0, -10)
-	var query := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 1500), collision_mask)
-	query.exclude = [get_rid()]
-	var result := get_world_2d().direct_space_state.intersect_ray(query)
-	var pt := Vector2(from.x, global_position.y)
-	if result:
-		pt = result.position
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	if p is CollisionObject2D:
+		ex.append(p.get_rid())
+
+	var x := p.global_position.x
+	var feet_y := _player_rect(p).end.y
+	var player_grounded: bool = p is CharacterBody2D and (p as CharacterBody2D).is_on_floor()
+
+	var pt := Vector2.INF
+	for off in [-8.0, -40.0, -90.0, 10.0]:
+		var from := Vector2(x, feet_y + off)
+		var q := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 1500), collision_mask)
+		q.exclude = ex
+		q.hit_from_inside = true
+		var r := space.intersect_ray(q)
+		if r.is_empty():
+			continue
+		# normal == 0 significa que el rayo arranco dentro de un collider: no sirve.
+		if r.normal == Vector2.ZERO:
+			continue
+		# Solo superficies donde se puede parar (no paredes ni techos).
+		if r.normal.y > -0.3:
+			continue
+		# Si el jugador esta en el piso, el aterrizaje tiene que estar cerca de sus pies.
+		if player_grounded and absf(r.position.y - feet_y) > 80.0:
+			continue
+		pt = r.position
+		break
+
+	if pt == Vector2.INF:
+		# Ningun rayo sirvio: usa la altura del ultimo lugar seguro (NUNCA la altura actual en el aire).
+		pt = Vector2(x, _last_safe_pos.y)
+
 	if not jump_can_leave_arena:
 		var cx := clampf(pt.x, _arena_left, _arena_right)
 		if debug_keys and not is_equal_approx(cx, pt.x) and not _warned_clamp:
@@ -592,6 +1417,23 @@ func _landing_point() -> Vector2:
 	return pt
 
 
+## Despues de aterrizar: si quedo incrustado en el piso lo sube hasta quedar libre,
+## y luego lo pega al piso. Evita que `move_and_slide` lo deje caer a traves de la plataforma.
+func _settle_on_ground() -> void:
+	var original := global_position
+	var lifted := 0.0
+	while lifted < landing_unstuck_max and test_move(global_transform, Vector2.ZERO, null, 0.08, true):
+		global_position.y -= 2.0
+		lifted += 2.0
+	if lifted >= landing_unstuck_max:
+		global_position = original      # subir no lo libera (ej. pegado a una pared): lo dejamos como estaba
+	var col := move_and_collide(Vector2(0, landing_snap_distance), true)
+	if col:
+		global_position += col.get_travel()
+		_last_safe_pos = global_position
+	velocity = Vector2.ZERO
+
+
 ## Salto parabolico controlado por codigo: llega EXACTAMENTE a `target` en t segundos,
 ## sube o baja la altura que haga falta y ATRAVIESA plataformas y paredes durante el vuelo.
 func _do_jump(target: Vector2, t: float) -> void:
@@ -599,13 +1441,23 @@ func _do_jump(target: Vector2, t: float) -> void:
 	var vx := (target.x - start.x) / t
 	var vy := ((target.y - start.y) - 0.5 * gravity * t * t) / t
 
+	# --- NUEVO: Hacer que el jefe mire hacia donde va a saltar ---
+	var animated_sprite := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if animated_sprite and absf(target.x - start.x) > 1.0:
+		animated_sprite.flip_h = target.x < start.x
+	# -------------------------------------------------------------
+
 	_scripted = true
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_AIR)
+		
 	velocity = Vector2.ZERO
 	var elapsed := 0.0
 	_jump_takeoff_vfx()
 	_ghost_timer = 0.0
 	while elapsed < t and not dead:
-		await get_tree().physics_frame
+		await _next_frame()
 		elapsed += get_physics_process_delta_time()
 		_jump_vfx_tick(get_physics_process_delta_time())
 		var tau := minf(elapsed, t)
@@ -620,6 +1472,11 @@ func _do_jump(target: Vector2, t: float) -> void:
 		_arena_right = maxf(_arena_right, global_position.x)
 	_scripted = false
 	velocity = Vector2.ZERO
+	_settle_on_ground()
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_LAND)
+		
 	_hide_marker()
 	_jump_impact_vfx()
 
@@ -637,13 +1494,48 @@ func _attack_dash() -> void:
 		var dir := signf(p.global_position.x - global_position.x)
 		if dir == 0.0:
 			dir = 1.0
-		var target_x := _arena_right if dir > 0.0 else _arena_left
-		target_x = _dash_limit_x(dir, target_x)   # se acorta si hay un vacio en el camino
 
+		# Calcula el recorrido completo ANTES de avisar. Si es muy corto, prueba el otro lado.
+		var path := _compute_dash_path(dir)
+		if _path_len(path) < dash_min_distance:
+			dir = -dir
+			path = _compute_dash_path(dir)
+		if _path_len(path) < dash_min_distance:
+			# No puede dashear hacia ningun lado: hace un salto en su lugar.
+			if i == 0:
+				_last_attack = Attack.JUMP
+				_repeat_count = 1
+				await _attack_jump()
+			return
+
+		$AnimatedSprite2D.flip_h = dir < 0.0
 		velocity.x = 0.0
+
 		if dash_show_warning:
-			_show_dash_path(target_x)
-			await _dash_warning(dash_windup if i == 0 else 0.4)
+			if animation_controller:
+				animation_controller.force_state(animation_controller.VisualState.DASH_WINDUP)
+			_show_dash_path(path)
+			var total := dash_windup if i == 0 else 0.4
+			var elapsed := 0.0
+			var bright := false
+			while elapsed < total and not dead:
+				# Mientras no se haya fijado, el recorrido sigue al jugador.
+				if dash_track_player_during_warning and elapsed < total - dash_lock_time:
+					if _dash_plan_now(dir):
+						dir = _dash_dir
+						path = _dash_path
+						$AnimatedSprite2D.flip_h = dir < 0.0
+						_show_dash_path(path)
+				# Mismo temblor y parpadeo que _dash_warning().
+				bright = not bright
+				visual.self_modulate = Color(2.5, 2.5, 2.5) if bright else Color(0.4, 0.4, 0.4)
+				visual.position = _visual_base_pos + Vector2(
+					randf_range(-dash_shake_pixels, dash_shake_pixels),
+					randf_range(-dash_shake_pixels * 0.4, dash_shake_pixels * 0.4))
+				await _wait(0.06)
+				elapsed += 0.06
+			visual.position = _visual_base_pos
+			visual.self_modulate = Color.WHITE
 			_hide_dash_path()
 		else:
 			await _wait(dash_windup if i == 0 else 0.15)
@@ -652,39 +1544,163 @@ func _attack_dash() -> void:
 
 		_hit_this_attack = false
 		_dash_vfx_start(dir)
-		_scripted = true                      # se mueve por codigo: no choca con plataformas ni paredes
+		if animation_controller:
+			animation_controller.force_state(animation_controller.VisualState.DASH_MOVE)
+
+		_scripted = true
 		velocity = Vector2.ZERO
-		var elapsed := 0.0
-		while not dead and (global_position.x - target_x) * dir < 0.0 and elapsed < 3.0:
-			var delta := get_physics_process_delta_time()
-			# Nunca pasa de target_x (que ya esta recortado antes del vacio).
-			var step := minf(dash_speed * delta, absf(target_x - global_position.x))
-			global_position.x += dir * step
+		var dt := get_physics_process_delta_time()
+		for pt in path:        # un punto del recorrido por frame de fisica
+			if dead:
+				break
+			global_position = pt
 			_try_damage_player()
-			_dash_vfx_tick(delta)
-			await get_tree().physics_frame
-			elapsed += delta
+			_dash_vfx_tick(dt)
+			await _next_frame()
 		_scripted = false
 		velocity = Vector2.ZERO
 		_dash_vfx_stop(dir)
+
+		# Para que la arena no lo regrese de golpe al borde cuando el dash termina fuera de ella
+		if not dash_limit_to_arena:
+			_arena_left = minf(_arena_left, global_position.x)
+			_arena_right = maxf(_arena_right, global_position.x)
+
 		if dead:
 			return
 		await _wait(0.4)
 
 
-## Hasta donde puede llegar el dash: se detiene `dash_edge_margin` antes de un vacio.
-func _dash_limit_x(dir: float, target_x: float) -> float:
-	if not dash_stop_at_edges:
-		return target_x
-	var y := global_position.y
-	var x := global_position.x
-	var last := x
-	while (x - target_x) * dir < 0.0:
-		x += dir * 16.0
-		if not _ground_at(x + dir * dash_edge_margin, y):
-			return last
-		last = x
-	return target_x
+func _path_len(path: PackedVector2Array) -> float:
+	if path.is_empty():
+		return 0.0
+	return path[path.size() - 1].distance_to(global_position)
+
+
+## Recalcula el recorrido del dash hacia el jugador actual. Devuelve true si hay uno valido.
+func _dash_plan_now(current_dir: float) -> bool:
+	var p := _get_player()
+	if p == null:
+		return false
+	var dir := signf(p.global_position.x - global_position.x)
+	if dir == 0.0:
+		dir = current_dir
+	var path := _compute_dash_path(dir)
+	if _path_len(path) < dash_min_distance:
+		dir = -dir
+		path = _compute_dash_path(dir)
+	if _path_len(path) < dash_min_distance:
+		return false
+	_dash_dir = dir
+	_dash_path = path
+	return true
+
+
+## Simula el dash: corre por el piso, se sale del borde, cae y sigue donde aterrice.
+## Devuelve un punto por frame de fisica (el dash simplemente recorre estos puntos).
+func _compute_dash_path(dir: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var dt := get_physics_process_delta_time()
+	var pos := global_position
+	var start_y := pos.y
+	var vy := 0.0
+	var grounded := true
+	var last_ground_count := 0
+	var limit_x := pos.x + dir * dash_max_distance
+	if dash_limit_to_arena:
+		limit_x = _arena_right if dir > 0.0 else _arena_left
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	var pl := _get_player()
+	if pl is CollisionObject2D:
+		ex.append(pl.get_rid())
+
+	for _i in int(4.0 / dt):
+		var remaining := (limit_x - pos.x) * dir
+		if grounded and remaining <= 0.0:
+			break
+		var step_x := clampf(dash_speed * dt, 0.0, maxf(remaining, 0.0))
+		var nx := pos.x + dir * step_x
+		# Pared real adelante: en el suelo se detiene; en el aire deja de avanzar y solo cae.
+		if _wall_ahead(pos, dir, step_x, space, ex):
+			if grounded:
+				break
+			nx = pos.x
+		if grounded:
+			var look := nx if dash_fall_off_edges else nx + dir * dash_edge_margin
+			if _ground_at(look, pos.y):
+				pos.x = nx
+			elif dash_fall_off_edges:
+				pos.x = nx
+				grounded = false
+				vy = 0.0
+			else:
+				break
+		else:
+			vy += gravity * dt
+			var ny := pos.y + vy * dt
+			var q := PhysicsRayQueryParameters2D.create(
+				Vector2(nx, pos.y - 4.0), Vector2(nx, ny + 2.0), collision_mask)
+			q.exclude = ex
+			var hit := space.intersect_ray(q)
+			if not hit.is_empty() and hit.normal.y < -0.7:
+				pos = hit.position + Vector2(0, -1)
+				grounded = true
+				vy = 0.0
+			else:
+				pos = Vector2(nx, ny)
+				if pos.y - start_y > dash_max_fall:
+					break
+		pts.append(pos)
+		if grounded:
+			last_ground_count = pts.size()
+
+	if pts.size() > last_ground_count:
+		pts.resize(last_ground_count)
+	return pts
+
+
+## true si hay una PARED (superficie vertical) justo delante del cuerpo del jefe.
+func _wall_ahead(pos: Vector2, dir: float, step_x: float, space: PhysicsDirectSpaceState2D, ex: Array[RID]) -> bool:
+	var shape := damage_shape.shape as RectangleShape2D
+	var half := shape.size.x * damage_shape.global_scale.abs().x / 2.0
+	var h := visual.size.y
+	for fy in [20.0, h * 0.5, h - 10.0]:       # pies, medio y cabeza
+		var from := Vector2(pos.x, pos.y - fy)
+		var q := PhysicsRayQueryParameters2D.create(from, from + Vector2(dir * (half + step_x), 0.0), collision_mask)
+		q.exclude = ex
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty() and absf(hit.normal.x) > 0.7:
+			return true
+	return false
+
+
+## Linea roja que muestra TODO el recorrido del dash (incluida la caida).
+func _show_dash_path(path: PackedVector2Array) -> void:
+	if _dash_line == null:
+		_dash_line = Line2D.new()
+		_dash_line.top_level = true
+		_dash_line.default_color = Color(1, 0, 0, 0.22)
+		_dash_line.joint_mode = Line2D.LINE_JOINT_ROUND
+		add_child(_dash_line)
+	_dash_line.global_position = Vector2.ZERO
+	_dash_line.global_rotation = 0.0
+	var rect := damage_shape.shape as RectangleShape2D
+	_dash_line.width = rect.size.y
+	var off := Vector2(0, damage_shape.position.y)
+	var pts := PackedVector2Array()
+	pts.append(global_position + off)
+	var step := 4        # un punto de cada 4 para que la linea sea ligera
+	for k in range(0, path.size(), step):
+		pts.append(path[k] + off)
+	pts.append(path[path.size() - 1] + off)
+	_dash_line.points = pts
+	_dash_line.show()
+
+
+func _hide_dash_path() -> void:
+	if _dash_line:
+		_dash_line.hide()
 
 
 ## true si hay piso en esa x a la altura de los pies del jefe (ignora plataformas mas altas/bajas).
@@ -700,15 +1716,228 @@ func _ground_at(x: float, surface_y: float) -> bool:
 	return not hit.is_empty() and absf(hit.position.y - surface_y) < 30.0
 
 
+# ---------------------------------------------------------------- MOVERSE ENTRE PLATAFORMAS
+
+## Despues de moverse / soltar la onda se reinicia el conteo de golpes y de ataques.
+func _after_special() -> void:
+	_attacks_since_move = 0
+	_recent_hits.clear()
+	_last_attack = Attack.JUMP        # un movimiento cuenta como salto
+	_repeat_count = 1
+
+
+## Salto tactico: va a otra plataforma (o al piso). Marca en rojo donde va a caer.
+func _attack_reposition() -> void:
+	var spot := _find_reposition_spot()
+	if spot == Vector2.INF:
+		await _wait(0.3)
+		return
+	velocity.x = 0.0
+	_telegraph_tween(reposition_windup, Color(0.5, 0.85, 1.0))
+	_show_marker(spot)
+	await _wait(reposition_windup)
+	if dead:
+		return
+	await _do_jump(spot, jump_time_phase2 if phase == 2 else jump_time)
+
+
+## Busca superficies planas dentro de la arena a las que pueda saltar y elige una al azar.
+func _find_reposition_spot() -> Vector2:
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	var p := _get_player()
+	if p is CollisionObject2D:
+		ex.append(p.get_rid())
+	var body_h := visual.size.y
+	var y_min := global_position.y - reposition_max_up
+	var y_max := global_position.y + reposition_max_down
+	var spots: Array[Vector2] = []
+	var x := _arena_left + 40.0
+	while x <= _arena_right - 40.0:
+		if absf(x - global_position.x) >= reposition_min_distance:
+			var y := y_min - 20.0
+			var guard := 0
+			while y < y_max and guard < 8:
+				guard += 1
+				var q := PhysicsRayQueryParameters2D.create(Vector2(x, y), Vector2(x, y_max + 60.0), collision_mask)
+				q.exclude = ex
+				var hit := space.intersect_ray(q)
+				if hit.is_empty():
+					break
+				var top: Vector2 = hit.position
+				if hit.normal.y < -0.7 and top.y >= y_min and top.y <= y_max and _spot_is_free(top, body_h, space, ex):
+					if p == null or absf(top.x - p.global_position.x) > 120.0 or absf(top.y - p.global_position.y) > 150.0:
+						spots.append(top)
+				y = top.y + 45.0       # sigue buscando superficies mas abajo (atraviesa el grosor de la plataforma)
+		x += reposition_scan_step
+	if spots.is_empty():
+		return Vector2.INF
+	return spots.pick_random()
+
+
+## Que haya espacio para el cuerpo del jefe y que no este en la orilla de la plataforma.
+func _spot_is_free(top: Vector2, body_h: float, space: PhysicsDirectSpaceState2D, ex: Array[RID]) -> bool:
+	var q := PhysicsRayQueryParameters2D.create(top + Vector2(0, -2), top + Vector2(0, -body_h), collision_mask)
+	q.exclude = ex
+	if not space.intersect_ray(q).is_empty():
+		return false          # hay techo encima
+	return _ground_at(top.x - 40.0, top.y) and _ground_at(top.x + 40.0, top.y)
+
+
+# ---------------------------------------------------------------- ANTI-SPAM: ONDA DE CHOQUE
+
+## Cuenta los golpes recibidos mientras el jefe no se mueve de lugar.
+func _register_hit() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if _recent_hits.is_empty() or global_position.distance_to(_spam_anchor) > spam_position_tolerance:
+		_recent_hits.clear()
+		_spam_anchor = global_position
+	_recent_hits.append(now)
+	while not _recent_hits.is_empty() and now - _recent_hits[0] > spam_window:
+		_recent_hits.pop_front()
+
+
+## Zona alrededor del jefe que cuenta como "muy pegado / encima".
+func _stomp_zone_rect() -> Rect2:
+	return _damage_rect().grow_individual(close_stomp_margin_x, close_stomp_margin_up, close_stomp_margin_x, 30.0)
+
+
+## Cuenta cuanto tiempo lleva el jugador dentro de la zona (se reinicia si sale).
+func _update_close_timer(delta: float) -> void:
+	if not close_stomp_enabled or not active or dead or _cinematic_active:
+		_close_timer = 0.0
+		return
+	if not is_instance_valid(_player):
+		_close_timer = 0.0
+		return
+	if _stomp_zone_rect().intersects(_player_rect(_player)):
+		_close_timer += delta
+	else:
+		_close_timer = 0.0
+
+
+func _close_stomp_ready() -> bool:
+	if not close_stomp_enabled or _close_timer < close_stomp_time_needed:
+		return false
+	return Time.get_ticks_msec() / 1000.0 - _last_close_stomp >= close_stomp_cooldown
+
+
+func _attack_shockwave(windup := -1.0, zone_hit := false) -> void:
+	if _get_player() == null:
+		return
+	velocity.x = 0.0
+	var w := windup if windup > 0.0 else shockwave_windup
+	
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.SHOCKWAVE_WINDUP)
+		
+	_telegraph_tween(w, Color(0.5, 0.85, 1.0))
+	await _dash_warning(w)     # tiembla y parpadea
+	if dead:
+		return
+	await _shockwave_blast(zone_hit)
+
+
+## Dos ondas bajas que corren por el piso hacia los lados; se esquivan saltando. Empujan al jugador.
+func _shockwave_blast(zone_hit := false) -> void:
+	if animation_controller:
+		animation_controller.play_and_wait(animation_controller.VisualState.SHOCKWAVE_BLAST)
+		
+	var origin := global_position
+	if jump_vfx:
+		for side in [-1.0, 1.0]:
+			_spawn_burst(side, 40, dust_color, 150.0, 420.0, 12.0, 26.0, Vector2(0, -40), 55.0)
+	if jump_camera_shake > 0.0:
+		_shake_camera(jump_camera_shake)
+
+	var waves: Array[ColorRect] = []
+	var alive := [true, true]
+	for i in 2:
+		var r := ColorRect.new()
+		r.top_level = true
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		r.color = shockwave_color
+		r.size = Vector2(30.0, shockwave_height)
+		add_child(r)
+		waves.append(r)
+
+	var traveled := 0.0
+	var hit_player := false
+	
+	# Pisotón por cercanía: daña y empuja a quien este pegado o encima del jefe.
+	if zone_hit:
+		var zp := _get_player()
+		if zp and _stomp_zone_rect().intersects(_player_rect(zp)):
+			hit_player = true
+			apply_damage(zp, shockwave_damage)
+			var zdir := signf(zp.global_position.x - origin.x)
+			if zdir == 0.0:
+				zdir = 1.0
+			_push_player(zdir, shockwave_push_distance)
+	
+	while traveled < shockwave_range and not dead:
+		var delta := get_physics_process_delta_time()
+		traveled += shockwave_speed * delta
+		for i in 2:
+			if not alive[i]:
+				continue
+			var side := -1.0 if i == 0 else 1.0
+			var wx := origin.x + side * (20.0 + traveled)
+			if dash_stop_at_edges and not _ground_at(wx, origin.y):
+				alive[i] = false          # se acaba el piso: la onda desaparece
+				waves[i].hide()
+				continue
+			waves[i].global_position = Vector2(wx - 15.0, origin.y - shockwave_height)
+		var p := _get_player()
+		if p and not hit_player:
+			var pr := _player_rect(p)
+			for i in 2:
+				if alive[i] and Rect2(waves[i].global_position, waves[i].size).intersects(pr):
+					hit_player = true
+					apply_damage(p, shockwave_damage)
+					var push_dir := signf(p.global_position.x - origin.x)
+					if push_dir == 0.0:
+						push_dir = 1.0
+					_push_player(push_dir, shockwave_push_distance)
+					break
+		await _next_frame()
+	for r in waves:
+		r.queue_free()
+
+
+## Empuja al jugador en horizontal (respeta paredes si es CharacterBody2D).
+func _push_player(dir: float, distance: float, duration := 0.25) -> void:
+	var p := _get_player()
+	if p == null:
+		return
+	if p.has_method("apply_knockback"):
+		p.apply_knockback(Vector2(dir, -0.3) * distance * 2.0)
+		return
+	_push_prev = 0.0
+	var tw := create_tween()
+	tw.tween_method(_push_step.bind(p, dir, distance), 0.0, 1.0, duration).set_ease(Tween.EASE_OUT)
+
+
+func _push_step(progress: float, p: Node2D, dir: float, distance: float) -> void:
+	if not is_instance_valid(p):
+		return
+	var dx := (progress - _push_prev) * distance * dir
+	_push_prev = progress
+	if p is CharacterBody2D:
+		p.move_and_collide(Vector2(dx, 0.0))
+	else:
+		p.global_position.x += dx
+
+
 # ---------------------------------------------------------------- DAÑO AL JUGADOR (por codigo, sin depender de capas)
 
 func _damage_window(duration: float) -> void:
 	_hit_this_attack = false
 	var elapsed := 0.0
 	while elapsed < duration and not dead:
-		_try_damage_player()
-		await get_tree().physics_frame
-		elapsed += get_physics_process_delta_time()
+			_try_damage_player()
+			await _next_frame()
+			elapsed += get_physics_process_delta_time()
 
 
 func _try_damage_player() -> void:
@@ -769,6 +1998,8 @@ func _get_player() -> Node2D:
 		if _player is PhysicsBody2D:
 			_player.add_collision_exception_with(self)
 		_sync_slash_layers()
+		# Escucha la muerte del jugador para reiniciar el combate
+		_hook_death_signals(_player, ["died", "player_died", "death", "dead", "player_dead", "player_death"])
 		_exceptions_done = true
 	return _player
 
@@ -790,6 +2021,9 @@ func _sync_slash_layers() -> void:
 
 ## Camina hacia el jugador durante `duration` segundos (para que el jefe siempre este presionando).
 func _chase(duration: float) -> void:
+	if animation_controller: 
+		animation_controller.set_state(animation_controller.VisualState.CHASE)
+		
 	var spd := chase_speed_phase2 if phase == 2 else chase_speed
 	var elapsed := 0.0
 	while elapsed < duration and not dead:
@@ -800,13 +2034,26 @@ func _chase(duration: float) -> void:
 				velocity.x = signf(dx) * spd
 			else:
 				velocity.x = 0.0
-		await get_tree().physics_frame
+		await _next_frame()
 		elapsed += get_physics_process_delta_time()
 	velocity.x = 0.0
+	
+	if animation_controller and not dead: 
+		animation_controller.set_state(animation_controller.VisualState.IDLE)
 
 
 func _wait(seconds: float) -> void:
-	await get_tree().create_timer(seconds).timeout
+	if not is_inside_tree():
+		return
+	await get_tree().create_timer(seconds, false).timeout
+
+## Espera al siguiente frame de fisica, pero se queda congelado mientras el juego esta pausado.
+func _next_frame() -> void:
+	if not is_inside_tree():
+		return
+	await get_tree().physics_frame
+	while is_inside_tree() and get_tree().paused:
+		await get_tree().physics_frame
 
 
 ## Parpadeo de aviso sin esperar (devuelve el tween).
@@ -988,6 +2235,16 @@ func _shake_camera(strength: float) -> void:
 		tw.tween_property(cam, "offset", Vector2(randf_range(-1, 1), randf_range(-1, 1)) * strength * k, 0.03)
 	tw.tween_property(cam, "offset", Vector2.ZERO, 0.04)
 
+func _shake_camera_weep(strength: float, time: float) -> void:
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var tw := create_tween()
+	for i in 6:
+		var k := 1.0 - float(i) / 6.0
+		tw.tween_property(cam, "offset", Vector2(randf_range(-1, 1), randf_range(-1, 1)) * strength * k, 0.03)
+	tw.tween_property(cam, "offset", Vector2.ZERO, time)
+
 
 # ---------------------------------------------------------------- EFECTOS DEL DASH (polvo, escombros, estela)
 
@@ -1097,27 +2354,6 @@ func _dash_warning(time: float) -> void:
 	visual.self_modulate = Color.WHITE
 
 
-## Franja roja en el piso que muestra por donde va a pasar el dash.
-func _show_dash_path(target_x: float) -> void:
-	if _dash_marker == null:
-		_dash_marker = ColorRect.new()
-		_dash_marker.top_level = true
-		_dash_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_dash_marker.color = Color(1, 0, 0, 0.22)
-		add_child(_dash_marker)
-	var rect := damage_shape.shape as RectangleShape2D
-	var left := minf(global_position.x, target_x)
-	var width := absf(target_x - global_position.x)
-	_dash_marker.size = Vector2(width, rect.size.y)
-	_dash_marker.global_position = Vector2(left, global_position.y + damage_shape.position.y - rect.size.y / 2.0)
-	_dash_marker.show()
-
-
-func _hide_dash_path() -> void:
-	if _dash_marker:
-		_dash_marker.hide()
-
-
 func _show_marker(target: Vector2) -> void:
 	if _marker == null:
 		_marker = ColorRect.new()
@@ -1134,3 +2370,246 @@ func _show_marker(target: Vector2) -> void:
 func _hide_marker() -> void:
 	if _marker:
 		_marker.hide()
+
+func _boss_cam_on() -> void:
+	var p := _get_player()
+	if p and p.has_method("activate_boss_cam"):
+		p.activate_boss_cam()
+
+func _boss_cam_off() -> void:
+	var p := _get_player()
+	if p and p.has_method("deactivate_boss_cam"):
+		p.deactivate_boss_cam()
+
+
+# ---------------------------------------------------------------- CINEMATICA DE LA FASE 2
+
+func _cinematic_available() -> bool:
+	if not cinematic_enabled:
+		return false
+	if cinematic_only_first_time and _cinematic_seen:
+		return false
+	if cinematic_player_spot == null or cinematic_boss_spot == null:
+		push_warning("Boss: asigna cinematic_player_spot y cinematic_boss_spot para ver la cinematica de la fase 2.")
+		return false
+	return _get_player() != null
+
+
+func _phase2_cinematic() -> void:
+	var p = _get_player()
+	var pac = p.get("animation_controller")
+	var psprite = p.get("sprite")
+	
+	# --- NUEVO: Crear una cámara temporal con Tween (transición suave) ---
+	_cine_temp_cam = Camera2D.new()
+	get_parent().add_child(_cine_temp_cam)
+	
+	# Posicionamos la cámara temporal donde estaba la del jugador originalmente
+	var current_cam := get_viewport().get_camera_2d()
+	var start_pos: Vector2 = current_cam.global_position if current_cam else p.global_position
+	_cine_temp_cam.global_position = start_pos
+	
+	# --- PASO 1 y 2: Guardar el zoom original y aplicar el zoom de la cinemática ---
+	if current_cam:
+		_cine_temp_cam.zoom = current_cam.zoom
+		_cine_player_zoom = current_cam.zoom  # <- zoom "normal" del jugador
+	
+	# APLICAMOS EL OFFSET AQUÍ PARA QUE SE MANTENGA EN TODA LA CINEMÁTICA
+	_cine_temp_cam.offset = cinematic_camera_offset
+	_cine_temp_cam.position_smoothing_enabled = false # Desactivado para que el Tween controle todo
+	_cine_temp_cam.make_current() 
+	
+	# --- PASO 2: Tween suave hacia el zoom de la cinemática ---
+	var zoom_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	zoom_tween.tween_property(_cine_temp_cam, "zoom", cinematic_zoom, 1.0)
+	# -------------------------------------------------------------------------
+	
+	# CALCULAMOS LA POSICIÓN DEL PIVOTE:
+	# Tomamos la posición del jefe y le sumamos el desplazamiento del pivote (que ajustas en el inspector)
+	var pivot_offset := Vector2.ZERO
+	if is_instance_valid(cinematic_pivot):
+		pivot_offset = cinematic_pivot.global_position - global_position
+	
+	var target_pivot_pos := global_position + pivot_offset
+	
+	# Hacemos que la cámara viaje desde su posición original hasta el PIVOTE del jefe
+	var cam_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if cinematic_tween:
+		cam_tween.set_trans(cinematic_tween.transition).set_ease(cinematic_tween.ease).set_parallel(false)
+		cam_tween.tween_property(_cine_temp_cam, "global_position", target_pivot_pos, cinematic_tween.duration)
+	else:
+		cam_tween.tween_property(_cine_temp_cam, "global_position", target_pivot_pos, 1.0)
+	# -------------------------------------------------------------
+
+	_cinematic_active = true
+	_cinematic_seen = true
+	velocity = Vector2.ZERO
+	_hide_marker()
+	_cine_freeze_player(p)
+
+	# 1) Aviso: el jefe se prepara para saltar.
+	_face_player_visual()
+	if animation_controller:
+		animation_controller.force_state(animation_controller.VisualState.JUMP_WINDUP)
+	_telegraph_tween(cinematic_windup, Color(1, 0.6, 0.2))
+	await _wait(cinematic_windup)
+	if dead:
+		return
+
+	# 2) Saltan a la vez: jugador a la izquierda, jefe a la derecha.
+	var boss_target: Vector2 = cinematic_boss_spot.global_position
+	var feet_offset: float = _player_rect(p).end.y - p.global_position.y
+	var player_target: Vector2 = cinematic_player_spot.global_position + Vector2(0, -feet_offset - 1.0)
+	var t := cinematic_jump_time
+	var start: Vector2 = p.global_position
+	var vx := (player_target.x - start.x) / t
+	var vy := ((player_target.y - start.y) - 0.5 * gravity * t * t) / t
+	if psprite:
+		psprite.flip_h = player_target.x < start.x
+	if pac:
+		pac.force_state(pac.VisualState.JUMP)
+	_cine_falling = false
+	var tw := create_tween()
+	tw.tween_method(_cine_player_arc.bind(p, start, vx, vy), 0.0, t, t)
+	
+	# Movemos la cámara temporal al pivote del jefe mientras salta
+	var cam_jump_tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if cinematic_tween:
+		cam_jump_tween.set_trans(cinematic_tween.transition).set_ease(cinematic_tween.ease).set_parallel(false)
+		cam_jump_tween.tween_property(_cine_temp_cam, "global_position", boss_target + pivot_offset, cinematic_tween.duration)
+	else:
+		cam_jump_tween.tween_property(_cine_temp_cam, "global_position", boss_target + pivot_offset, t)
+	
+	await _do_jump(boss_target, t)
+	if tw.is_valid() and tw.is_running():
+		await tw.finished
+	if cam_jump_tween.is_valid() and cam_jump_tween.is_running():
+		await cam_jump_tween.finished
+	if dead:
+		return
+	p.global_position = player_target
+
+	# 3) Se miran de frente.
+	if psprite:
+		psprite.flip_h = boss_target.x < player_target.x
+	_face_player_visual()
+	if pac:
+		pac.force_state(pac.VisualState.IDLE)
+	await _wait(cinematic_pause_after_land)
+	if dead:
+		return
+
+	# 4) Pausa de tension antes del grito de enojo (sin tp).
+	await _wait(cinematic_pause_before_scream)
+	if dead:
+		return
+	# Despues de esto, _enter_phase2 reproduce el grito (weep) y activa la fase 2.
+	_shake_camera_weep(100, 2)
+
+
+## Movimiento parabolico del jugador (lo llama el tween).
+func _cine_player_arc(tau: float, p, start: Vector2, vx: float, vy: float) -> void:
+	if not is_instance_valid(p):
+		return
+	p.global_position = start + Vector2(vx * tau, vy * tau + 0.5 * gravity * tau * tau)
+	# Al pasar el punto mas alto cambia a la animacion de caida.
+	if not _cine_falling and vy + gravity * tau > 0.0:
+		_cine_falling = true
+		var ac = p.get("animation_controller")
+		if ac:
+			ac.force_state(ac.VisualState.FALL)
+
+
+func _face_player_visual() -> void:
+	var p := _get_player()
+	var spr := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if p and spr:
+		spr.flip_h = p.global_position.x < global_position.x
+
+
+## Termina la cinematica (idempotente): devuelve el control al jugador.
+## --- PASO 3: Reemplazo completo de _cinematic_end() con tween de posicion + zoom + offset ---
+func _cinematic_end() -> void:
+	if not _cinematic_active:
+		return
+		
+	# --- NUEVO: Regresar suavemente al jugador con tween de posicion + zoom + offset ---
+	if is_instance_valid(_cine_temp_cam):
+		var p = _get_player()
+		var player_dead: bool = is_instance_valid(p) and "is_dead" in p and p.is_dead
+		
+		if is_instance_valid(p) and not player_dead:
+			# Sin smoothing: el tween controla todo.
+			_cine_temp_cam.position_smoothing_enabled = false
+			
+			var back := create_tween().set_parallel(true)
+			back.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			var dur := 0.9
+			# 1) Se desliza hacia el jugador
+			back.tween_property(_cine_temp_cam, "global_position", p.global_position, dur)
+			# 2) Se aleja/acerca hasta el zoom de la camara del jugador
+			back.tween_property(_cine_temp_cam, "zoom", _cine_player_zoom, dur)
+			# 3) Quita el offset del encuadre del jefe
+			back.tween_property(_cine_temp_cam, "offset", Vector2.ZERO, dur)
+			await back.finished
+			
+			# Ajuste final exacto por si el jugador se movio durante el tween
+			if is_instance_valid(_cine_temp_cam) and is_instance_valid(p):
+				_cine_temp_cam.global_position = p.global_position
+		
+		# Ahora que ya está sobre el jugador, destruimos la cámara temporal.
+		# La cámara original del jugador tomará el control exactamente en la misma posición,
+		# por lo que no habrá ningún salto brusco.
+		if is_instance_valid(_cine_temp_cam):
+			_cine_temp_cam.queue_free()
+			_cine_temp_cam = null
+	# -------------------------------------------------------------------------
+
+	_cinematic_active = false
+	if is_instance_valid(_cine_tp):
+		_cine_tp.queue_free()
+	_cine_tp = null
+	_cine_unfreeze_player(_player)
+
+
+## Congela al jugador SIN tocar su script: apaga su fisica y su input, y lo hace invulnerable.
+func _cine_freeze_player(p) -> void:
+	if p.has_method("_cancel_tp_charge"):
+		p._cancel_tp_charge()
+	if "is_recharging" in p:
+		p.is_recharging = false
+	if "ChargeCam" in p and p.ChargeCam:
+		p.ChargeCam.priority = 0
+	if "invulnerable_timer" in p:
+		p.invulnerable_timer = 9999.0
+	if "sprite" in p and p.sprite:
+		p.sprite.visible = true
+	if "dust_particles" in p and p.dust_particles:
+		p.dust_particles.emitting = false
+	var ac = p.get("animation_controller")
+	if ac:
+		ac.cancel_sequence()
+		ac.unlock()
+	p.velocity = Vector2.ZERO
+	p.set_physics_process(false)
+	p.set_process_unhandled_input(false)
+	p.set_process_input(false)
+
+
+func _cine_unfreeze_player(p) -> void:
+	if not is_instance_valid(p):
+		return
+	var player_dead: bool = "is_dead" in p and p.is_dead
+	if not player_dead:
+		if "invulnerable_timer" in p:
+			p.invulnerable_timer = 0.5
+		var ac = p.get("animation_controller")
+		if ac:
+			ac.cancel_sequence()
+			ac.unlock()
+	if "_last_fall_speed" in p:
+		p._last_fall_speed = 0.0
+	p.velocity = Vector2.ZERO
+	p.set_physics_process(true)
+	p.set_process_unhandled_input(true)
+	p.set_process_input(true)

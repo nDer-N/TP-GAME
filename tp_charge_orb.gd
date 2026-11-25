@@ -19,7 +19,41 @@ extends Node2D
 ## Variación inicial para que no floten todos en fase.
 @export var bob_phase_offset: float = 0.0
 
+@export_group("Animación")
+## Animación del AnimatedSprite2D que se reproduce al aparecer.
+## Vacío = usa la animación que tenga seleccionada el nodo (o la primera que exista).
+@export var animation_name: StringName = &""
+## Cada orbe arranca en un cuadro distinto, para que no se vean sincronizados.
+@export var randomize_start_frame: bool = true
+
 var _bob_phase: float = 0.0
+
+@onready var _anim: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
+
+
+func _ready() -> void:
+	_play_animation()
+
+
+## El AnimatedSprite2D no se reproduce solo al instanciar la escena: hay que
+## llamar a play() (o activar "Autoplay on Load" en el panel SpriteFrames).
+func _play_animation() -> void:
+	if _anim == null or _anim.sprite_frames == null:
+		return
+	var frames: SpriteFrames = _anim.sprite_frames
+	var names: PackedStringArray = frames.get_animation_names()
+	if names.is_empty():
+		return
+
+	var anim_name: StringName = animation_name
+	if anim_name == &"" or not frames.has_animation(anim_name):
+		anim_name = _anim.animation if frames.has_animation(_anim.animation) else StringName(names[0])
+
+	_anim.play(anim_name)
+	if randomize_start_frame:
+		var count: int = frames.get_frame_count(anim_name)
+		if count > 1:
+			_anim.set_frame_and_progress(randi() % count, 0.0)
 
 
 func _process(delta: float) -> void:
