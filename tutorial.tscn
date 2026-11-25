@@ -1985,7 +1985,7 @@ animacion = &"djump"
 position = Vector2(5908, -770)
 scale = Vector2(2, 2)
 texto = ""
-paginas = Array[String](["Mantenga C para curar 1 de Vida y ademas recarga tus TPs", "Mantenga Click Derecho  para Apuntar el TP mientras mas tiempo lo mantenga mas largo es el lanzado, suelte para disparar el TP"])
+paginas = Array[String](["Mantenga C para curar 1 de Vida y ademas recarga tus TPs", "Mantenga Click Derecho  para Apuntar el TP mientras mas tiempo lo mantenga mas largo es el lanzado, suelte para disparar el TP. Al lanzarlo a un enemigo, se ejecutará un ataque"])
 animaciones = Array[StringName]([&"charge", &"shoot"])
 
 [node name="HoloTutorial6" parent="." unique_id=972421841 instance=ExtResource("33_pm7ge")]
@@ -2032,7 +2032,7 @@ texture_scale = 3.44
 [node name="Boss1" parent="." unique_id=718000262 node_paths=PackedStringArray("cinematic_player_spot", "cinematic_boss_spot") instance=ExtResource("34_brok5")]
 process_priority = 1
 position = Vector2(40192, -592)
-max_health = 275
+max_health = 175
 phase2_threshold = 0.65
 projectile_damage = 3
 parry_damage = 5

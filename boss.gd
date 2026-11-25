@@ -115,6 +115,11 @@ const SCREAM_FX_BUS := "BossScreamFX"
 @export var second_jump_windup := 0.3
 @export var impact_duration := 0.2             # tiempo que dura el daño al aterrizar
 
+## Red de seguridad anti-atravesar-piso.
+@export var landing_unstuck_max := 160.0       # si cae incrustado en el piso, lo sube hasta esto (px) para sacarlo
+@export var landing_snap_distance := 300.0     # tras aterrizar se pega al piso si hay uno a menos de esto (px)
+@export var fall_rescue_distance := 1500.0     # si cae mas que esto debajo de su ultimo punto seguro, lo regresa
+
 @export_group("Dash")
 @export var dash_speed := 1500.0
 @export var dash_windup := 0.7                 # tiempo de aviso antes de embestir
@@ -323,6 +328,7 @@ var _fight_over := false        # true mientras se aborta el combate por reinici
 var _resetting := false
 var _loop_running := false
 var _start_position := Vector2.ZERO
+var _last_safe_pos := Vector2.ZERO   # ultimo lugar donde estuvo parado en el piso
 var _start_arena_left := 0.0
 var _start_arena_right := 0.0
 
@@ -398,6 +404,7 @@ func _ready() -> void:
 	_arena_right = global_position.x + arena_half_width
 	# Guardamos el estado original para el reinicio
 	_start_position = global_position
+	_last_safe_pos = global_position
 	_start_arena_left = _arena_left
 	_start_arena_right = _arena_right
 	_hook_death_signals(get_node_or_null("/root/Events"), ["player_died", "player_dead", "player_death"])
@@ -439,6 +446,13 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 	move_and_slide()
 	global_position.x = clampf(global_position.x, _arena_left, _arena_right)
+
+	# Red de seguridad: si por cualquier motivo atraviesa el piso, vuelve al ultimo punto seguro.
+	if is_on_floor():
+		_last_safe_pos = global_position
+	elif global_position.y > _last_safe_pos.y + fall_rescue_distance:
+		global_position = _last_safe_pos
+		velocity = Vector2.ZERO
 
 	if not active:
 		var p := _get_player()
@@ -523,6 +537,7 @@ func reset_fight() -> void:
 
 	# Posicion y arena originales
 	global_position = _start_position
+	_last_safe_pos = _start_position
 	_arena_left = _start_arena_left
 	_arena_right = _start_arena_right
 
@@ -1353,17 +1368,46 @@ func _attack_jump() -> void:
 
 
 ## Punto del suelo/plataforma justo debajo del jugador (a donde saltara el jefe).
+## Lanza varios rayos hacia abajo desde distintas alturas, ignorando al jugador y al jefe, y descarta
+## los que empiezan DENTRO de un collider (esos "no pegan" y hacian que el jefe cayera en una altura equivocada).
 func _landing_point() -> Vector2:
 	var p := _get_player()
 	if p == null:
 		return global_position
-	var from := p.global_position + Vector2(0, -10)
-	var query := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 1500), collision_mask)
-	query.exclude = [get_rid()]
-	var result := get_world_2d().direct_space_state.intersect_ray(query)
-	var pt := Vector2(from.x, global_position.y)
-	if result:
-		pt = result.position
+	var space := get_world_2d().direct_space_state
+	var ex: Array[RID] = [get_rid()]
+	if p is CollisionObject2D:
+		ex.append(p.get_rid())
+
+	var x := p.global_position.x
+	var feet_y := _player_rect(p).end.y
+	var player_grounded: bool = p is CharacterBody2D and (p as CharacterBody2D).is_on_floor()
+
+	var pt := Vector2.INF
+	for off in [-8.0, -40.0, -90.0, 10.0]:
+		var from := Vector2(x, feet_y + off)
+		var q := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 1500), collision_mask)
+		q.exclude = ex
+		q.hit_from_inside = true
+		var r := space.intersect_ray(q)
+		if r.is_empty():
+			continue
+		# normal == 0 significa que el rayo arranco dentro de un collider: no sirve.
+		if r.normal == Vector2.ZERO:
+			continue
+		# Solo superficies donde se puede parar (no paredes ni techos).
+		if r.normal.y > -0.3:
+			continue
+		# Si el jugador esta en el piso, el aterrizaje tiene que estar cerca de sus pies.
+		if player_grounded and absf(r.position.y - feet_y) > 80.0:
+			continue
+		pt = r.position
+		break
+
+	if pt == Vector2.INF:
+		# Ningun rayo sirvio: usa la altura del ultimo lugar seguro (NUNCA la altura actual en el aire).
+		pt = Vector2(x, _last_safe_pos.y)
+
 	if not jump_can_leave_arena:
 		var cx := clampf(pt.x, _arena_left, _arena_right)
 		if debug_keys and not is_equal_approx(cx, pt.x) and not _warned_clamp:
@@ -1371,6 +1415,23 @@ func _landing_point() -> Vector2:
 			print("Boss: el jugador esta FUERA de la arena (x=%d, arena=%d..%d): el salto se limita al borde." % [pt.x, _arena_left, _arena_right])
 		pt.x = cx
 	return pt
+
+
+## Despues de aterrizar: si quedo incrustado en el piso lo sube hasta quedar libre,
+## y luego lo pega al piso. Evita que `move_and_slide` lo deje caer a traves de la plataforma.
+func _settle_on_ground() -> void:
+	var original := global_position
+	var lifted := 0.0
+	while lifted < landing_unstuck_max and test_move(global_transform, Vector2.ZERO, null, 0.08, true):
+		global_position.y -= 2.0
+		lifted += 2.0
+	if lifted >= landing_unstuck_max:
+		global_position = original      # subir no lo libera (ej. pegado a una pared): lo dejamos como estaba
+	var col := move_and_collide(Vector2(0, landing_snap_distance), true)
+	if col:
+		global_position += col.get_travel()
+		_last_safe_pos = global_position
+	velocity = Vector2.ZERO
 
 
 ## Salto parabolico controlado por codigo: llega EXACTAMENTE a `target` en t segundos,
@@ -1411,6 +1472,7 @@ func _do_jump(target: Vector2, t: float) -> void:
 		_arena_right = maxf(_arena_right, global_position.x)
 	_scripted = false
 	velocity = Vector2.ZERO
+	_settle_on_ground()
 	
 	if animation_controller:
 		animation_controller.force_state(animation_controller.VisualState.JUMP_LAND)

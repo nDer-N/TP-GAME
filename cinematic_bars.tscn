@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://ct08hg0ntij4v"]
+
+[ext_resource type="Script" uid="uid://dtq641ue4en1l" path="res://cinematic_bars.gd" id="1_pah3n"]
+
+[node name="CanvasLayer" type="CanvasLayer" unique_id=1687862033]
+script = ExtResource("1_pah3n")
+slide_in_time = 0.0
+slide_out_time = 0.1
+default_duration = 1.0

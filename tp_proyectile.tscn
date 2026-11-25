@@ -3,6 +3,14 @@
 [ext_resource type="Script" uid="uid://csxgm0rvftb52" path="res://tp_proyectile.gd" id="1_7m7ok"]
 [ext_resource type="Resource" uid="uid://b66kr5sme6dne" path="res://resources/default_projectile_physics.tres" id="2_xuoj6"]
 [ext_resource type="Texture2D" uid="uid://xuw3nymssfkb" path="res://animations/projectileTP/shot/tp.png" id="3_xuoj6"]
+[ext_resource type="Texture2D" uid="uid://dd35x0n4cl3t3" path="res://animations/projectileTP/shot/death/S_0000.png" id="4_4lih7"]
+[ext_resource type="Texture2D" uid="uid://cpbex7xcyeeqc" path="res://animations/projectileTP/shot/death/S_0001.png" id="5_4ft1v"]
+[ext_resource type="Texture2D" uid="uid://pbdjs5qxmvfj" path="res://animations/projectileTP/shot/death/S_0002.png" id="6_3i5x6"]
+[ext_resource type="Texture2D" uid="uid://cqpn7e6oyf7fa" path="res://animations/projectileTP/shot/death/S_0003.png" id="7_xtqde"]
+[ext_resource type="Texture2D" uid="uid://chia28glm350a" path="res://animations/projectileTP/shot/death/S_0004.png" id="8_6hx6e"]
+[ext_resource type="Texture2D" uid="uid://ta7kgpl20hy8" path="res://animations/projectileTP/shot/death/S_0005.png" id="9_nutym"]
+[ext_resource type="Texture2D" uid="uid://o4x8f5uqmsaw" path="res://animations/projectileTP/shot/death/S_0006.png" id="10_ppv3l"]
+[ext_resource type="Texture2D" uid="uid://c7tlxmgqyl5ms" path="res://animations/projectileTP/shot/death/S_0007.png" id="11_aoxt5"]
 
 [sub_resource type="Gradient" id="Gradient_xuoj6"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
@@ -16,6 +24,38 @@ fill_from = Vector2(0.52730376, 0.5341297)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ddicg"]
 radius = 76.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ddicg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_4lih7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_4ft1v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_3i5x6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_xtqde")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_6hx6e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_nutym")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_ppv3l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_aoxt5")
+}],
+"loop": 0,
+"name": &"death",
+"speed": 24.0
+}]
 
 [node name="Tp_proyectile" type="CharacterBody2D" unique_id=1992403906]
 scale = Vector2(0.5, 0.5)
@@ -37,3 +77,12 @@ shape = SubResource("CircleShape2D_ddicg")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=796744853]
 scale = Vector2(1.2893751, 1.2893751)
 texture = ExtResource("3_xuoj6")
+
+[node name="DeathAnimation" type="AnimatedSprite2D" parent="." unique_id=204194632]
+z_index = 20
+position = Vector2(16.000015, -96)
+scale = Vector2(0.63657403, 0.61378837)
+sprite_frames = SubResource("SpriteFrames_ddicg")
+animation = &"death"
+frame = 7
+frame_progress = 1.0

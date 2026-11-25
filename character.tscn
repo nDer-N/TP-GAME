@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://bta8utsxvgac0" path="res://tp_charge_orb.tscn" id="10_uswop"]
 [ext_resource type="PackedScene" uid="uid://djchg5k5nyd08" path="res://landing.tscn" id="11_c1b4b"]
 [ext_resource type="PackedScene" uid="uid://dmlwse5x03oql" path="res://PlayerHitPaticles.tscn" id="11_xc4g8"]
+[ext_resource type="PackedScene" uid="uid://bgwxtqhpq7ohk" path="res://HitSprite.tscn" id="12_3fhje"]
 [ext_resource type="Script" uid="uid://b3l2sqf1b1g5s" path="res://reload_indicator.gd" id="12_7tnxx"]
 [ext_resource type="Texture2D" uid="uid://bjypsskjnf2sf" path="res://resources/pixil-frame-0.png" id="12_lpiy1"]
 [ext_resource type="Texture2D" uid="uid://c7er4v6x1bwsw" path="res://resources/pixil-frame-1.png" id="13_88tkl"]
@@ -184,7 +185,6 @@ metadata/_custom_type_script = "uid://dimvdouy8g0sv"
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2084045175]
 process_mode = 3
 physics_interpolation_mode = 1
-top_level = true
 position = Vector2(0, -208)
 zoom = Vector2(0.41, 0.41)
 editor_draw_limits = true
@@ -316,23 +316,14 @@ gravity = 3000.0
 low_jump_multiplier = 4.0
 friction = 10000.0
 tp_projectile_scene = ExtResource("2_px5sl")
-charge_rate = null
-min_power_threshold = null
-max_charge = null
 physics_config = ExtResource("3_0qfo5")
 RegularCamera = NodePath("../Camera2D/PhantomCameraHost/RegularCamera")
 aim_pcam = NodePath("../Camera2D/PhantomCameraHost/TPCamera")
 CeilingCam = NodePath("../Camera2D/PhantomCameraHost/CeilingCam")
 BasementCam = NodePath("../Camera2D/PhantomCameraHost/BasementCam")
 ChargeCam = NodePath("../Camera2D/PhantomCameraHost/ChargeCam")
-max_tp_charges = null
-recharge_hold_time = null
 trajectory_line = NodePath("Preview")
 max_hits = 4
-hit_invulnerability_time = null
-attack_flash_duration = null
-damage_flash_duration = null
-attack_flash_color = null
 damage_flash_color = Color(1, 0, 0, 1)
 death_flash_color = Color(0.40518534, 0.9999997, 0.9974949, 1)
 HitCAM = NodePath("../Camera2D/PhantomCameraHost/HitCAM")
@@ -340,24 +331,24 @@ HitCAM_duration = 0.5
 teleport_vfx_scene = ExtResource("8_hvi53")
 landing_lock_time = 0.5
 min_fall_speed_for_landing = 2000.0
-attack_brake_friction = null
 side_slash_lunge_speed = 2000.0
 side_slash_lunge_duration = 0.1
-knockback_friction = null
-knockback_gravity_mult = null
-hit_recoil_multiplier = null
 tp_charge_orb_scene = ExtResource("10_uswop")
 tp_charge_offsets = Array[Vector2]([Vector2(-90, -40), Vector2(-80, -100), Vector2(-80, 0)])
-respawn_delay = null
-respawn_invulnerability = null
 BossCAM = NodePath("../Camera2D/PhantomCameraHost/BossCAM")
 pogo_bounce_velocity = 1600.0
-pogo_cancel_side_lunge = null
 hit_vfx_scene = ExtResource("11_xc4g8")
-hit_vfx_offset = null
 hit_noise_emitter = NodePath("../PhantomCameraNoiseEmitter2D")
 death_noise_emitter = NodePath("../DeathNoise")
 death_cam = NodePath("../Camera2D/PhantomCameraHost/DeathCamera")
+enemy_hit_vfx_scene = ExtResource("12_3fhje")
+enemy_hit_vfx_offset = Vector2(0, -100)
+enemy_hit_vfx_z_index = 100
+enemy_hit_vfx_scale_min = 0.6
+enemy_hit_vfx_scale_max = 1.5
+death_blackout_fade_in = 0.0
+tp_afterimage_duration = 0.5
+tp_afterimage_lifetime = 0.5
 
 [node name="dust_particles" type="GPUParticles2D" parent="CharacterBody2D" unique_id=18878947]
 position = Vector2(7.9999995, 59.999996)

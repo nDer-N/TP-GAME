@@ -52,6 +52,55 @@ extends CharacterBody2D
 @export var hit_noise_emitter: PhantomCameraNoiseEmitter2D
 @export var death_noise_emitter: PhantomCameraNoiseEmitter2D
 @export var death_cam: PhantomCamera2D
+
+@export_group("VFX de golpe sobre el enemigo")
+## Escena con un AnimatedSprite2D (como raíz o dentro de un Node2D) que se muestra encima del enemigo al golpearlo con el TP.
+@export var enemy_hit_vfx_scene: PackedScene
+## Animación a reproducir. Vacío = usa la animación que tenga seleccionada el AnimatedSprite2D.
+@export var enemy_hit_vfx_animation: StringName = &""
+## Desplazamiento respecto al origen del enemigo (si su origen está en los pies, usa Y negativa para subirlo).
+@export var enemy_hit_vfx_offset: Vector2 = Vector2.ZERO
+## Orden de dibujo del efecto (alto = por encima de casi todo).
+@export var enemy_hit_vfx_z_index: int = 20
+## Escala mínima del efecto. Cada golpe elige al azar entre mínimo y máximo (se multiplica por la escala que ya tenga la escena).
+@export var enemy_hit_vfx_scale_min: float = 0.8
+## Escala máxima del efecto.
+@export var enemy_hit_vfx_scale_max: float = 1.3
+## Nombre de un nodo (Marker2D, Node2D, etc.) dentro de la escena del efecto que se usa como pivote:
+## ese punto queda sobre el enemigo y la escala/rotación giran alrededor de él. Vacío o inexistente = usa la raíz.
+@export var enemy_hit_vfx_pivot_node: StringName = &"Pivot"
+## true = el efecto sigue al enemigo mientras dura (y se borra con él si muere). false = queda fijo en el mundo.
+@export var enemy_hit_vfx_follow_enemy: bool = false
+
+@export_group("Pantalla de muerte")
+## Al morir, todo el mundo se pone negro y solo se ve la animacion del jugador (la UI no se toca).
+@export var death_blackout_enabled := true
+@export var death_blackout_color := Color.BLACK
+## Tiempo que tarda en oscurecerse (0 = instantaneo).
+@export var death_blackout_fade_in := 0.15
+## Tiempo que tarda en aclararse al reaparecer.
+@export var death_blackout_fade_out := 0.3
+## Orden de dibujo (max 4096). Debe ser mayor que cualquier z_index de tu mundo; el sprite usa este +1.
+@export var death_blackout_z := 3000
+
+@export_group("Afterimage del TP")
+## Deja una estela de imágenes tras golpear a un enemigo con el TP (NO con golpes normales).
+@export var tp_afterimage_enabled: bool = true
+## Cuántos segundos sigue saliendo la estela después del golpe con TP.
+@export var tp_afterimage_duration: float = 1.5
+## Cada cuánto aparece una imagen (menor = estela más densa).
+@export var tp_afterimage_interval: float = 0.03
+## Cuánto tarda cada imagen en desaparecer.
+@export var tp_afterimage_lifetime: float = 0.35
+## Opacidad inicial de cada imagen.
+@export var tp_afterimage_start_alpha: float = 0.6
+## true = cada imagen es una silueta de color sólido (como el flash del sprite).
+## false = copia del sprite con un tinte encima.
+@export var tp_afterimage_solid: bool = true
+## Color de la silueta (o tinte, si "solid" está apagado).
+@export var tp_afterimage_color: Color = Color(0.0, 1.0, 0.9, 1.0)
+## Escala final de cada imagen respecto al sprite (1.0 = no se encoge).
+@export var tp_afterimage_scale_end: float = 0.85
 	
 
 var _pogo_jump_active: bool = false
@@ -66,6 +115,21 @@ var _was_on_floor: bool = false
 var _outline_active: bool = false
 var _hit_timer: float = 0.0
 var _flash_tween: Tween = null
+var _blackout: ColorRect = null
+var _blackout_tween: Tween = null
+var _sprite_z_backup := {}
+var _tp_afterimage_time_left: float = 0.0
+var _tp_afterimage_timer: float = 0.0
+var _tp_ghost_mat: ShaderMaterial = null
+
+# Silueta de color sólido: conserva la forma (alfa) del sprite y reemplaza su color.
+const TP_GHOST_SHADER := """
+shader_type canvas_item;
+uniform vec4 ghost_color : source_color = vec4(0.0, 1.0, 0.9, 1.0);
+void fragment() {
+	COLOR = vec4(ghost_color.rgb, COLOR.a);
+}
+"""
 var current_speed: float = speed
 var jumps_left: int = 2
 var facing_direction: int = 1
@@ -196,6 +260,7 @@ func _on_enemy_died() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_update_tp_afterimage(delta)
 	
 	var is_moving = abs(velocity.x)>10
 	var on_ground = is_on_floor()
@@ -570,10 +635,93 @@ func shoot_tp(target_position: Vector2, charge_power2: float):
 	projectile.launch(global_position, target_position, charge_power2, half_height)
 	projectile.died.connect(_on_tp_expired)
 	projectile.landed.connect(_on_tp_landed)
+	projectile.hit_enemy.connect(_on_tp_hit_enemy) 
 	
 func _on_tp_expired(did_die : bool):
 	if (did_die):
 		set_outline(false)
+
+func _on_tp_hit_enemy(enemy: Node2D, hit_position: Vector2) -> void:
+	if ChargeCam.priority > 0:
+		ChargeCam.priority = 0
+	set_outline(false)
+	flash_sprite(0.5, Color(0, 1, 0.9))
+	HitStop.request(0.5)
+	_start_tp_afterimage()   # solo el golpe con TP deja estela
+	ScreenFlashLayer.flash(0.4, 0.5)
+	spawn_enemy_hit_vfx(enemy)   # AnimatedSprite2D encima del enemigo
+	
+	# Efecto visual de salida
+	if teleport_vfx_scene:
+		var vfx_out = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_out)
+		vfx_out.global_position = global_position
+		vfx_out.setup(-1.0)
+		
+	# --- SISTEMA ANTI-CLIP ---
+	var dir = (hit_position - global_position).normalized()
+	
+	# Punto inicial de aparición: 40 píxeles antes del impacto
+	var target_pos = hit_position - dir * 40.0
+	
+	# Preparamos la consulta de física para ver si el jugador cabe ahí
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsShapeQueryParameters2D.new()
+	query.shape = collision_shape.shape
+	query.collision_mask = collision_mask # La máscara de colisión del jugador
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	
+	# Excluimos al jugador y al enemigo para no detectarlos en la prueba
+	var exclude_rids: Array[RID] = [get_rid()]
+	if enemy is CollisionObject2D:
+		exclude_rids.append(enemy.get_rid())
+	query.exclude = exclude_rids
+	
+	# Función auxiliar para comprobar si está bloqueado
+		# Función auxiliar para comprobar si está bloqueado
+	var is_blocked := func(pos: Vector2) -> bool:
+		# Copiamos la transformación actual y solo cambiamos la posición
+		var new_transform = global_transform
+		new_transform.origin = pos
+		
+		query.transform = new_transform * collision_shape.transform
+		return not space_state.intersect_shape(query, 1).is_empty()
+	
+	# Si el punto inicial está bloqueado, retrocedemos más en la línea del disparo
+	if is_blocked.call(target_pos):
+		target_pos = hit_position - dir * 70.0
+		
+		# Si sigue bloqueado (ej. disparo contra una pared), retrocedemos aún más
+		if is_blocked.call(target_pos):
+			target_pos = hit_position - dir * 100.0
+			
+			# Si definitivamente no hay espacio (ej. pasillo muy angosto), 
+			# lo ponemos un poco más arriba para evitar que se atasque
+			if is_blocked.call(target_pos):
+				target_pos.y -= 64.0
+	# -------------------------
+	
+	# Aplicamos la nueva posición
+	global_position = target_pos
+	velocity = Vector2.ZERO
+	_snap_all_tp_orbs()
+	
+	# Efecto visual de llegada
+	if teleport_vfx_scene:
+		var vfx_in = teleport_vfx_scene.instantiate()
+		get_tree().current_scene.add_child(vfx_in)
+		vfx_in.global_position = global_position
+		vfx_in.setup(1.0)
+		
+	# Damos invulnerabilidad por medio segundo para que no reciba daño por contacto
+	invulnerable_timer = 0.5
+	
+	# FORZAMOS EL SLASH HACIA EL ENEMIGO (ignorando el cooldown)
+	if slash_controller:
+		slash_controller.try_attack(enemy.global_position, true)
+	
+	aim_pcam.priority = 0
 		
 func _on_tp_landed(landing_position: Vector2) -> void:
 	if ChargeCam.priority > 0:
@@ -668,6 +816,132 @@ func _spawn_hit_vfx() -> void:
 		if not finished_connected and p.has_signal("finished"):
 			p.finished.connect(vfx.queue_free)
 			finished_connected = true
+
+## Muestra un AnimatedSprite2D encima del enemigo golpeado y lo borra al terminar la animación.
+## Es reutilizable: llámalo desde donde necesites (golpe con TP, slash normal, etc.).
+func spawn_enemy_hit_vfx(enemy: Node2D) -> void:
+	if enemy_hit_vfx_scene == null or not is_instance_valid(enemy):
+		return
+	var vfx := enemy_hit_vfx_scene.instantiate() as Node2D
+	if vfx == null:
+		return
+
+	vfx.z_as_relative = false
+	vfx.z_index = enemy_hit_vfx_z_index
+
+	# Escala y rotación aleatorias en cada golpe.
+	vfx.scale *= randf_range(enemy_hit_vfx_scale_min, enemy_hit_vfx_scale_max)
+	vfx.rotation = randf_range(0.0, TAU)
+
+	if enemy_hit_vfx_follow_enemy:
+		enemy.add_child(vfx)
+		vfx.position = enemy_hit_vfx_offset
+	else:
+		get_tree().current_scene.add_child(vfx)
+		vfx.global_position = enemy.global_position + enemy_hit_vfx_offset
+
+	# Pivote personalizado: mover el efecto para que el nodo pivote quede donde iría la raíz.
+	# Como la escala y la rotación ya están aplicadas, es equivalente a girar/escalar alrededor del pivote.
+	if enemy_hit_vfx_pivot_node != &"":
+		var pivot := vfx.find_child(String(enemy_hit_vfx_pivot_node), true, false) as Node2D
+		if pivot:
+			var target := vfx.global_position   # donde debe quedar el pivote
+			vfx.global_position += target - pivot.global_position
+
+	# El AnimatedSprite2D puede ser la raíz de la escena o un hijo.
+	var anim := vfx as AnimatedSprite2D
+	if anim == null:
+		var found := vfx.find_children("*", "AnimatedSprite2D", true, false)
+		if not found.is_empty():
+			anim = found[0] as AnimatedSprite2D
+	if anim == null or anim.sprite_frames == null:
+		vfx.queue_free()
+		return
+
+	var anim_name: StringName = enemy_hit_vfx_animation if enemy_hit_vfx_animation != &"" else anim.animation
+	if not anim.sprite_frames.has_animation(anim_name):
+		vfx.queue_free()
+		return
+
+	# Sin loop, para que animation_finished se emita y el efecto se limpie solo.
+	anim.sprite_frames.set_animation_loop(anim_name, false)
+	anim.animation_finished.connect(vfx.queue_free)
+	anim.play(anim_name)
+
+# ===================================================== AFTERIMAGE DEL TP
+
+func _start_tp_afterimage() -> void:
+	if not tp_afterimage_enabled:
+		return
+	_tp_afterimage_time_left = tp_afterimage_duration
+	_tp_afterimage_timer = 0.0   # primer fantasma de inmediato
+
+
+func _update_tp_afterimage(delta: float) -> void:
+	if _tp_afterimage_time_left <= 0.0:
+		return
+	if is_dead:
+		_tp_afterimage_time_left = 0.0
+		return
+
+	_tp_afterimage_time_left -= delta
+	_tp_afterimage_timer -= delta
+	if _tp_afterimage_timer > 0.0:
+		return
+	_tp_afterimage_timer = tp_afterimage_interval
+	_spawn_tp_afterimage()
+
+
+func _get_tp_ghost_material() -> ShaderMaterial:
+	if _tp_ghost_mat == null:
+		var shader := Shader.new()
+		shader.code = TP_GHOST_SHADER
+		_tp_ghost_mat = ShaderMaterial.new()
+		_tp_ghost_mat.shader = shader
+	_tp_ghost_mat.set_shader_parameter("ghost_color", tp_afterimage_color)
+	return _tp_ghost_mat
+
+
+func _spawn_tp_afterimage() -> void:
+	if sprite == null or not sprite.visible or sprite.sprite_frames == null:
+		return
+
+	# Frame actual de la animación
+	var tex := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if tex == null:
+		return
+
+	var ghost := Sprite2D.new()
+	ghost.texture = tex
+	ghost.centered = sprite.centered
+	ghost.offset = sprite.offset
+	ghost.flip_h = sprite.flip_h
+	ghost.flip_v = sprite.flip_v
+	ghost.global_position = sprite.global_position
+	ghost.global_rotation = sprite.global_rotation
+	ghost.z_index = z_index + sprite.z_index - 1   # por detrás del jugador
+
+	var base_scale: Vector2 = sprite.global_scale
+	ghost.global_scale = base_scale
+
+	if tp_afterimage_solid:
+		# Silueta sólida: el color lo pone el shader, el alfa se anima con modulate
+		ghost.material = _get_tp_ghost_material()
+		ghost.modulate = Color(1, 1, 1, tp_afterimage_start_alpha)
+	else:
+		var c := tp_afterimage_color
+		c.a = tp_afterimage_start_alpha
+		ghost.modulate = c
+
+	# Al mundo, no al jugador, para que no se mueva con él
+	get_tree().current_scene.add_child(ghost)
+
+	var tween := ghost.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(ghost, "modulate:a", 0.0, tp_afterimage_lifetime)
+	tween.tween_property(ghost, "scale", base_scale * tp_afterimage_scale_end, tp_afterimage_lifetime)
+	tween.chain().tween_callback(ghost.queue_free)
+
 
 func flash_sprite(duration: float, color: Color ) -> void:
 	_update_shader_frame_size()
@@ -765,6 +1039,73 @@ func deactivate_boss_cam() -> void:
 	if BossCAM:
 		BossCAM.priority = _boss_cam_previous_priority
 	
+func _process(_delta: float) -> void:
+	if _blackout and _blackout.visible:
+		_update_blackout_rect()
+
+
+## Cubre TODO el mundo (todo lo que se dibuja en el canvas por defecto) con un rectangulo negro
+## y sube el sprite del jugador por encima. La UI vive en CanvasLayers, que se dibujan sobre el mundo,
+## asi que no se ve afectada.
+func _start_death_blackout() -> void:
+	if not death_blackout_enabled:
+		return
+	if _blackout_tween and _blackout_tween.is_valid():
+		_blackout_tween.kill()
+	if _blackout == null:
+		_blackout = ColorRect.new()
+		_blackout.top_level = true            # ignora la posicion del jugador
+		_blackout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_blackout.z_as_relative = false
+		add_child(_blackout)
+	_blackout.z_index = death_blackout_z
+	_update_blackout_rect()
+	var c := death_blackout_color
+	c.a = 0.0
+	_blackout.color = c
+	_blackout.show()
+
+	# El sprite del jugador se dibuja encima del negro.
+	if _sprite_z_backup.is_empty():
+		_sprite_z_backup = {"z": sprite.z_index, "rel": sprite.z_as_relative}
+	sprite.z_as_relative = false
+	sprite.z_index = death_blackout_z + 1
+
+	if death_blackout_fade_in <= 0.0:
+		_blackout.color.a = death_blackout_color.a
+	else:
+		_blackout_tween = create_tween()
+		_blackout_tween.tween_property(_blackout, "color:a", death_blackout_color.a, death_blackout_fade_in)
+
+
+func _end_death_blackout() -> void:
+	if _blackout == null or not _blackout.visible:
+		return
+	if _blackout_tween and _blackout_tween.is_valid():
+		_blackout_tween.kill()
+	_blackout_tween = create_tween()
+	_blackout_tween.tween_property(_blackout, "color:a", 0.0, maxf(death_blackout_fade_out, 0.0))
+	_blackout_tween.tween_callback(_finish_death_blackout)
+
+
+func _finish_death_blackout() -> void:
+	if _blackout:
+		_blackout.hide()
+	if not _sprite_z_backup.is_empty():
+		sprite.z_index = _sprite_z_backup["z"]
+		sprite.z_as_relative = _sprite_z_backup["rel"]
+		_sprite_z_backup = {}
+
+
+## Ajusta el rectangulo negro a lo que ve la camara (con margen), aunque cambie el zoom o se mueva.
+func _update_blackout_rect() -> void:
+	var vp := get_viewport()
+	var world_rect: Rect2 = vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	world_rect = world_rect.grow(300.0)
+	_blackout.global_position = world_rect.position
+	_blackout.size = world_rect.size
+
+
 func _schedule_respawn() -> void:
 	await get_tree().create_timer(respawn_delay).timeout
 	if not is_inside_tree():
@@ -772,7 +1113,9 @@ func _schedule_respawn() -> void:
 	_respawn()
 
 func _respawn() -> void:
+	_tp_afterimage_time_left = 0.0
 	death_cam.priority = 0
+	_end_death_blackout()
 	_pogo_jump_active = false
 	#deactivate_boss_cam()
 	# --- Posición: usar el checkpoint guardado ---
@@ -791,6 +1134,9 @@ func _respawn() -> void:
 	is_recharging = false
 	charge_power = 0.0
 	recharge_timer = 0.0
+	if trajectory_line:
+		trajectory_line.visible = false
+		trajectory_line.clear_points()
 	tp_charges = 0
 	_sync_tp_orbs()
 
@@ -835,12 +1181,18 @@ func die() -> void:
 		return
 		
 	is_dead = true  # ← Se pone primero para que nada más interfiera
+	_tp_afterimage_time_left = 0.0
+	
+	# Cancelar cualquier apuntado/carga de TP en curso (apaga is_charging y oculta la línea de trayectoria).
+	# Sin esto la línea quedaba visible porque _unhandled_input ignora el input mientras estás muerto.
+	_cancel_tp_charge()
 	
 	dust_particles.emitting = false
 	if death_noise_emitter:
 		death_noise_emitter.emit()
 	
 	death_cam.priority = 100
+	_start_death_blackout()
 	set_outline(false) 
 	_slash_lunge_timer = 0.0         
 	_slash_lunge_velocity = 0.0

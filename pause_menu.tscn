@@ -1,6 +1,23 @@
 [gd_scene format=3 uid="uid://dwpy5s6dusk0h"]
 
 [ext_resource type="Script" uid="uid://haoa2pxmshll" path="res://Game/pause_menu.gd" id="1_hdmo1"]
+[ext_resource type="Texture2D" uid="uid://bm6ns3ujjh2cf" path="res://textures/UI/buttons_2.png" id="2_05uyy"]
+[ext_resource type="Texture2D" uid="uid://wxm5ukqsavo8" path="res://textures/UI/buttons2.png" id="3_p81d2"]
+[ext_resource type="Texture2D" uid="uid://cwpl22b7xohgs" path="res://textures/UI/buttons.png" id="4_2nc7s"]
+[ext_resource type="SpriteFrames" uid="uid://bwu8fpor7iqbk" path="res://resources/HoverButton.tres" id="4_d3xb4"]
+[ext_resource type="Texture2D" uid="uid://b8ph7ymi88hhd" path="res://textures/UI/buttons_3.png" id="5_d3xb4"]
+[ext_resource type="AudioStream" uid="uid://bfd8526n5qi6j" path="res://Audio/sfx/exports/confirm_05_spell_sealed.wav" id="7_e8sti"]
+[ext_resource type="AudioStream" uid="uid://b4twgyqngoa4c" path="res://Audio/sfx/exports/hover_04_ghost_breath.wav" id="8_q2yj1"]
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1899958170]
 script = ExtResource("1_hdmo1")
+button_hover_font_color = Color(0, 0, 0, 1)
+button_normal_texture = ExtResource("2_05uyy")
+button_hover_texture = ExtResource("3_p81d2")
+button_hover_overlay = false
+button_hover_sprite_frames = ExtResource("4_d3xb4")
+button_normal_variants = Array[Texture2D]([ExtResource("2_05uyy"), ExtResource("4_2nc7s"), ExtResource("5_d3xb4")])
+click_sound = ExtResource("7_e8sti")
+hover_sound = ExtResource("8_q2yj1")
+click_volume_db = -5.5
+hover_volume_db = -7.0

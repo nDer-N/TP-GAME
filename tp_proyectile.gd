@@ -10,18 +10,27 @@ extends CharacterBody2D
 @export var afterimage_color: Color = Color(0.6, 0.9, 1.0, 1.0)  # tinte cian
 @export var afterimage_scale: float = 1.0            # scale del fantasma (relativo al proyectil)
 @export var afterimage_scale_end: float = 0.6
+@export_group("Death animation")
+## Nombre de la animación (dentro del AnimatedSprite2D hijo llamado "DeathAnimation") que se reproduce
+## SIEMPRE que el proyectil termina: al golpear un enemigo, al aterrizar o al acabarse su lifetime.
+@export var death_animation_name: StringName = &"death"
 
 var time_elapsed: float = 0.0
 var target_half_height: float = 0.0
 var _afterimage_timer: float = 0.0
+var _is_dying: bool = false   # true mientras suena la animación de muerte (el proyectil ya no hace nada más)
 signal landed(position: Vector2)
 signal died(did_die : bool)
+signal hit_enemy(enemy: Node2D, hit_position: Vector2)
 
 
 @onready var sprite: Sprite2D = $Sprite2D   # asegúrate de que exista
+@onready var death_sprite: AnimatedSprite2D = get_node_or_null("DeathAnimation")
 
 func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	if death_sprite:
+		death_sprite.hide()   # solo se muestra al morir
 
 func launch(from: Vector2, to: Vector2, charge_power: float, half_height: float = 0.0) -> void:
 	global_position = from
@@ -44,7 +53,16 @@ func _physics_process(delta: float) -> void:
 
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		
+		
+		if collider and collider.is_in_group("enemies"):
+			hit_enemy.emit(collider, collision.get_position())
+			_play_death(collision.get_position())
+			return
 		_bounce(collision, velocity_before_collision)
+		if _is_dying:   # _bounce pudo haber llamado a _land()
+			return
 	_update_afterimage(delta)
 		
 func _update_afterimage(delta: float) -> void:
@@ -92,9 +110,10 @@ func _bounce(collision: KinematicCollision2D, incoming_velocity: Vector2) -> voi
 	
 	# CHECK DE GRUPO: Si el objeto es un techo, forzamos el rebote sin importar la normal
 	if collision.get_collider().is_in_group("TECHO"):
-		velocity = incoming_velocity.bounce(normal) * physics_config.bounce_decay
-		# Pequeño empujón para evitar que se quede pegado al techo
-		global_position += Vector2(0, 2)
+		# Rebote con velocidad mínima (ver ProjectilePhysicsConfig.ceiling_bounce)
+		velocity = physics_config.ceiling_bounce(incoming_velocity, normal)
+		# Empujón hacia AFUERA de la superficie, no siempre hacia abajo
+		global_position += normal * physics_config.ceiling_push_out
 		return
 	
 	# Lógica original de normales (solo se ejecuta si NO es techo)
@@ -109,9 +128,11 @@ func _bounce(collision: KinematicCollision2D, incoming_velocity: Vector2) -> voi
 
 
 func _land(pos: Vector2) -> void:
+	if _is_dying:
+		return
 	velocity = Vector2.ZERO
 	landed.emit(pos)
-	queue_free()
+	_play_death()
 
 
 func _get_platform_top(collision_point: Vector2) -> Vector2:
@@ -126,5 +147,42 @@ func _get_platform_top(collision_point: Vector2) -> Vector2:
 	return Vector2(collision_point.x, collision_point.y - target_half_height - 2.0)
 
 func die() -> void:
+	if _is_dying:
+		return
 	died.emit(true)
-	queue_free()
+	_play_death()
+
+
+## Detiene el proyectil, oculta su sprite normal y reproduce la animación de muerte.
+## Es el ÚNICO punto de salida del proyectil: golpe a enemigo, aterrizaje y expiración pasan por aquí.
+## Las señales (hit_enemy / landed / died) se emiten ANTES de llamar a esto, así que el gameplay
+## (teleport, slash, etc.) no espera a que termine la animación.
+## at_position: dónde mostrar la animación (por defecto, donde esté el proyectil).
+func _play_death(at_position: Vector2 = Vector2.INF) -> void:
+	if _is_dying:
+		return
+	_is_dying = true
+
+	# Congelar el proyectil: sin movimiento, sin colisiones y sin estela nueva.
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	set_deferred("collision_layer", 0)
+	set_deferred("collision_mask", 0)
+
+	if at_position != Vector2.INF:
+		global_position = at_position
+
+	# Si no hay animación de muerte configurada, se comporta como antes: desaparece al instante.
+	if death_sprite == null \
+			or death_sprite.sprite_frames == null \
+			or not death_sprite.sprite_frames.has_animation(death_animation_name):
+		queue_free()
+		return
+
+	if sprite:
+		sprite.hide()
+	# Si la animación estuviera en loop, animation_finished nunca se emitiría y el proyectil quedaría para siempre.
+	death_sprite.sprite_frames.set_animation_loop(death_animation_name, false)
+	death_sprite.show()
+	death_sprite.animation_finished.connect(queue_free)
+	death_sprite.play(death_animation_name)
